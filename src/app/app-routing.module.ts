@@ -51,10 +51,6 @@ const routes: Routes = [
     path: 'notifikasi',
     loadChildren: () => import('./notifikasi/notifikasi.module').then( m => m.NotifikasiPageModule)
   },
-  {
-    path: 'akun',
-    loadChildren: () => import('./akun/akun.module').then( m => m.AkunPageModule)
-  },
 ];
 
 @NgModule({
