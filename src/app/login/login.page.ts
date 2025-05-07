@@ -6,11 +6,12 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage implements OnInit {
+export class LoginPage {
+  email = '';
+  password = '';
 
-  constructor() { }
-
-  ngOnInit() {
+  onLogin() {
+    console.log('Login dengan:', this.email, this.password);
+    // Tambahkan logika autentikasi di sini
   }
-
 }

@@ -1,13 +1,25 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>login</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="flex items-center justify-center h-full bg-gray-100">
+  <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
+    <h1 class="text-2xl font-bold text-center mb-6">Login</h1>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">login</ion-title>
-    </ion-toolbar>
-  </ion-header>
+    <form (submit)="onLogin()" class="space-y-4">
+      <ion-item class="rounded-xl">
+        <ion-label position="floating">Email</ion-label>
+        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
+      </ion-item>
+
+      <ion-item class="rounded-xl">
+        <ion-label position="floating">Password</ion-label>
+        <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
+      </ion-item>
+
+      <ion-button expand="block" type="submit" class="mt-4 rounded-xl" color="primary">
+        Login
+      </ion-button>
+    </form>
+
+    <div class="text-center mt-4 text-sm text-gray-600">
+      Belum punya akun? <a href="/register" class="text-blue-500 font-semibold">Daftar</a>
+    </div>
+  </div>
 </ion-content>
