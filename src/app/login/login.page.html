@@ -1,25 +1,33 @@
-<ion-content class="flex items-center justify-center h-full bg-gray-100">
-  <div class="w-full max-w-md bg-white p-8 rounded-2xl shadow-xl">
-    <h1 class="text-2xl font-bold text-center mb-6">Login</h1>
+<ion-content [fullscreen]="true" class="login-page">
+  <div class="container">
+    <ion-icon name="arrow-back-outline" class="back-icon"></ion-icon>
 
-    <form (submit)="onLogin()" class="space-y-4">
-      <ion-item class="rounded-xl">
-        <ion-label position="floating">Email</ion-label>
-        <ion-input type="email" [(ngModel)]="email" name="email" required></ion-input>
-      </ion-item>
+    <h1 class="title">Masuk</h1>
 
-      <ion-item class="rounded-xl">
-        <ion-label position="floating">Password</ion-label>
-        <ion-input type="password" [(ngModel)]="password" name="password" required></ion-input>
-      </ion-item>
-
-      <ion-button expand="block" type="submit" class="mt-4 rounded-xl" color="primary">
-        Login
-      </ion-button>
-    </form>
-
-    <div class="text-center mt-4 text-sm text-gray-600">
-      Belum punya akun? <a href="/register" class="text-blue-500 font-semibold">Daftar</a>
+    <div class="input-wrapper">
+      <label class="input-label">Nomer Telepon/Username/Email</label>
+      <input type="text" class="input-field" />
     </div>
+
+    <div class="input-wrapper">
+      <label class="input-label">Password</label>
+      <div class="password-field">
+        <input [type]="showPassword ? 'text' : 'password'" class="input-field" />
+        <ion-icon
+          name="{{ showPassword ? 'eye-outline' : 'eye-off-outline' }}"
+          class="toggle-password"
+          (click)="togglePassword()"
+        ></ion-icon>
+      </div>
+    </div>
+
+    <p class="forgot-password">Lupa Password?</p>
+
+    <button class="login-button" (click)="goToHome()">Masuk</button>
+
+    <p class="signup-link">
+      Belum Punya Akun?
+      <a routerLink="/registrasi"><strong>Daftar</strong></a>
+    </p>    
   </div>
 </ion-content>
