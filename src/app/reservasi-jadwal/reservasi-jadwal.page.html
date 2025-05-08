@@ -1,13 +1,84 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>reservasi-jadwal</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="ion-padding" [fullscreen]="true">
+  <div class="reservasi-wrapper">
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">reservasi-jadwal</ion-title>
-    </ion-toolbar>
-  </ion-header>
+    <!-- Header -->
+    <div class="header">
+      <ion-icon name="arrow-back-outline" class="back-icon"></ion-icon>
+      <h2>Reservasi</h2>
+    </div>
+
+    <div class="section">
+      <h3>Jadwal</h3>
+      <div class="input-box" (click)="openDate()">
+        <ion-input
+          readonly
+          [value]="tanggal ? (tanggal | date: 'dd/MM/yyyy') : ''"
+          placeholder="DD/MM/YY"
+          class="custom-date-input"
+        ></ion-input>
+        <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
+      </div>
+    
+      <ion-modal [isOpen]="showDateModal" (didDismiss)="showDateModal = false">
+        <ng-template>
+          <ion-datetime
+            presentation="date"
+            [value]="tanggal"
+            (ionChange)="setTanggal($event)"
+            doneText="OK"
+            cancelText="Batal"
+          ></ion-datetime>
+        </ng-template>
+      </ion-modal>
+    </div>    
+
+    <!-- Waktu Datang -->
+    <div class="section">
+      <h3>Waktu Datang</h3>
+      <div class="button-grid">
+        <button
+          *ngFor="let jam of waktuList"
+          class="custom-btn"
+          [class.selected]="waktu === jam"
+          (click)="waktu = jam"
+        >
+          {{ jam }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Jumlah Tamu -->
+    <div class="section">
+      <h3>Jumlah Tamu</h3>
+      <p class="note">*Sesuai kursi yang anda pilih</p>
+      <div class="input-box center">
+        <ion-input
+          type="number"
+          [(ngModel)]="jumlahTamu"
+          class="number-input"
+        ></ion-input>
+      </div>
+    </div>
+
+    <!-- Tempat -->
+    <div class="section">
+      <h3>Tempat</h3>
+      <p class="note">*Sesuai tempat yang anda pilih</p>
+      <div class="button-grid">
+        <button
+          *ngFor="let t of tempatList"
+          class="custom-btn"
+          [class.selected]="tempat === t"
+          (click)="tempat = t"
+        >
+          {{ t }}
+        </button>
+      </div>
+    </div>
+
+    <ion-button class="confirm-btn" expand="block" [routerLink]="['/menu']">
+      KONFIRMASI RESERVASI
+    </ion-button>
+    
+  </div>
 </ion-content>

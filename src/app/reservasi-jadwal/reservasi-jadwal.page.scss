@@ -1,0 +1,104 @@
+ion-content {
+    --background: #a3d9ff;
+  }
+  
+  .reservasi-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .back-icon {
+    font-size: 24px;
+  }
+  
+  .section h3 {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 8px;
+  }
+  
+  .note {
+    font-size: 12px;
+    color: #000;
+    margin-bottom: 8px;
+  }
+  
+  .center {
+    justify-content: center;
+  }
+  
+  .number-input {
+    text-align: center;
+    font-size: 18px;
+    width: 100%;
+  }
+  
+  
+  .button-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  
+  .custom-btn {
+    background-color: white;
+    border: 1.5px solid black;
+    border-radius: 16px;
+    padding: 10px 20px;
+    font-weight: bold;
+    color: black;
+    font-size: 16px;
+  }
+  
+  .custom-btn.selected {
+    background-color: black;
+    color: white;
+  }
+  
+  .confirm-btn {
+    --background: white;
+    --color: black;
+    border: 1.5px solid black;
+    border-radius: 16px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  
+
+  .custom-date-input {
+    --color: black;
+    color: black;
+    font-size: 16px;
+    pointer-events: none; // biar tidak bisa diketik manual
+  }
+  
+  .input-box {
+    --color: black;
+  color: black;
+    background-color: white;
+    border: 1px solid black;
+    border-radius: 16px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    position: relative;
+  }
+  
+  .calendar-icon {
+    position: absolute;
+    right: 12px;
+    font-size: 20px;
+    color: black;
+  }
+  
