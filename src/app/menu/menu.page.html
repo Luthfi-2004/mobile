@@ -4,10 +4,55 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">menu</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="menu-page">
+  <!-- Header -->
+  <div class="header">
+    <ion-icon name="arrow-back-outline" (click)="goBack()"></ion-icon>
+    <ion-searchbar [(ngModel)]="searchText" placeholder="Cari Menu"></ion-searchbar>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <span 
+      *ngFor="let kategori of kategoriList"
+      [class.active]="kategori === selectedKategori"
+      (click)="selectKategori(kategori)"
+    >
+      {{ kategori }}
+    </span>
+  </div>
+
+  <ion-list>
+    <ion-item *ngFor="let item of getFilteredMenu()">
+      <ion-avatar slot="start">
+        <img [src]="item.image" />
+      </ion-avatar>
+      <ion-label>
+        <h2>{{ item.nama }}</h2>
+        <p>Rp{{ item.harga | number:'1.0-0' }}</p>
+      </ion-label>
+      <div slot="end" class="quantity-controls">
+        <ion-button fill="clear" size="small" (click)="removeFromCart(item)">
+          <ion-icon name="remove-circle-outline"></ion-icon>
+        </ion-button>
+        <span>{{ item.quantity || 0 }}</span>
+        <ion-button fill="clear" size="small" (click)="addToCart(item)">
+          <ion-icon name="add-circle-outline"></ion-icon>
+        </ion-button>
+      </div>
+      
+    </ion-item>
+  </ion-list>
+
+  <!-- Bottom Total -->
+  <div class="bottom-bar">
+    <div class="total">
+      <small>Total</small>
+      <strong>Rp{{ getTotalHarga() | number:'1.0-0' }}</strong>
+    </div>
+    <ion-button shape="round" fill="outline" (click)="goToCart()">
+      <ion-icon name="cart-outline" slot="start"></ion-icon>
+      Check out ({{ cart.length }})
+    </ion-button>
+  </div>
 </ion-content>
