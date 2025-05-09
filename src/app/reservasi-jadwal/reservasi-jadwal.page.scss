@@ -102,3 +102,20 @@ ion-content {
     color: black;
   }
   
+  .readonly-btn {
+    cursor: default;
+    opacity: 1;
+    background-color: #f4f4f4;
+    color: #000;
+    border: 1px solid #ddd;
+    
+    &.selected {
+      background-color: #e0e0e0;
+      color: #000;
+      border: 1px solid #bbb;
+    }
+    
+    &:active {
+      transform: none !important;
+    }
+  }

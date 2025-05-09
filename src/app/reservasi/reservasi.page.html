@@ -1,13 +1,54 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>reservasi</ion-title>
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reservasi</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">reservasi</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding custom-bg">
+  <div *ngFor="let section of sections" class="section">
+    <h2 class="section-title">{{ section | titlecase }}</h2>
+    <p class="notes">{{ getNotes(section) }}</p>
+
+    <div class="scroll-container">
+      <div class="tables">
+        <div
+          *ngFor="let table of tables[section]"
+          class="table"
+          [ngClass]="{
+            'full': table.full,
+            'selected': table.selected
+          }"
+          (click)="selectTable(table)"
+        >
+          <div class="table-content">
+            <div class="table-id">{{ table.id }}</div>
+            <div class="table-seats">({{ table.seats }} kursi)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="box full"></div> Full
+    </div>
+    <div class="legend-item">
+      <div class="box selected"></div> Dipilih
+    </div>
+    <div class="legend-item">
+      <div class="box available"></div> Tersedia
+    </div>
+  </div>
+
+  <div class="total-seats">
+    Total kursi dipilih: {{ getTotalSelectedSeats() }}
+  </div>
+
+  <ion-button expand="block" class="confirm-btn" (click)="confirm()" [disabled]="getSelectedTables().length === 0">
+    Konfirmasi
+  </ion-button>
 </ion-content>
