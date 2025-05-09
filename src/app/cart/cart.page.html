@@ -1,13 +1,86 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>cart</ion-title>
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/menu"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Ringkasan Pemesanan dan Pembayaran</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">cart</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content [fullscreen]="true" class="ion-padding">
+  <div *ngIf="cart.length === 0" class="empty-cart">
+    <p>Keranjang masih kosong.</p>
+  </div>
+
+  <div *ngIf="cart.length > 0" class="order-summary">
+    <!-- Jumlah Item -->
+    <div class="item-count">
+      <h3>{{ cart.length }} Item</h3>
+    </div>
+    
+    <!-- Daftar Item -->
+    <ion-list class="food-item">
+      <ion-item *ngFor="let item of cart" lines="none">
+        <ion-label>
+          <h2>{{ item.nama }}</h2>
+          <p class="add-more">Add More</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
+    <div class="divider"></div>
+
+    <!-- Additional Items -->
+    <div class="additional-items">
+      <h3>Additional Items:</h3>
+      <p class="price">Rp21.000</p>
+    </div>
+    
+    <!-- Ringkasan Pembayaran -->
+    <div class="payment-breakdown">
+      <h3>Ringkasan Pembayaran</h3>
+      <div class="breakdown-row">
+        <span>Subtotal item:</span>
+        <span>Rp21.000</span>
+      </div>
+      <div class="breakdown-row">
+        <span>Biaya Layanan:</span>
+        <span>Rp0</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Total Pembayaran -->
+    <div class="total-payment">
+      <h3>Total Pembayaran:</h3>
+      <h2>Rp30.000</h2>
+    </div>
+
+    <!-- Metode Pembayaran -->
+    <div class="payment-methods">
+      <h3>Pilih Metode Pembayaran</h3>
+      <ion-list>
+        <ion-radio-group>
+          <ion-item>
+            <ion-radio slot="start" value="qris"></ion-radio>
+            <ion-label>QRIS</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-radio slot="start" value="transfer"></ion-radio>
+            <ion-label>Transfer Bank (Manual)</ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-radio slot="start" value="cod"></ion-radio>
+            <ion-label>Bayar di Tempat (COD)</ion-label>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+    </div>
+
+    <!-- Tombol Checkout -->
+    <ion-button expand="block" (click)="checkout()" class="checkout-btn">
+      Bayar Sekarang
+    </ion-button>
+  </div>
 </ion-content>
