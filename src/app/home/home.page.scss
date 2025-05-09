@@ -138,3 +138,8 @@ ion-tab-button[selected] {
   display: block;
   font-size: 22px;
 }
+
+ion-button {
+  z-index: 9999;
+  position: relative;
+}
