@@ -3,13 +3,13 @@ import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
-    path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
-  },
-  {
     path: '',
     redirectTo: 'login',
     pathMatch: 'full'
+  },
+  {
+    path: 'home',
+    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
   },
   {
     path: 'login',
@@ -51,6 +51,22 @@ const routes: Routes = [
     path: 'notifikasi',
     loadChildren: () => import('./notifikasi/notifikasi.module').then( m => m.NotifikasiPageModule)
   },
+  {
+    path: 'akun',
+    loadChildren: () => import('./akun/akun.module').then(m => m.AkunPageModule)
+  },  {
+    path: 'info-akun',
+    loadChildren: () => import('./info-akun/info-akun.module').then( m => m.InfoAkunPageModule)
+  },
+  {
+    path: 'pengaturan',
+    loadChildren: () => import('./pengaturan/pengaturan.module').then( m => m.PengaturanPageModule)
+  },
+  {
+    path: 'tentang-kami',
+    loadChildren: () => import('./tentang-kami/tentang-kami.module').then( m => m.TentangKamiPageModule)
+  }
+
 ];
 
 @NgModule({

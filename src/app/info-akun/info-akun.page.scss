@@ -1,0 +1,40 @@
+ion-content {
+  --background: #90caf9;
+  text-align: center;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+
+  ion-avatar {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    cursor: pointer;
+
+    .edit-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      text-align: center;
+      padding: 5px;
+      border-bottom-left-radius: 50%;
+      border-bottom-right-radius: 50%;
+
+      ion-icon {
+        font-size: 20px;
+      }
+    }
+  }
+}
+
+ion-card {
+  margin-top: 20px;
+  --background: #f8f9fa;
+}

@@ -1,0 +1,67 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/akun"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Info Akun</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="saveChanges()" [disabled]="!form.valid">
+        <ion-icon name="save-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form">
+    <!-- Foto Profil -->
+    <div class="avatar-section">
+      <ion-avatar (click)="changeProfilePicture()">
+        <img [src]="profileImage" alt="Profile Picture" />
+        <div class="edit-overlay">
+          <ion-icon name="camera-outline"></ion-icon>
+        </div>
+      </ion-avatar>
+      <input type="file" accept="image/*" (change)="handleImageChange($event)" #fileInput style="display: none"/>
+    </div>
+
+    <!-- Username -->
+    <ion-item>
+      <ion-label position="floating">Username</ion-label>
+      <ion-input formControlName="username" type="text"></ion-input>
+    </ion-item>
+
+    <!-- Email -->
+    <ion-item>
+      <ion-label position="floating">Email</ion-label>
+      <ion-input formControlName="email" type="email"></ion-input>
+    </ion-item>
+
+    <!-- Nomor Handphone -->
+    <ion-item>
+      <ion-label position="floating">Nomor Handphone</ion-label>
+      <ion-input formControlName="phone" type="tel"></ion-input>
+    </ion-item>
+
+    <!-- Ganti Password -->
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Ganti Kata Sandi</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-item>
+          <ion-label position="floating">Password Saat Ini</ion-label>
+          <ion-input formControlName="currentPassword" type="password"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Password Baru</ion-label>
+          <ion-input formControlName="newPassword" type="password"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-label position="floating">Konfirmasi Password</ion-label>
+          <ion-input formControlName="confirmPassword" type="password"></ion-input>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+  </form>
+</ion-content>
