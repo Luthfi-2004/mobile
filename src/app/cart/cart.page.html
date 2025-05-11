@@ -1,86 +1,72 @@
-<ion-header>
+<ion-header translucent>
   <ion-toolbar color="light">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/menu"></ion-back-button>
     </ion-buttons>
-    <ion-title>Ringkasan Pemesanan dan Pembayaran</ion-title>
+    <ion-title class="ion-text-center">Ringkasan Pemesanan dan Pembayaran</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
-  <div *ngIf="cart.length === 0" class="empty-cart">
-    <p>Keranjang masih kosong.</p>
-  </div>
+<ion-content [fullscreen]="true" class="cart-content">
+  <div class="cart-wrapper">
+    <h3>{{ cart.length }} Item</h3>
 
-  <div *ngIf="cart.length > 0" class="order-summary">
-    <!-- Jumlah Item -->
-    <div class="item-count">
-      <h3>{{ cart.length }} Item</h3>
+    <div *ngFor="let item of cart; let i = index" class="cart-item">
+      <img [src]="item.image" alt="Menu Image" />
+      <div class="item-detail">
+        <h4>{{ item.nama }}</h4>
+        <p>Rp{{ item.harga | number }}</p>
+
+        <div class="qty-control">
+          <ion-button size="small" fill="clear" (click)="decreaseQty(i)">-</ion-button>
+          <span>{{ item.quantity }}</span>
+          <ion-button size="small" fill="clear" (click)="increaseQty(i)">+</ion-button>
+        </div>
+
+        <div class="edit-delete">
+          <ion-button size="small" fill="outline" color="primary" (click)="editItem(i)">
+            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+          <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
     </div>
-    
-    <!-- Daftar Item -->
-    <ion-list class="food-item">
-      <ion-item *ngFor="let item of cart" lines="none">
-        <ion-label>
-          <h2>{{ item.nama }}</h2>
-          <p class="add-more">Add More</p>
-        </ion-label>
+
+    <ion-list lines="none" class="payment-summary">
+      <ion-item>
+        <ion-label>Subtotal Item:</ion-label>
+        <ion-text>Rp{{ subtotal | number }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label>Biaya Layanan:</ion-label>
+        <ion-text>Rp{{ serviceFee | number }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label><strong>Total Pembayaran:</strong></ion-label>
+        <ion-text><strong>Rp{{ total | number }}</strong></ion-text>
       </ion-item>
     </ion-list>
 
-    <div class="divider"></div>
-
-    <!-- Additional Items -->
-    <div class="additional-items">
-      <h3>Additional Items:</h3>
-      <p class="price">Rp21.000</p>
-    </div>
-    
-    <!-- Ringkasan Pembayaran -->
-    <div class="payment-breakdown">
-      <h3>Ringkasan Pembayaran</h3>
-      <div class="breakdown-row">
-        <span>Subtotal item:</span>
-        <span>Rp21.000</span>
-      </div>
-      <div class="breakdown-row">
-        <span>Biaya Layanan:</span>
-        <span>Rp0</span>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- Total Pembayaran -->
-    <div class="total-payment">
-      <h3>Total Pembayaran:</h3>
-      <h2>Rp30.000</h2>
-    </div>
-
-    <!-- Metode Pembayaran -->
-    <div class="payment-methods">
-      <h3>Pilih Metode Pembayaran</h3>
-      <ion-list>
-        <ion-radio-group>
-          <ion-item>
-            <ion-radio slot="start" value="qris"></ion-radio>
-            <ion-label>QRIS</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" value="transfer"></ion-radio>
-            <ion-label>Transfer Bank (Manual)</ion-label>
-          </ion-item>
-          <ion-item>
-            <ion-radio slot="start" value="cod"></ion-radio>
-            <ion-label>Bayar di Tempat (COD)</ion-label>
-          </ion-item>
-        </ion-radio-group>
+    <div class="payment-method">
+      <h4>Pilih Metode Pembayaran</h4>
+      <ion-list lines="none">
+        <ion-item button (click)="selectPayment('qris')" [class.selected]="paymentMethod === 'qris'">
+          <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+          <ion-label>QRIS</ion-label>
+        </ion-item>
+        <ion-item button (click)="selectPayment('manual')" [class.selected]="paymentMethod === 'manual'">
+          <ion-icon name="cash-outline" slot="start"></ion-icon>
+          <ion-label>Transfer Bank (Manual)</ion-label>
+        </ion-item>
+        <ion-item button (click)="selectPayment('cod')" [class.selected]="paymentMethod === 'cod'">
+          <ion-icon name="wallet-outline" slot="start"></ion-icon>
+          <ion-label>Bayar di Tempat (COD)</ion-label>
+        </ion-item>
       </ion-list>
     </div>
 
-    <!-- Tombol Checkout -->
-    <ion-button expand="block" (click)="checkout()" class="checkout-btn">
-      Bayar Sekarang
-    </ion-button>
+    <ion-button expand="block" class="checkout-btn" (click)="checkout()">Buat Pesanan</ion-button>
   </div>
 </ion-content>

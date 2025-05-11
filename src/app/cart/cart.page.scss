@@ -1,115 +1,67 @@
-/* Style untuk tampilan sesuai gambar */
-.order-summary {
-    color: #333333; /* Warna teks utama */
-  }
-  
-  .item-count h3 {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #333333;
-  }
-  
-  .food-item ion-item {
-    --padding-start: 0;
-    --inner-padding-end: 0;
-  }
-  
-  .food-item h2 {
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: 4px;
-    color: #333333;
-  }
-  
-  .add-more {
-    font-size: 14px;
-    color: #3880ff; /* Warna biru untuk 'Add More' */
-    margin-top: 4px;
-  }
-  
-  .divider {
-    height: 1px;
-    background-color: #e0e0e0;
-    margin: 16px 0;
-  }
-  
-  .additional-items {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  
-  .additional-items h3 {
-    font-size: 15px;
-    font-weight: 500;
-  }
-  
-  .additional-items .price {
-    font-size: 15px;
-    font-weight: 600;
-    color: #333333;
-  }
-  
-  .payment-breakdown {
-    margin-bottom: 16px;
-  }
-  
-  .payment-breakdown h3 {
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: 12px;
-  }
-  
-  .breakdown-row {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-    font-size: 14px;
-  }
-  
-  .total-payment {
-    margin: 16px 0;
-  }
-  
-  .total-payment h3 {
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: 8px;
-  }
-  
-  .total-payment h2 {
-    font-size: 18px;
-    font-weight: 600;
-    color: #333333;
-  }
-  
-  .payment-methods {
-    margin: 24px 0;
-  }
-  
-  .payment-methods h3 {
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: 12px;
-  }
-  
-  .payment-methods ion-item {
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    --border-color: transparent;
-    margin-bottom: 8px;
-  }
-  
-  .payment-methods ion-radio {
-    margin-right: 12px;
-  }
-  
-  .checkout-btn {
-    --background: #3880ff;
-    --background-activated: #3171e0;
-    --color: white;
-    margin-top: 24px;
-    font-weight: 500;
-  }
+.cart-content {
+  --background: #e0f2ff;
+}
+
+.cart-wrapper {
+  padding: 16px;
+}
+
+.cart-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.cart-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.item-detail {
+  flex: 1;
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.edit-delete {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+}
+
+.payment-summary ion-item {
+  background: #fff;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  --padding-start: 16px;
+}
+
+.payment-method h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: bold;
+}
+
+.payment-method ion-item {
+  margin-bottom: 10px;
+  border-radius: 8px;
+  background-color: #f1f1f1;
+}
+
+.payment-method ion-item.selected {
+  background-color: #d1eaff;
+}
+
+
