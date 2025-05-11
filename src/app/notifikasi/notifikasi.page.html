@@ -1,13 +1,20 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>notifikasi</ion-title>
-  </ion-toolbar>
-</ion-header>
+<ion-content class="notif-content">
+  <div class="notif-list">
+    <div *ngFor="let notif of notifikasi" class="notif-card">
+      <div class="notif-icon">
+        <ion-icon name="notifications-outline"></ion-icon>
+      </div>
+      <div class="notif-text">
+        <h4>{{ notif.judul }}</h4>
+        <p>{{ notif.deskripsi }}</p>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">notifikasi</ion-title>
-    </ion-toolbar>
-  </ion-header>
+        <ion-button size="small" fill="outline" color="dark" (click)="goToDetail(notif)">
+          Detail Pesanan
+        </ion-button>
+        <ion-button size="small" fill="solid" color="primary" (click)="goToRating(notif)">
+          Beri Penilaian
+        </ion-button>
+      </div>
+    </div>
+  </div>
 </ion-content>

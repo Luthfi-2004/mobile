@@ -44,9 +44,13 @@ const routes: Routes = [
     loadChildren: () => import('./riwayat/riwayat.module').then( m => m.RiwayatPageModule)
   },
   {
-    path: 'ulasan',
-    loadChildren: () => import('./ulasan/ulasan.module').then( m => m.UlasanPageModule)
+    path: 'detail-pesanan',
+    loadChildren: () => import('./detail-pesanan/detail-pesanan.module').then(m => m.DetailPesananPageModule)
   },
+  {
+    path: 'ulasan',
+    loadChildren: () => import('./ulasan/ulasan.module').then(m => m.UlasanPageModule)
+  },  
   {
     path: 'notifikasi',
     loadChildren: () => import('./notifikasi/notifikasi.module').then( m => m.NotifikasiPageModule)
@@ -54,7 +58,8 @@ const routes: Routes = [
   {
     path: 'akun',
     loadChildren: () => import('./akun/akun.module').then(m => m.AkunPageModule)
-  },  {
+  },
+  {
     path: 'info-akun',
     loadChildren: () => import('./info-akun/info-akun.module').then( m => m.InfoAkunPageModule)
   },
@@ -65,7 +70,12 @@ const routes: Routes = [
   {
     path: 'tentang-kami',
     loadChildren: () => import('./tentang-kami/tentang-kami.module').then( m => m.TentangKamiPageModule)
+  },
+  {
+    path: 'detail-pesanan',
+    loadChildren: () => import('./detail-pesanan/detail-pesanan.module').then( m => m.DetailPesananPageModule)
   }
+
 
 ];
 

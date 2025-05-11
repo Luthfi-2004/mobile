@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { NavController } from '@ionic/angular';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-home',
@@ -15,18 +16,19 @@ export class HomePage {
   ];
   currentImageIndex = 0;
 
-  constructor(private navCtrl: NavController) {
+  constructor(
+    private navCtrl: NavController,
+    private router: Router
+  ) {
     this.startImageSlider();
   }
 
   startImageSlider() {
     setInterval(() => {
       this.currentImageIndex = (this.currentImageIndex + 1) % this.images.length;
-    }, 4000); // Ganti gambar tiap 4 detik
+    }, 4000);
   }
-
-  // Fungsi untuk navigasi ke halaman reservasi
   goToReservasi() {
-    this.navCtrl.navigateForward('/reservasi');
+    this.router.navigate(['/reservasi']);
   }
 }

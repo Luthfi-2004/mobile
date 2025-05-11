@@ -42,25 +42,6 @@ export class CartPage {
     }
   }
 
-  selectPayment(method: string) {
-    this.paymentMethod = method;
-  }
-
-  checkout() {
-    if (!this.paymentMethod) {
-      alert('Silakan pilih metode pembayaran terlebih dahulu.');
-      return;
-    }
-
-    if (this.cart.length === 0) {
-      alert('Keranjang kosong!');
-      return;
-    }
-
-    alert(`Pesanan berhasil dikirim!\nMetode Pembayaran: ${this.paymentMethod}\nTotal: Rp${this.total.toLocaleString()}`);
-    this.router.navigate(['/menu']);
-  }
-
   editItem(index: number) {
     const currentQty = this.cart[index].quantity;
     const newQty = prompt(`Ubah jumlah untuk ${this.cart[index].nama}:`, currentQty.toString());
@@ -83,8 +64,41 @@ export class CartPage {
     }
   }
 
+  selectPayment(method: string) {
+    this.paymentMethod = method;
+  }
+
+  checkout() {
+    if (!this.paymentMethod) {
+      alert('Silakan pilih metode pembayaran terlebih dahulu.');
+      return;
+    }
+
+    if (this.cart.length === 0) {
+      alert('Keranjang kosong!');
+      return;
+    }
+
+    const transaksi = {
+      id: Date.now(),
+      tanggal: new Date().toLocaleString(),
+      items: [...this.cart],
+      total: this.total,
+      status: 'Selesai',
+      metode: this.paymentMethod,
+    };
+
+    const existing = JSON.parse(localStorage.getItem('riwayat') || '[]');
+    existing.push(transaksi);
+    localStorage.setItem('riwayat', JSON.stringify(existing));
+
+    alert(`Pesanan berhasil dikirim!\nMetode Pembayaran: ${this.paymentMethod}\nTotal: Rp${this.total.toLocaleString()}`);
+    this.cart = [];
+    this.router.navigate(['/riwayat']);
+  }
+
   updateTotals() {
-    // Trigger getter recalculations (getters already handle it, no-op but here for clarity)
+    // Getter sudah otomatis menghitung ulang
   }
 
   goBack() {

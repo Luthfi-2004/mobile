@@ -1,13 +1,36 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>riwayat</ion-title>
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Riwayat Reservasi</ion-title>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">riwayat</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content class="ion-padding" [fullscreen]="true">
+  <div *ngFor="let data of riwayat" class="card-riwayat">
+    <div class="header">
+      <h2>Reservasi#{{ data.id }}</h2>
+      <span class="status">{{ data.status }}</span>
+    </div>
+
+    <p>{{ data.tanggal }}</p>
+
+    <div class="items">
+      <div *ngFor="let item of data.items">
+        <span>{{ item.nama }}</span>
+        <span>x{{ item.quantity }}</span>
+        <span>Rp{{ item.harga | number }}</span>
+      </div>
+    </div>
+
+    <div class="total">
+      Total: <strong>Rp{{ data.total | number }}</strong>
+    </div>
+
+    <div class="actions">
+      <ion-button size="small" fill="outline" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
+      <ion-button size="small" color="dark">Beri Penilaian</ion-button>
+    </div>
+  </div>
 </ion-content>
