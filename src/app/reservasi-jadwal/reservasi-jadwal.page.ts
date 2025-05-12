@@ -59,7 +59,7 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
 
-    this.router.navigate(['/reservasi'], {
+    this.router.navigate(['/menu'], {
       queryParams: {
         tanggal: this.tanggal,
         waktu: this.waktu,
