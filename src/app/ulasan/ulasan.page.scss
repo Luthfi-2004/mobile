@@ -1,0 +1,16 @@
+.rating-section {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.stars {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.star-icon {
+  font-size: 32px;
+  cursor: pointer;
+}

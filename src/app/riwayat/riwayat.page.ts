@@ -21,4 +21,10 @@ export class RiwayatPage {
       state: { pesanan: data }
     });
   }
+
+  beriUlasan(data: any) {
+    this.router.navigate(['/ulasan'], {
+      state: { pesanan: data }
+    });
+  }
 }
