@@ -4,44 +4,48 @@ import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'splash',
+    redirectTo: 'splash',  
     pathMatch: 'full'
   },
   {
-    path: 'home',
-    loadChildren: () => import('./home/home.module').then( m => m.HomePageModule)
+    path: 'splash',
+    loadChildren: () => import('./splash/splash.module').then(m => m.SplashPageModule)  
   },
   {
     path: 'login',
-    loadChildren: () => import('./login/login.module').then( m => m.LoginPageModule)
+    loadChildren: () => import('./login/login.module').then(m => m.LoginPageModule)
+  },
+  {
+    path: 'tabs',
+    loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)  
   },
   {
     path: 'registrasi',
-    loadChildren: () => import('./registrasi/registrasi.module').then( m => m.RegistrasiPageModule)
+    loadChildren: () => import('./registrasi/registrasi.module').then(m => m.RegistrasiPageModule)
   },
   {
     path: 'reservasi',
-    loadChildren: () => import('./reservasi/reservasi.module').then( m => m.ReservasiPageModule)
+    loadChildren: () => import('./reservasi/reservasi.module').then(m => m.ReservasiPageModule)
   },
   {
     path: 'reservasi-jadwal',
-    loadChildren: () => import('./reservasi-jadwal/reservasi-jadwal.module').then( m => m.ReservasiJadwalPageModule)
+    loadChildren: () => import('./reservasi-jadwal/reservasi-jadwal.module').then(m => m.ReservasiJadwalPageModule)
   },
   {
     path: 'menu',
-    loadChildren: () => import('./menu/menu.module').then( m => m.MenuPageModule)
+    loadChildren: () => import('./menu/menu.module').then(m => m.MenuPageModule)
   },
   {
     path: 'cart',
-    loadChildren: () => import('./cart/cart.module').then( m => m.CartPageModule)
+    loadChildren: () => import('./cart/cart.module').then(m => m.CartPageModule)
   },
   {
     path: 'invoice',
-    loadChildren: () => import('./invoice/invoice.module').then( m => m.InvoicePageModule)
+    loadChildren: () => import('./invoice/invoice.module').then(m => m.InvoicePageModule)
   },
   {
     path: 'riwayat',
-    loadChildren: () => import('./riwayat/riwayat.module').then( m => m.RiwayatPageModule)
+    loadChildren: () => import('./riwayat/riwayat.module').then(m => m.RiwayatPageModule)
   },
   {
     path: 'detail-pesanan',
@@ -53,7 +57,7 @@ const routes: Routes = [
   },  
   {
     path: 'notifikasi',
-    loadChildren: () => import('./notifikasi/notifikasi.module').then( m => m.NotifikasiPageModule)
+    loadChildren: () => import('./notifikasi/notifikasi.module').then(m => m.NotifikasiPageModule)
   },
   {
     path: 'akun',
@@ -61,27 +65,20 @@ const routes: Routes = [
   },
   {
     path: 'info-akun',
-    loadChildren: () => import('./info-akun/info-akun.module').then( m => m.InfoAkunPageModule)
+    loadChildren: () => import('./info-akun/info-akun.module').then(m => m.InfoAkunPageModule)
   },
   {
     path: 'pengaturan',
-    loadChildren: () => import('./pengaturan/pengaturan.module').then( m => m.PengaturanPageModule)
+    loadChildren: () => import('./pengaturan/pengaturan.module').then(m => m.PengaturanPageModule)
   },
   {
     path: 'tentang-kami',
-    loadChildren: () => import('./tentang-kami/tentang-kami.module').then( m => m.TentangKamiPageModule)
+    loadChildren: () => import('./tentang-kami/tentang-kami.module').then(m => m.TentangKamiPageModule)
   },
   {
     path: 'detail-pesanan',
-    loadChildren: () => import('./detail-pesanan/detail-pesanan.module').then( m => m.DetailPesananPageModule)
+    loadChildren: () => import('./detail-pesanan/detail-pesanan.module').then(m => m.DetailPesananPageModule)
   },
-  {
-    path: 'splash',
-    loadChildren: () => import('./splash/splash.module').then( m => m.SplashPageModule)
-  }
-
-
-
 ];
 
 @NgModule({

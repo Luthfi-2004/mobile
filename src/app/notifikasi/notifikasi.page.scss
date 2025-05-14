@@ -1,12 +1,12 @@
 .notif-content {
     --background: #a3d9ff;
-  }
-  
-  .notif-list {
+}
+
+.notif-list {
     padding: 16px;
-  }
-  
-  .notif-card {
+}
+
+.notif-card {
     display: flex;
     background: #fff;
     border-radius: 12px;
@@ -14,28 +14,27 @@
     margin-bottom: 12px;
     box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     align-items: flex-start;
-  }
-  
-  .notif-icon {
+}
+
+.notif-icon {
     font-size: 24px;
     margin-right: 12px;
     color: #ff3b3f;
     margin-top: 4px;
-  }
-  
-  .notif-text h4 {
+}
+
+.notif-text h4 {
     margin: 0;
     font-size: 16px;
     font-weight: bold;
-  }
-  
-  .notif-text p {
+}
+
+.notif-text p {
     margin: 4px 0 12px;
     font-size: 14px;
-  }
-  
-  .notif-actions {
+}
+
+.notif-actions {
     display: flex;
     gap: 8px;
-  }
-  
+}

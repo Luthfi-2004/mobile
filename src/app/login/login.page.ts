@@ -14,7 +14,7 @@ export class LoginPage {
   constructor(private router: Router) {}
 
   goToHome() {
-    this.router.navigate(['/home']);
+    this.router.navigate(['/tabs/home']);
   }
   togglePassword() {
     this.showPassword = !this.showPassword;

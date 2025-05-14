@@ -62,13 +62,17 @@ ion-content {
   background-color: #333;
 }
 
-
-/* Text and button */
 .promo-text-section {
-  padding: 20px;
-  color: #212121;
-  margin: 5px;
+  margin-top: 24px;
+  padding: 0 16px 100px 16px; // atas-kanan-bawah-kiri
+  text-align: center;
 }
+
+.promo-text-section h2 {
+  margin-bottom: 16px;
+  font-weight: bold;
+}
+
 
 h2 {
   font-size: 18px;

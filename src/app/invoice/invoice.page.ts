@@ -23,25 +23,30 @@ export class InvoicePage {
   reservasi: any = {};
 
   constructor(private router: Router) {
-  const nav = this.router.getCurrentNavigation();
-  this.transaksi = nav?.extras?.state?.['transaksi'];
-  this.reservasi = nav?.extras?.state?.['reservasi'] || {};
+    const nav = this.router.getCurrentNavigation();
+    this.transaksi = nav?.extras?.state?.['transaksi'];
+    this.reservasi = nav?.extras?.state?.['reservasi'] || {};
 
-  if (this.transaksi) {
-    this.subtotal = this.transaksi.items.reduce(
-      (total: number, item: any) => total + item.harga * item.quantity,
-      0
-    );
-    this.total = this.transaksi.total;
-    this.downPayment = this.transaksi.dibayar;
+    if (this.transaksi) {
+      this.subtotal = this.transaksi.items.reduce(
+        (total: number, item: any) => total + item.harga * item.quantity,
+        0
+      );
+      this.total = this.transaksi.total;
+      this.downPayment = this.transaksi.dibayar;
+    }
+
+    // Simpan transaksi ke localStorage agar bisa diambil oleh notifikasi
+    if (this.transaksi) {
+      localStorage.setItem('lastTransaction', JSON.stringify(this.transaksi));
+    }
   }
-}
 
   getQrCodeData(): string {
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=INV-${this.transaksi?.id}`;
   }
 
   goBack() {
-    this.router.navigate(['/home']);
+    this.router.navigate(['/tabs/home']);
   }
 }

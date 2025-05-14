@@ -1,20 +1,30 @@
-<ion-content class="notif-content">
-  <div class="notif-list">
-    <div *ngFor="let notif of notifikasi" class="notif-card">
-      <div class="notif-icon">
-        <ion-icon name="notifications-outline"></ion-icon>
-      </div>
-      <div class="notif-text">
-        <h4>{{ notif.judul }}</h4>
-        <p>{{ notif.deskripsi }}</p>
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Notifikasi</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-        <ion-button size="small" fill="outline" color="dark" (click)="goToDetail(notif)">
-          Detail Pesanan
-        </ion-button>
-        <ion-button size="small" fill="solid" color="primary" (click)="goToRating(notif)">
-          Beri Penilaian
-        </ion-button>
+<ion-content class="ion-padding notif-content">
+  <!-- Daftar notifikasi -->
+  <div *ngFor="let notif of notifikasi" class="notif-card" (click)="goToDetail(notif)">
+    <ion-icon class="notif-icon" name="notifications-outline"></ion-icon>
+    <div class="notif-text">
+      <h4>{{ notif.judul }}</h4>
+      <p>{{ notif.deskripsi }}</p>
+      <p><strong>{{ notif.tanggal }}</strong></p>
+      <ion-badge color="primary">{{ notif.status }}</ion-badge>
+      <div *ngIf="notif.totalPembayaran">
+        <p>Total Pembayaran: Rp{{ notif.totalPembayaran | number }}</p>
       </div>
+
+      <!-- Tombol jika pembayaran diperlukan -->
+      <ion-button *ngIf="notif.status === 'Pending'" color="danger" (click)="goToInvoice(notif)">Bayar Sekarang</ion-button>
+      
+      <!-- Tombol untuk memberi rating jika selesai -->
+      <ion-button *ngIf="notif.status === 'Berhasil'" color="success" (click)="goToRating(notif)">Beri Penilaian</ion-button>
     </div>
   </div>
 </ion-content>
