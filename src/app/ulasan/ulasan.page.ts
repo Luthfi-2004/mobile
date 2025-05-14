@@ -15,6 +15,7 @@ export class UlasanPage {
   ratingAplikasi: number = 0;
   pesanan: any;
   ulasanSudahAda: boolean = false;
+  feedback: string = '';
 
   constructor(
     private router: Router,
@@ -56,7 +57,8 @@ export class UlasanPage {
       id: this.pesanan.id,
       makanan: this.ratingMakanan,
       pelayanan: this.ratingPelayanan,
-      aplikasi: this.ratingAplikasi
+      aplikasi: this.ratingAplikasi,
+      feedback: this.feedback
     };
 
     localStorage.setItem(`ulasan-${this.pesanan.id}`, JSON.stringify(tempRating));
@@ -69,6 +71,7 @@ export class UlasanPage {
       this.ratingMakanan = data.makanan || 0;
       this.ratingPelayanan = data.pelayanan || 0;
       this.ratingAplikasi = data.aplikasi || 0;
+      this.feedback = data.feedback || '';
     }
   }
 
@@ -80,6 +83,7 @@ export class UlasanPage {
       this.ratingMakanan = ulasan.makanan;
       this.ratingPelayanan = ulasan.pelayanan;
       this.ratingAplikasi = ulasan.aplikasi;
+      this.feedback = ulasan.feedback || '';
       this.ulasanSudahAda = true;
     }
   }
@@ -88,7 +92,11 @@ export class UlasanPage {
     if (this.ulasanSudahAda) return;
 
     // Validasi jika ada yang belum diberi rating
-    if (this.ratingMakanan === 0 || this.ratingPelayanan === 0 || this.ratingAplikasi === 0) {
+    if (
+      this.ratingMakanan === 0 ||
+      this.ratingPelayanan === 0 ||
+      this.ratingAplikasi === 0
+    ) {
       const alert = await this.alertController.create({
         header: 'Gagal',
         message: 'Mohon beri rating untuk semua kategori sebelum menyimpan.',
@@ -103,7 +111,8 @@ export class UlasanPage {
       tanggal: new Date().toLocaleString(),
       makanan: this.ratingMakanan,
       pelayanan: this.ratingPelayanan,
-      aplikasi: this.ratingAplikasi
+      aplikasi: this.ratingAplikasi,
+      feedback: this.feedback
     };
 
     const existing = JSON.parse(localStorage.getItem('penilaian') || '[]');
