@@ -59,7 +59,6 @@
   </div>
 
 </ion-content>
-
 <ion-tabs>
   <ion-tab-bar slot="bottom">
     <ion-tab-button tab="beranda" routerLink="/home">
@@ -70,7 +69,7 @@
       <ion-icon name="document-text-outline"></ion-icon>
       <ion-label>Riwayat</ion-label>
     </ion-tab-button>
-    <ion-tab-button tab="invoice" routerLink="/invoice">
+    <ion-tab-button tab="invoice" (click)="handleInvoiceClick()">
       <ion-icon name="receipt-outline"></ion-icon>
       <ion-label>Invoice</ion-label>
     </ion-tab-button>
@@ -80,3 +79,4 @@
     </ion-tab-button>
   </ion-tab-bar>
 </ion-tabs>
+

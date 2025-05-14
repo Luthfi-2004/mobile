@@ -14,16 +14,25 @@ export class CartPage {
   paymentMethod: string = '';
   paymentMethodGroup: string = 'qris';
   showQrisOptions: boolean = false;
+  reservasi: any = {};
 
-  constructor(private router: Router, private alertController: AlertController) {
-    const nav = this.router.getCurrentNavigation();
-    if (nav?.extras?.state && nav.extras.state['cart']) {
+constructor(private router: Router, private alertController: AlertController) {
+  const nav = this.router.getCurrentNavigation();
+
+  if (nav?.extras?.state) {
+    if (nav.extras.state['cart']) {
       this.cart = nav.extras.state['cart'].map((item: any) => ({
         ...item,
         quantity: item.quantity || 1,
       }));
     }
+
+    if (nav.extras.state['reservasi']) {
+      this.reservasi = nav.extras.state['reservasi'];
+    }
   }
+}
+
 
   get subtotal(): number {
     return this.cart.reduce((total, item) => total + item.harga * item.quantity, 0);
@@ -162,7 +171,10 @@ export class CartPage {
     localStorage.setItem('riwayat', JSON.stringify(existing));
 
     this.cart = [];
-    this.router.navigate(['/invoice'], { state: { transaksi } });
+    this.router.navigate(['/invoice'], {state: {transaksi,reservasi: this.reservasi
+  }
+});
+
   }
 
   updateTotals() {
