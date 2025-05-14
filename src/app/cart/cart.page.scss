@@ -64,4 +64,20 @@
   background-color: #d1eaff;
 }
 
+.warning-note {
+  font-size: 0.8rem;
+  color: #ff3b30; /* merah lembut */
+  margin: 10px 16px;
+  text-align: center;
+  font-style: italic;
+}
+ion-item.selected {
+  background-color: #e0f7fa;
+}
 
+ion-item.sub-selected {
+  background-color: #c8e6c9;
+}
+.qris-sub-options {
+  margin-left: 16px;
+}

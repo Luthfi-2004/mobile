@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-cart',
@@ -10,9 +11,11 @@ import { Router } from '@angular/router';
 export class CartPage {
   cart: any[] = [];
   serviceFee: number = 9000;
-  paymentMethod: string = 'qris';
+  paymentMethod: string = '';
+  paymentMethodGroup: string = 'qris';
+  showQrisOptions: boolean = false;
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private alertController: AlertController) {
     const nav = this.router.getCurrentNavigation();
     if (nav?.extras?.state && nav.extras.state['cart']) {
       this.cart = nav.extras.state['cart'].map((item: any) => ({
@@ -42,63 +45,128 @@ export class CartPage {
     }
   }
 
-  editItem(index: number) {
-    const currentQty = this.cart[index].quantity;
-    const newQty = prompt(`Ubah jumlah untuk ${this.cart[index].nama}:`, currentQty.toString());
-    const parsedQty = parseInt(newQty || '', 10);
+  async editItem(index: number) {
+    const alert = await this.alertController.create({
+      header: `Ubah Jumlah`,
+      subHeader: this.cart[index].nama,
+      inputs: [
+        {
+          name: 'qty',
+          type: 'number',
+          placeholder: 'Jumlah',
+          value: this.cart[index].quantity,
+          min: 0
+        }
+      ],
+      buttons: [
+        {
+          text: 'Batal',
+          role: 'cancel'
+        },
+        {
+          text: 'Simpan',
+          handler: (data) => {
+            const parsedQty = parseInt(data.qty, 10);
+            if (!isNaN(parsedQty) && parsedQty >= 0) {
+              if (parsedQty === 0) {
+                this.cart.splice(index, 1);
+              } else {
+                this.cart[index].quantity = parsedQty;
+              }
+              this.updateTotals();
+              if (this.cart.length === 0) {
+                this.router.navigate(['/menu']);
+              }
+            }
+          }
+        }
+      ]
+    });
 
-    if (!isNaN(parsedQty) && parsedQty >= 0) {
-      this.cart[index].quantity = parsedQty;
-      if (parsedQty === 0) {
-        this.cart.splice(index, 1);
-      }
-      this.updateTotals();
-    }
+    await alert.present();
   }
 
-  deleteItem(index: number) {
-    const confirmDelete = confirm(`Yakin ingin menghapus ${this.cart[index].nama} dari pesanan?`);
-    if (confirmDelete) {
-      this.cart.splice(index, 1);
-      this.updateTotals();
-    }
+  async deleteItem(index: number) {
+    const alert = await this.alertController.create({
+      header: 'Konfirmasi',
+      message: `Yakin ingin menghapus ${this.cart[index].nama} dari pesanan?`,
+      buttons: [
+        {
+          text: 'Batal',
+          role: 'cancel'
+        },
+        {
+          text: 'Hapus',
+          handler: () => {
+            this.cart.splice(index, 1);
+            this.updateTotals();
+            if (this.cart.length === 0) {
+              this.router.navigate(['/menu']);
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  toggleQrisOptions() {
+    this.showQrisOptions = !this.showQrisOptions;
+    this.paymentMethodGroup = 'qris';
   }
 
   selectPayment(method: string) {
     this.paymentMethod = method;
+    this.paymentMethodGroup = 'qris';
   }
 
-  checkout() {
+  async checkout() {
     if (!this.paymentMethod) {
-      alert('Silakan pilih metode pembayaran terlebih dahulu.');
+      const alert = await this.alertController.create({
+        header: 'Peringatan',
+        message: 'Silakan pilih metode pembayaran terlebih dahulu.',
+        buttons: ['OK']
+      });
+      await alert.present();
       return;
     }
 
     if (this.cart.length === 0) {
-      alert('Keranjang kosong!');
+      const alert = await this.alertController.create({
+        header: 'Keranjang Kosong',
+        message: 'Keranjang kosong! Silakan pilih menu terlebih dahulu.',
+        buttons: ['OK']
+      });
+      await alert.present();
+      this.router.navigate(['/menu']);
       return;
     }
+
+    const dibayar = this.total * 0.5;
+    const sisaBayar = this.total - dibayar;
 
     const transaksi = {
       id: Date.now(),
       tanggal: new Date().toLocaleString(),
       items: [...this.cart],
       total: this.total,
-      status: 'Selesai',
+      dibayar: dibayar,
+      sisaBayar: sisaBayar,
       metode: this.paymentMethod,
+      status: 'Belum Lunas',
     };
 
     const existing = JSON.parse(localStorage.getItem('riwayat') || '[]');
     existing.push(transaksi);
     localStorage.setItem('riwayat', JSON.stringify(existing));
 
-    alert(`Pesanan berhasil dikirim!\nMetode Pembayaran: ${this.paymentMethod}\nTotal: Rp${this.total.toLocaleString()}`);
     this.cart = [];
-    this.router.navigate(['/riwayat']);
+    this.router.navigate(['/invoice'], { state: { transaksi } });
   }
 
   updateTotals() {
-    // Getter sudah otomatis menghitung ulang
+    // getter sudah handle total otomatis
   }
 
   goBack() {

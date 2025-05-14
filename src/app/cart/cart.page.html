@@ -47,26 +47,44 @@
         <ion-label><strong>Total Pembayaran:</strong></ion-label>
         <ion-text><strong>Rp{{ total | number }}</strong></ion-text>
       </ion-item>
+      <ion-item>
+        <ion-label color="success"><strong>Total Dibayar Sekarang (50%):</strong></ion-label>
+        <ion-text color="success"><strong>Rp{{ (total * 0.5) | number }}</strong></ion-text>
+      </ion-item>
     </ion-list>
 
     <div class="payment-method">
       <h4>Pilih Metode Pembayaran</h4>
       <ion-list lines="none">
-        <ion-item button (click)="selectPayment('qris')" [class.selected]="paymentMethod === 'qris'">
+        <ion-item button (click)="toggleQrisOptions()" [class.selected]="paymentMethodGroup === 'qris'">
           <ion-icon name="qr-code-outline" slot="start"></ion-icon>
           <ion-label>QRIS</ion-label>
+          <ion-icon [name]="showQrisOptions ? 'chevron-up-outline' : 'chevron-down-outline'" slot="end"></ion-icon>
         </ion-item>
-        <ion-item button (click)="selectPayment('manual')" [class.selected]="paymentMethod === 'manual'">
-          <ion-icon name="cash-outline" slot="start"></ion-icon>
-          <ion-label>Transfer Bank (Manual)</ion-label>
-        </ion-item>
-        <ion-item button (click)="selectPayment('cod')" [class.selected]="paymentMethod === 'cod'">
-          <ion-icon name="wallet-outline" slot="start"></ion-icon>
-          <ion-label>Bayar di Tempat (COD)</ion-label>
-        </ion-item>
+
+        <div *ngIf="showQrisOptions" class="qris-sub-options">
+          <ion-item button (click)="selectPayment('shopeepay')" [class.sub-selected]="paymentMethod === 'shopeepay'">
+            <ion-label>ShopeePay</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('gopay')" [class.sub-selected]="paymentMethod === 'gopay'">
+            <ion-label>GoPay</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('dana')" [class.sub-selected]="paymentMethod === 'dana'">
+            <ion-label>DANA</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('ovo')" [class.sub-selected]="paymentMethod === 'ovo'">
+            <ion-label>OVO</ion-label>
+          </ion-item>
+        </div>
       </ion-list>
     </div>
 
-    <ion-button expand="block" class="checkout-btn" (click)="checkout()">Buat Pesanan</ion-button>
+    <p class="info-note">
+      <ion-icon name="information-circle-outline" color="medium"></ion-icon>
+      Pembayaran ini hanya sebesar <strong>50%</strong> dari total. Pelunasan dilakukan saat hari reservasi. 
+      Jika Anda tidak hadir, uang yang dibayarkan tidak dapat dikembalikan.
+    </p>
+
+    <ion-button expand="block" class="checkout-btn" (click)="checkout()">Bayar 50% Sekarang</ion-button>
   </div>
 </ion-content>

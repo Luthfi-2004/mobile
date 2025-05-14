@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-menu',
@@ -24,7 +25,7 @@ export class MenuPage {
 
   cart: any[] = [];
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private alertController: AlertController) {}
 
   selectKategori(kategori: string) {
     this.selectedKategori = kategori;
@@ -63,9 +64,20 @@ export class MenuPage {
     return this.cart.reduce((total, item) => total + item.harga * item.quantity, 0);
   }
 
-  goToCart() {
-    this.router.navigate(['/cart'], { state: { cart: this.cart } });
+ async goToCart() {
+  if (this.cart.length === 0) {
+    const alert = await this.alertController.create({
+      header: 'Keranjang Kosong',
+      message: 'Silakan pilih minimal satu menu sebelum melanjutkan ke checkout.',
+      buttons: ['OK']
+    });
+
+    await alert.present();
+    return;
   }
+
+  this.router.navigate(['/cart'], { state: { cart: this.cart } });
+}
 
   goBack() {
     this.router.navigate(['/reservasi-jadwal']);
