@@ -9,6 +9,7 @@ import { InfoAkunPageRoutingModule } from './info-akun-routing.module';
 
 import { InfoAkunPage } from './info-akun.page';
 
+
 @NgModule({
   imports: [
     CommonModule,
@@ -19,4 +20,4 @@ import { InfoAkunPage } from './info-akun.page';
   ],
   declarations: [InfoAkunPage]
 })
-export class InfoAkunPageModule {}
+export class InfoAkunPageModule {}

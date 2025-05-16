@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-pengaturan',
@@ -6,11 +6,6 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./pengaturan.page.scss'],
   standalone: false,
 })
-export class PengaturanPage implements OnInit {
-
-  constructor() { }
-
-  ngOnInit() {
-  }
-
+export class PengaturanPage {
+  // Tidak perlu logika tambahan jika hanya menampilkan teks statis
 }
