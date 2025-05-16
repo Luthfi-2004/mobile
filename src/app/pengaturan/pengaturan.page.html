@@ -1,44 +1,33 @@
 <ion-header>
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/akun"></ion-back-button>
+    </ion-buttons>
     <ion-title>Pengaturan</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <!-- Tentang Aplikasi -->
-  <ion-card>
-    <ion-card-header>
-      <ion-card-title>Tentang Aplikasi</ion-card-title>
-    </ion-card-header>
 
-    <ion-card-content>
-      <!-- Versi Aplikasi -->
-      <ion-item lines="none">
-        <ion-label class="ion-text-wrap">
-          <h2><strong>Versi Aplikasi</strong></h2>
-          <p>1.0.0</p>
-        </ion-label>
-      </ion-item>
+  <!-- Versi Aplikasi -->
+  <div class="section">
+    <h2 class="section-title">Versi Aplikasi</h2>
+    <p class="section-content">1.0.0</p>
+  </div>
 
-      <!-- Kebijakan Privasi -->
-      <ion-item lines="none">
-        <ion-label class="ion-text-wrap">
-          <h2><strong>Kebijakan Privasi</strong></h2>
-          <p>
-            Aplikasi ini menghormati privasi pengguna. Data yang dikumpulkan hanya digunakan untuk keperluan fungsionalitas aplikasi.
-          </p>
-        </ion-label>
-      </ion-item>
+  <!-- Kebijakan Privasi -->
+  <div class="section">
+    <h2 class="section-title">Kebijakan Privasi</h2>
+    <p class="section-content">
+      Aplikasi ini menghormati privasi pengguna. Data yang dikumpulkan hanya digunakan untuk keperluan fungsionalitas aplikasi.
+    </p>
+  </div>
 
-      <!-- Syarat & Ketentuan -->
-      <ion-item lines="none">
-        <ion-label class="ion-text-wrap">
-          <h2><strong>Syarat & Ketentuan</strong></h2>
-          <p>
-            Dengan menggunakan aplikasi ini, Anda menyetujui semua ketentuan yang berlaku. Dilarang menyalahgunakan fitur.
-          </p>
-        </ion-label>
-      </ion-item>
-    </ion-card-content>
-  </ion-card>
+  <!-- Syarat & Ketentuan -->
+  <div class="section">
+    <h2 class="section-title">Syarat & Ketentuan</h2>
+    <p class="section-content">
+      Dengan menggunakan aplikasi ini, Anda menyetujui semua ketentuan yang berlaku. Dilarang menyalahgunakan fitur.
+    </p>
+  </div>
 </ion-content>

@@ -1,0 +1,25 @@
+/* about.page.scss */
+.page-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.section {
+  margin-bottom: 25px;
+  
+  &-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 8px;
+  }
+  
+  &-content {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
