@@ -19,9 +19,9 @@ export class AkunPage {
     this.navCtrl.navigateForward('/info-akun');
   }
 
-  // Fungsi untuk navigasi ke halaman Pengaturan
-  goToPengaturan() {
-    this.navCtrl.navigateForward('/pengaturan');
+  // Fungsi untuk navigasi ke halaman Bantuan
+  goToBantuan() {
+    this.navCtrl.navigateForward('/bantuan');
   }
 
   // Fungsi untuk navigasi ke halaman Tentang Kami

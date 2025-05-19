@@ -68,17 +68,17 @@ const routes: Routes = [
     loadChildren: () => import('./info-akun/info-akun.module').then(m => m.InfoAkunPageModule)
   },
   {
-    path: 'pengaturan',
-    loadChildren: () => import('./pengaturan/pengaturan.module').then(m => m.PengaturanPageModule)
-  },
-  {
     path: 'tentang-kami',
     loadChildren: () => import('./tentang-kami/tentang-kami.module').then(m => m.TentangKamiPageModule)
   },
   {
     path: 'detail-pesanan',
     loadChildren: () => import('./detail-pesanan/detail-pesanan.module').then(m => m.DetailPesananPageModule)
+  },  {
+    path: 'bantuan',
+    loadChildren: () => import('./bantuan/bantuan.module').then( m => m.BantuanPageModule)
   },
+
 
 ];
 
