@@ -170,9 +170,7 @@ constructor(private router: Router, private alertController: AlertController) {
     existing.push(transaksi);
     localStorage.setItem('riwayat', JSON.stringify(existing));
 
-    this.cart = [];
-    this.router.navigate(['/invoice'], {state: {transaksi,reservasi: this.reservasi
-  }
+    this.cart = []; this.router.navigate(['/tabs/invoice'], {state: {transaksi,reservasi: this.reservasi }
 });
 
   }

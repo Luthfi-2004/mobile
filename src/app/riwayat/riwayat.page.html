@@ -1,8 +1,5 @@
 <ion-header>
   <ion-toolbar color="light">
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
-    </ion-buttons>
     <ion-title>Riwayat</ion-title>
     <ion-buttons slot="end">
       <ion-button color="danger" (click)="hapusRiwayat()">
@@ -34,7 +31,7 @@
     </div>
 
     <div class="actions">
-      <ion-button color="primary"  size="small" fill="outline" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
+      <ion-button color="primary"  size="small" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
       <ion-button size="small" color="dark" (click)="beriUlasan(data)">Beri Penilaian</ion-button>
     </div>
   </div>
