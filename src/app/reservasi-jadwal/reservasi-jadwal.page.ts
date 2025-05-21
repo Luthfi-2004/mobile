@@ -15,6 +15,7 @@ export class ReservasiJadwalPage implements OnInit {
   waktu: string = '';
   jumlahTamu: number = 0;
   tempat: string = '';
+  idMeja: string = ''; 
 
   waktuList = ['11.00', '12.00', '13.00', '14:00', '15:00', '16:00'];
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
@@ -44,12 +45,15 @@ export class ReservasiJadwalPage implements OnInit {
       } else {
         this.filteredTempatList = [...this.tempatList];
       }
+
+      if (params['idMeja']) {
+        this.idMeja = params['idMeja']; // ✅ Ambil idMeja dari query params
+      }
     });
   }
 
   setTanggal(event: any) {
     this.tanggal = event.detail.value;
-    // Langsung tutup popover
     if (this.popover) {
       this.popover.dismiss();
     }
@@ -76,7 +80,8 @@ export class ReservasiJadwalPage implements OnInit {
         tanggal: this.tanggal,
         waktu: this.waktu,
         jumlahTamu: this.jumlahTamu,
-        tempat: this.tempat
+        tempat: this.tempat,
+        idMeja: this.idMeja // ✅ Teruskan idMeja ke halaman berikutnya
       }
     });
   }

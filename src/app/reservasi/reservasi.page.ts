@@ -92,10 +92,15 @@ export class ReservasiPage {
       return;
     }
 
+    const idMeja = selectedTables.map(t => t.id).join(','); // Gabung jika pilih lebih dari 1 meja
+    const tempat = this.getSelectedSections().join(',');
+    const jumlahKursi = this.getTotalSelectedSeats();
+
     this.navCtrl.navigateForward('/reservasi-jadwal', {
       queryParams: {
-        jumlahKursi: this.getTotalSelectedSeats(),
-        tempat: this.getSelectedSections().join(',')
+        idMeja,
+        tempat,
+        jumlahKursi
       }
     });
   }

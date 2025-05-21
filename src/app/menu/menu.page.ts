@@ -27,7 +27,8 @@ export class MenuPage {
     tanggal: '',
     waktu: '',
     tamu: 0,
-    area: ''
+    area: '',
+    idMeja: '' // ✅ Tambahkan idMeja di sini
   };
 
   constructor(
@@ -43,6 +44,7 @@ export class MenuPage {
       this.reservasi.waktu = params['waktu'] || '';
       this.reservasi.tamu = Number(params['jumlahTamu']) || 0;
       this.reservasi.area = params['tempat'] || '';
+      this.reservasi.idMeja = params['idMeja'] || ''; // ✅ Ambil idMeja
     });
   }
 
@@ -98,7 +100,7 @@ export class MenuPage {
     this.router.navigate(['/cart'], {
       state: {
         cart: this.cart,
-        reservasi: this.reservasi
+        reservasi: this.reservasi // ✅ Sudah termasuk idMeja
       }
     });
   }

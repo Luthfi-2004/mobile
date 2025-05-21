@@ -9,7 +9,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 })
 export class InvoiceDetailPage implements OnInit {
   transaksi: any;
-  reservasi: any;
+  reservasi: any = {};
   subtotal = 0;
   serviceFee = 9000;
   total = 0;
@@ -34,15 +34,22 @@ export class InvoiceDetailPage implements OnInit {
   }
 
   hitungTotal() {
+    // Hitung subtotal dari items, walaupun transaksi.total sudah ada, ini untuk memastikan konsistensi
     this.subtotal = this.transaksi.items.reduce(
-      (sum: number, itm: any) => sum + itm.harga * itm.quantity,
+      (sum: number, item: any) => sum + item.harga * item.quantity,
       0
     );
     this.total = this.transaksi.total;
     this.downPayment = this.transaksi.dibayar;
   }
 
+  // Menghasilkan URL QR Code berdasarkan ID transaksi, dapat ditampilkan di template
   getQrCodeData(id: string): string {
     return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=INV-${id}`;
+  }
+
+  // Mengambil idMeja dari data reservasi jika ada, jika tidak tampilkan 'Tidak tersedia'
+  get idMeja(): string {
+    return this.reservasi?.idMeja || 'Tidak tersedia';
   }
 }

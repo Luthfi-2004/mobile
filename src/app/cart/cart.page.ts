@@ -16,37 +16,41 @@ export class CartPage {
   showQrisOptions: boolean = false;
   reservasi: any = {};
 
-constructor(private router: Router, private alertController: AlertController) {
-  const nav = this.router.getCurrentNavigation();
+  constructor(private router: Router, private alertController: AlertController) {
+    const nav = this.router.getCurrentNavigation();
 
-  if (nav?.extras?.state) {
-    if (nav.extras.state['cart']) {
-      this.cart = nav.extras.state['cart'].map((item: any) => ({
-        ...item,
-        quantity: item.quantity || 1,
-      }));
-    }
+    // Ambil data cart dan reservasi dari state navigation (dari halaman menu)
+    if (nav?.extras?.state) {
+      if (nav.extras.state['cart']) {
+        this.cart = nav.extras.state['cart'].map((item: any) => ({
+          ...item,
+          quantity: item.quantity || 1,
+        }));
+      }
 
-    if (nav.extras.state['reservasi']) {
-      this.reservasi = nav.extras.state['reservasi'];
+      if (nav.extras.state['reservasi']) {
+        this.reservasi = nav.extras.state['reservasi'];
+      }
     }
   }
-}
 
-
+  // Hitung subtotal (harga item x qty)
   get subtotal(): number {
     return this.cart.reduce((total, item) => total + item.harga * item.quantity, 0);
   }
 
+  // Hitung total termasuk service fee
   get total(): number {
     return this.subtotal + this.serviceFee;
   }
 
+  // Tambah qty item
   increaseQty(index: number) {
     this.cart[index].quantity += 1;
     this.updateTotals();
   }
 
+  // Kurangi qty item jika lebih dari 1
   decreaseQty(index: number) {
     if (this.cart[index].quantity > 1) {
       this.cart[index].quantity -= 1;
@@ -54,6 +58,7 @@ constructor(private router: Router, private alertController: AlertController) {
     }
   }
 
+  // Edit qty dengan input alert
   async editItem(index: number) {
     const alert = await this.alertController.create({
       header: `Ubah Jumlah`,
@@ -95,6 +100,7 @@ constructor(private router: Router, private alertController: AlertController) {
     await alert.present();
   }
 
+  // Konfirmasi hapus item dari cart
   async deleteItem(index: number) {
     const alert = await this.alertController.create({
       header: 'Konfirmasi',
@@ -120,16 +126,19 @@ constructor(private router: Router, private alertController: AlertController) {
     await alert.present();
   }
 
+  // Toggle pilihan QRIS
   toggleQrisOptions() {
     this.showQrisOptions = !this.showQrisOptions;
     this.paymentMethodGroup = 'qris';
   }
 
+  // Pilih metode pembayaran
   selectPayment(method: string) {
     this.paymentMethod = method;
     this.paymentMethodGroup = 'qris';
   }
 
+  // Proses checkout, simpan transaksi di localStorage, lalu navigasi ke invoice
   async checkout() {
     if (!this.paymentMethod) {
       const alert = await this.alertController.create({
@@ -152,7 +161,7 @@ constructor(private router: Router, private alertController: AlertController) {
       return;
     }
 
-    const dibayar = this.total * 0.5;
+    const dibayar = this.total * 0.5; // contoh bayar 50%
     const sisaBayar = this.total - dibayar;
 
     const transaksi = {
@@ -166,17 +175,25 @@ constructor(private router: Router, private alertController: AlertController) {
       status: 'Belum Lunas',
     };
 
+    // Simpan transaksi ke localStorage (riwayat)
     const existing = JSON.parse(localStorage.getItem('riwayat') || '[]');
     existing.push(transaksi);
     localStorage.setItem('riwayat', JSON.stringify(existing));
 
-    this.cart = []; this.router.navigate(['/tabs/invoice'], {state: {transaksi,reservasi: this.reservasi }
-});
+    // Kosongkan cart
+    this.cart = [];
 
+    // Navigasi ke halaman invoice dengan state transaksi dan reservasi (termasuk idMeja)
+    this.router.navigate(['/tabs/invoice'], {
+      state: {
+        transaksi,
+        reservasi: this.reservasi
+      }
+    });
   }
 
   updateTotals() {
-    // getter sudah handle total otomatis
+    // Getter subtotal dan total sudah otomatis, tapi jika ada logic lain bisa ditambah di sini
   }
 
   goBack() {
