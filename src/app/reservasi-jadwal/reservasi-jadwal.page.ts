@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { IonPopover } from '@ionic/angular';
 
 @Component({
   selector: 'app-reservasi-jadwal',
@@ -8,6 +9,8 @@ import { Router, ActivatedRoute } from '@angular/router';
   standalone: false,
 })
 export class ReservasiJadwalPage implements OnInit {
+  @ViewChild(IonPopover) popover!: IonPopover;
+
   tanggal: string = '';
   waktu: string = '';
   jumlahTamu: number = 0;
@@ -16,25 +19,21 @@ export class ReservasiJadwalPage implements OnInit {
   waktuList = ['11.00', '12.00', '13.00', '14:00', '15:00', '16:00'];
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
   filteredTempatList: string[] = [];
-  showDateModal = false;
 
   constructor(private router: Router, private route: ActivatedRoute) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      // Set jumlah tamu
       if (params['jumlahKursi']) {
         this.jumlahTamu = Number(params['jumlahKursi']);
       }
 
-      // Filter tempat berdasarkan pilihan user
       if (params['tempat']) {
         const selectedPlaces = params['tempat'].split(',');
-        this.filteredTempatList = this.tempatList.filter(t => 
+        this.filteredTempatList = this.tempatList.filter(t =>
           selectedPlaces.includes(t)
         );
-        
-        // Set tempat pertama sebagai default jika belum dipilih
+
         if (this.filteredTempatList.length > 0 && !this.tempat) {
           this.tempat = this.filteredTempatList[0];
         }
@@ -44,13 +43,12 @@ export class ReservasiJadwalPage implements OnInit {
     });
   }
 
-  openDate() {
-    this.showDateModal = true;
-  }
-  
   setTanggal(event: any) {
     this.tanggal = event.detail.value;
-    this.showDateModal = false;
+    // Langsung tutup popover
+    if (this.popover) {
+      this.popover.dismiss();
+    }
   }
 
   konfirmasi() {

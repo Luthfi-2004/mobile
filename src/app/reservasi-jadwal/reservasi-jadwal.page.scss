@@ -119,3 +119,8 @@ ion-content {
       transform: none !important;
     }
   }
+  ion-popover::part(content) {
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}

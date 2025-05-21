@@ -10,9 +10,10 @@
 <ion-content class="ion-padding" [fullscreen]="true">
   <div class="reservasi-wrapper">
 
+    <!-- Jadwal -->
     <div class="section">
       <h3>Jadwal</h3>
-      <div class="input-box" (click)="openDate()">
+      <div class="input-box" id="calendarTrigger">
         <ion-input
           readonly
           [value]="tanggal ? (tanggal | date: 'dd/MM/yyyy') : ''"
@@ -21,20 +22,20 @@
         ></ion-input>
         <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
       </div>
-    
-      <ion-modal [isOpen]="showDateModal" (didDismiss)="showDateModal = false">
+
+      <ion-popover trigger="calendarTrigger" showBackdrop="true">
         <ng-template>
           <ion-datetime
             presentation="date"
             [value]="tanggal"
             (ionChange)="setTanggal($event)"
-            doneText="OK"
-            cancelText="Batal"
+            showDefaultButtons="false"
           ></ion-datetime>
         </ng-template>
-      </ion-modal>
-    </div>    
+      </ion-popover>
+    </div>
 
+    <!-- Waktu Datang -->
     <div class="section">
       <h3>Waktu Datang</h3>
       <div class="button-grid">
@@ -49,6 +50,7 @@
       </div>
     </div>
 
+    <!-- Jumlah Tamu -->
     <div class="section">
       <h3>Jumlah Tamu</h3>
       <p class="note">*Sesuai kursi yang anda pilih</p>
@@ -62,6 +64,7 @@
       </div>
     </div>
 
+    <!-- Tempat -->
     <div class="section">
       <h3>Tempat</h3>
       <p class="note">*Sesuai tempat yang anda pilih</p>
@@ -76,9 +79,10 @@
       </div>
     </div>
 
+    <!-- Tombol Konfirmasi -->
     <ion-button class="confirm-btn" expand="block" (click)="konfirmasi()">
       KONFIRMASI RESERVASI
     </ion-button>
-    
+
   </div>
 </ion-content>
