@@ -78,6 +78,10 @@ const routes: Routes = [
     path: 'bantuan',
     loadChildren: () => import('./bantuan/bantuan.module').then( m => m.BantuanPageModule)
   },
+  {
+    path: 'invoice-detail',
+    loadChildren: () => import('./invoice-detail/invoice-detail.module').then( m => m.InvoiceDetailPageModule)
+  },
 
 
 ];
