@@ -11,11 +11,6 @@ export class TabsPage {
   constructor(private router: Router) {}
 
   handleInvoiceClick() {
-    const invoice = localStorage.getItem('invoice');
-    if (invoice) {
-      this.router.navigate(['/invoice']);
-    } else {
-      alert('Belum ada transaksi!');
-    }
+    this.router.navigate(['/invoice']);
   }
 }
