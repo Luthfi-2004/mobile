@@ -1,6 +1,6 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { IonPopover } from '@ionic/angular';
+import { IonPopover, AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-reservasi-jadwal',
@@ -20,7 +20,11 @@ export class ReservasiJadwalPage implements OnInit {
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
   filteredTempatList: string[] = [];
 
-  constructor(private router: Router, private route: ActivatedRoute) {}
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private alertController: AlertController
+  ) {}
 
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
@@ -51,9 +55,19 @@ export class ReservasiJadwalPage implements OnInit {
     }
   }
 
+  async presentAlert() {
+    const alert = await this.alertController.create({
+      header: 'Peringatan',
+      message: 'Harap lengkapi semua data reservasi!',
+      buttons: ['OK']
+    });
+
+    await alert.present();
+  }
+
   konfirmasi() {
     if (!this.tanggal || !this.waktu || !this.tempat) {
-      alert('Harap lengkapi semua data reservasi!');
+      this.presentAlert();
       return;
     }
 
