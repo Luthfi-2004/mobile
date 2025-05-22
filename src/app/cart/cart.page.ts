@@ -136,6 +136,7 @@ export class CartPage {
   selectPayment(method: string) {
     this.paymentMethod = method;
     this.paymentMethodGroup = 'qris';
+    this.showQrisOptions = false; 
   }
 
   // Proses checkout, simpan transaksi di localStorage, lalu navigasi ke invoice

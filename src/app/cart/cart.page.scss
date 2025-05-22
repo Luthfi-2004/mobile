@@ -1,9 +1,12 @@
-.cart-content {
-  --background: #e0f2ff;
+ion-content {
+  --background: #90caf9;
 }
 
 .cart-wrapper {
   padding: 16px;
+  max-width: 600px; /* Optional: batasi max lebar agar rapi di layar besar */
+  margin: 0 auto;   /* center container */
+  box-sizing: border-box;
 }
 
 .cart-item {
@@ -41,27 +44,49 @@
   gap: 10px;
 }
 
-.payment-summary ion-item {
+/* Perbaikan di sini */
+.payment-summary {
   background: #fff;
-  margin-bottom: 8px;
-  border-radius: 8px;
-  --padding-start: 16px;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0; /* Hilangkan margin kiri-kanan, hanya atas bawah */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 100%;    /* Penuhi container .cart-wrapper */
+  box-sizing: border-box;
+}
+
+.payment-summary ion-item {
+  --background: transparent;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.payment-method {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 20px 0; /* Hilangkan margin kiri-kanan */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 100%;    /* Penuhi container .cart-wrapper */
+  box-sizing: border-box;
 }
 
 .payment-method h4 {
-  margin-top: 20px;
-  margin-bottom: 10px;
-  font-weight: bold;
+  margin-bottom: 12px;
 }
 
-.payment-method ion-item {
-  margin-bottom: 10px;
-  border-radius: 8px;
-  background-color: #f1f1f1;
+.qris-sub-options ion-item {
+  padding-left: 20px;
 }
 
 .payment-method ion-item.selected {
-  background-color: #d1eaff;
+  background-color: #d0eaff;
+  border-radius: 8px;
+}
+
+.payment-method ion-item.sub-selected {
+  background-color: #a0cfff;
+  border-radius: 8px;
 }
 
 .warning-note {
@@ -71,6 +96,7 @@
   text-align: center;
   font-style: italic;
 }
+
 ion-item.selected {
   background-color: #e0f7fa;
 }
@@ -78,6 +104,7 @@ ion-item.selected {
 ion-item.sub-selected {
   background-color: #c8e6c9;
 }
+
 .qris-sub-options {
   margin-left: 16px;
 }
