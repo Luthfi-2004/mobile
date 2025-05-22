@@ -60,7 +60,7 @@ ion-accordion-group {
 
       ion-icon {
         color: var(--ion-color-primary);
-        transition: transform 0.25s ease;
+        transition: transform 1s ease;
       }
     }
 
@@ -116,6 +116,44 @@ ion-accordion-group {
 
 .submit-button {
   margin-top: 20px;
+}
+
+/* Custom styling for contact page */
+.contact-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  color: var(--ion-color-primary);
+}
+
+.contact-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 15px;
+
+  ion-icon {
+    margin-right: 15px;
+  }
+
+  h2 {
+    font-weight: 600;
+    margin-bottom: 5px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    margin-top: 0;
+  }
+}
+
+.submit-button {
+  margin-top: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  ion-card {
+    margin: 10px 0;
+  }
 }
 
 /* Responsive adjustments */
