@@ -28,6 +28,8 @@
           <ion-datetime
             presentation="date"
             [value]="tanggal"
+            [min]="minDate"
+            [max]="maxDate"
             (ionChange)="setTanggal($event)"
             showDefaultButtons="false"
           ></ion-datetime>
@@ -81,11 +83,11 @@
 
     <!-- Tombol Konfirmasi -->
     <ion-button 
-  color="primary"
-  expand="block" 
-  (click)="konfirmasi()">
-  KONFIRMASI
-</ion-button>
+      color="primary"
+      expand="block" 
+      (click)="konfirmasi()">
+      KONFIRMASI
+    </ion-button>
 
   </div>
 </ion-content>

@@ -11,10 +11,12 @@
 
 <ion-content class="ion-padding" [fullscreen]="true">
   <div *ngFor="let data of riwayat" class="card-riwayat">
-    <div class="header">
-      <h2>Reservasi#{{ data.id }}</h2>
-      <span class="status">{{ data.status }}</span>
-    </div>
+<div class="header">
+  <h2>Reservasi#{{ data.id }}</h2>
+  <ion-badge *ngIf="data.status === 'Selesai'" color="success">Selesai</ion-badge>
+  <ion-badge *ngIf="data.status === 'Pesanan Dibatalkan'" color="danger">Dibatalkan</ion-badge>
+  <ion-badge *ngIf="data.status === 'Belum Lunas'" color="warning">Belum Lunas</ion-badge>
+</div>
 
     <p>{{ data.tanggal }}</p>
 

@@ -21,6 +21,9 @@ export class ReservasiJadwalPage implements OnInit {
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
   filteredTempatList: string[] = [];
 
+  minDate: string = '';
+  maxDate: string = '';
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -28,6 +31,13 @@ export class ReservasiJadwalPage implements OnInit {
   ) {}
 
   ngOnInit() {
+    const today = new Date();
+    const max = new Date();
+    max.setDate(today.getDate() + 10); // Maksimal 10 hari ke depan
+
+    this.minDate = today.toISOString().split('T')[0];
+    this.maxDate = max.toISOString().split('T')[0];
+
     this.route.queryParams.subscribe(params => {
       if (params['jumlahKursi']) {
         this.jumlahTamu = Number(params['jumlahKursi']);
@@ -47,7 +57,7 @@ export class ReservasiJadwalPage implements OnInit {
       }
 
       if (params['idMeja']) {
-        this.idMeja = params['idMeja']; // ✅ Ambil idMeja dari query params
+        this.idMeja = params['idMeja'];
       }
     });
   }
@@ -81,7 +91,7 @@ export class ReservasiJadwalPage implements OnInit {
         waktu: this.waktu,
         jumlahTamu: this.jumlahTamu,
         tempat: this.tempat,
-        idMeja: this.idMeja // ✅ Teruskan idMeja ke halaman berikutnya
+        idMeja: this.idMeja
       }
     });
   }

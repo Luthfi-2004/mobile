@@ -58,7 +58,9 @@
       <ion-list lines="none">
         <ion-item button (click)="toggleQrisOptions()" [class.selected]="paymentMethodGroup === 'qris'">
           <ion-icon name="qr-code-outline" slot="start"></ion-icon>
-          <ion-label>QRIS</ion-label>
+          <ion-label>
+            {{ paymentMethodGroup === 'qris' && paymentMethod ? (paymentMethod | titlecase) : 'QRIS' }}
+          </ion-label>
           <ion-icon [name]="showQrisOptions ? 'chevron-up-outline' : 'chevron-down-outline'" slot="end"></ion-icon>
         </ion-item>
 

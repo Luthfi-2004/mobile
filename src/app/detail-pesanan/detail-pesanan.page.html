@@ -35,6 +35,11 @@
           </ion-note>
         </ion-item>
       </ion-list>
+
+      <ion-button *ngIf="isBisaDibatalkan()" expand="full" color="danger" (click)="cancelOrder()" style="margin-top: 16px;">
+  Batalkan Pesanan
+</ion-button>
+
     </ion-card-content>
   </ion-card>
 

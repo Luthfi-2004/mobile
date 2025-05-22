@@ -10,10 +10,11 @@ import { AlertController } from '@ionic/angular';
 })
 export class MenuPage {
   searchText = '';
-  selectedKategori = 'Appetizer';
+  selectedKategori = 'All';
   cart: any[] = [];
 
   kategoriList = ['Appetizer', 'Main Course', 'Dessert', 'Beverage'];
+  kategoriListWithAll: string[] = [];
 
   menuList = [
     { nama: 'Risoles', harga: 7000, kategori: 'Appetizer', image: 'assets/img/mayo.jpg', quantity: 0 },
@@ -28,7 +29,7 @@ export class MenuPage {
     waktu: '',
     tamu: 0,
     area: '',
-    idMeja: '' // ✅ Tambahkan idMeja di sini
+    idMeja: ''
   };
 
   constructor(
@@ -38,13 +39,16 @@ export class MenuPage {
   ) {}
 
   ngOnInit() {
+    // Tambahkan kategori 'All' ke daftar kategori
+    this.kategoriListWithAll = ['All', ...this.kategoriList];
+
     // Ambil data reservasi dari queryParams
     this.route.queryParams.subscribe(params => {
       this.reservasi.tanggal = params['tanggal'] || '';
       this.reservasi.waktu = params['waktu'] || '';
       this.reservasi.tamu = Number(params['jumlahTamu']) || 0;
       this.reservasi.area = params['tempat'] || '';
-      this.reservasi.idMeja = params['idMeja'] || ''; // ✅ Ambil idMeja
+      this.reservasi.idMeja = params['idMeja'] || '';
     });
   }
 
@@ -54,7 +58,7 @@ export class MenuPage {
 
   getFilteredMenu() {
     return this.menuList.filter(item =>
-      item.kategori === this.selectedKategori &&
+      (this.selectedKategori === 'All' || item.kategori === this.selectedKategori) &&
       item.nama.toLowerCase().includes(this.searchText.toLowerCase())
     );
   }
@@ -100,7 +104,7 @@ export class MenuPage {
     this.router.navigate(['/cart'], {
       state: {
         cart: this.cart,
-        reservasi: this.reservasi // ✅ Sudah termasuk idMeja
+        reservasi: this.reservasi
       }
     });
   }
