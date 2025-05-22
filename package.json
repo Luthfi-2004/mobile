@@ -32,7 +32,7 @@
     "iconv-lite": "^0.6.3",
     "ionicons": "^7.0.0",
     "rxjs": "~7.8.0",
-    "swiper": "^11.2.7",
+    "swiper": "^7.4.1",
     "tslib": "^2.3.0",
     "webpack-dev-server": "^5.2.1",
     "zone.js": "~0.15.0"
