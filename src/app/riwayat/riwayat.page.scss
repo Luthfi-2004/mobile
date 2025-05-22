@@ -1,3 +1,16 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  ion-badge {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    height: auto;
+    text-transform: capitalize;
+  }
+}
 ion-content {
   --background: #90caf9;
 }
@@ -58,4 +71,3 @@ ion-content {
       gap: 8px;
     }
   }
-  

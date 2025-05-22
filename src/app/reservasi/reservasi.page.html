@@ -21,8 +21,7 @@
             'full': table.full,
             'selected': table.selected
           }"
-          (click)="selectTable(table)"
-        >
+          (click)="selectTable(table)">
           <div class="table-content">
             <div class="table-id">{{ table.id }}</div>
             <div class="table-seats">({{ table.seats }} kursi)</div>
@@ -31,7 +30,6 @@
       </div>
     </div>
   </div>
-
   <div class="legend">
     <div class="legend-item">
       <div class="box full"></div> Full

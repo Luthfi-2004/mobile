@@ -16,8 +16,14 @@ export class RiwayatPage {
     private alertController: AlertController
   ) {}
 
+  // Akan dipanggil setiap kali halaman ini dibuka
   ionViewWillEnter() {
-    this.riwayat = JSON.parse(localStorage.getItem('riwayat') || '[]').reverse();
+    this.loadRiwayat();
+  }
+
+  loadRiwayat() {
+    const data = JSON.parse(localStorage.getItem('riwayat') || '[]');
+    this.riwayat = data.reverse(); // Menampilkan terbaru di atas
   }
 
   lihatDetail(data: any) {
@@ -45,7 +51,7 @@ export class RiwayatPage {
           text: 'Hapus',
           handler: () => {
             localStorage.removeItem('riwayat');
-            this.riwayat = []; // kosongkan array setelah hapus
+            this.riwayat = []; 
             console.log('Riwayat transaksi telah dihapus.');
           }
         }
