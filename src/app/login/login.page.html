@@ -29,5 +29,16 @@
       Belum Punya Akun?
       <a routerLink="/registrasi"><strong>Daftar</strong></a>
     </p>    
+
+    <!-- Tambahan tombol Google -->
+    <ion-button 
+      expand="block" 
+      color="danger" 
+      class="ion-margin-top"
+      (click)="loginWithGoogle()">
+      <ion-icon slot="start" name="logo-google"></ion-icon>
+      Login with Google
+    </ion-button>
+    
   </div>
 </ion-content>
