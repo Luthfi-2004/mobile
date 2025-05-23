@@ -9,11 +9,23 @@ import { AlertController } from '@ionic/angular';
   standalone: false,
 })
 export class HomePage {
-  images: string[] = [
-    'assets/img/makan.jpg',
-    'assets/img/makan2.jpg',
-    'assets/img/makan3.jpg'
-  ];
+  images: { src: string; type: 'indoor' | 'outdoor' | 'vvip'; text?: string }[] = [
+  { 
+    src: 'assets/img/indoor.jpg', 
+    type: 'indoor',
+    text: 'Area Indoor' 
+  },
+  { 
+    src: 'assets/img/outdoor.jpg', 
+    type: 'outdoor',
+    text: 'Area Outdoor' 
+  },
+  { 
+    src: 'assets/img/vvip.jpg', 
+    type: 'vvip',
+    text: 'Area VVIP' 
+  }
+];
   currentImageIndex = 0;
 
   constructor(
