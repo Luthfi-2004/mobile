@@ -9,8 +9,4 @@ import { Router } from '@angular/router';
 })
 export class TabsPage {
   constructor(private router: Router) {}
-
-  handleInvoiceClick() {
-    this.router.navigate(['/invoice']);
-  }
 }
