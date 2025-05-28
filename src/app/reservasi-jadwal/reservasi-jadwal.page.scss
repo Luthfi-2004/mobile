@@ -124,3 +124,8 @@ ion-content {
   padding: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
+.custom-btn:disabled {
+  opacity: 0.5;
+  filter: blur(1px);
+  pointer-events: none;
+}

@@ -42,13 +42,15 @@
       <h3>Waktu Datang</h3>
       <div class="button-grid">
         <button
-          *ngFor="let jam of waktuList"
-          class="custom-btn"
-          [class.selected]="waktu === jam"
-          (click)="waktu = jam"
-        >
-          {{ jam }}
-        </button>
+  *ngFor="let jam of waktuList"
+  class="custom-btn"
+  [class.selected]="waktu === jam.label"
+  [disabled]="jam.disabled"
+  (click)="waktu = jam.label"
+>
+  {{ jam.label }}
+</button>
+
       </div>
     </div>
 

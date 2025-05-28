@@ -38,6 +38,10 @@ export class RiwayatPage {
     });
   }
 
+  lanjutkanPembayaran(data: any) {
+    this.router.navigate(['/invoice-detail', data.id]);
+  }
+
   async hapusRiwayat() {
     const alert = await this.alertController.create({
       header: 'Konfirmasi',

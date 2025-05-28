@@ -33,8 +33,13 @@
     </div>
 
     <div class="actions">
-      <ion-button color="primary"  size="small" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
+      <ion-button color="primary" size="small" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
       <ion-button size="small" color="dark" (click)="beriUlasan(data)">Beri Penilaian</ion-button>
+
+      <ion-button *ngIf="data.status === 'Belum Dibayar'" color="warning" size="small" (click)="lanjutkanPembayaran(data)">
+        Lanjutkan Pembayaran
+      </ion-button>
     </div>
+
   </div>
 </ion-content>

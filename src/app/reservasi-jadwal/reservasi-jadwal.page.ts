@@ -17,7 +17,9 @@ export class ReservasiJadwalPage implements OnInit {
   tempat: string = '';
   idMeja: string = ''; 
 
-  waktuList = ['11.00', '12.00', '13.00', '14:00', '15:00', '16:00'];
+  originalWaktuList = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
+  waktuList: { label: string; disabled: boolean }[] = [];
+
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
   filteredTempatList: string[] = [];
 
@@ -33,10 +35,12 @@ export class ReservasiJadwalPage implements OnInit {
   ngOnInit() {
     const today = new Date();
     const max = new Date();
-    max.setDate(today.getDate() + 10); // Maksimal 10 hari ke depan
+    max.setDate(today.getDate() + 10);
 
     this.minDate = today.toISOString().split('T')[0];
     this.maxDate = max.toISOString().split('T')[0];
+
+    this.waktuList = this.originalWaktuList.map(waktu => ({ label: waktu, disabled: false }));
 
     this.route.queryParams.subscribe(params => {
       if (params['jumlahKursi']) {
@@ -63,7 +67,33 @@ export class ReservasiJadwalPage implements OnInit {
   }
 
   setTanggal(event: any) {
-    this.tanggal = event.detail.value;
+    this.tanggal = event.detail.value; // tanggal string ISO, contoh: "2025-05-28"
+    const selectedDate = new Date(this.tanggal);
+    const today = new Date();
+
+    if (selectedDate.toDateString() === today.toDateString()) {
+      const now = new Date();
+      this.waktuList = this.originalWaktuList.map(waktu => {
+        const [hour, minute] = waktu.split(':').map(Number);
+        const waktuDate = new Date();
+        waktuDate.setHours(hour, minute, 0, 0);
+
+        return {
+          label: waktu,
+          disabled: now > waktuDate
+        };
+      });
+
+      // Reset pilihan waktu jika waktu sekarang sudah lewat
+      const selectedWaktuObj = this.waktuList.find(w => w.label === this.waktu);
+      if (!selectedWaktuObj || selectedWaktuObj.disabled) {
+        this.waktu = '';
+      }
+    } else {
+      // Jika bukan hari ini, semua waktu aktif
+      this.waktuList = this.originalWaktuList.map(waktu => ({ label: waktu, disabled: false }));
+    }
+
     if (this.popover) {
       this.popover.dismiss();
     }
@@ -79,20 +109,68 @@ export class ReservasiJadwalPage implements OnInit {
     await alert.present();
   }
 
-  konfirmasi() {
-    if (!this.tanggal || !this.waktu || !this.tempat) {
-      this.presentAlert();
+  async showTokoTutupAlert() {
+    const alert = await this.alertController.create({
+      header: 'Peringatan',
+      message: 'Toko tutup dan tidak menerima reservasi lagi pada hari ini.',
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
+async konfirmasi() {
+  if (!this.tanggal || !this.tempat) {
+    await this.presentAlert();
+    return;
+  }
+
+  // Cek apakah ada waktu yang enabled (belum lewat)
+  const adaWaktuAktif = this.waktuList.some(w => !w.disabled);
+
+  if (!adaWaktuAktif) {
+    // Semua waktu disabled, berarti toko tutup hari ini
+    await this.showTokoTutupAlert();
+    return;
+  }
+
+  // Jika ada waktu aktif tapi user belum memilih waktu
+  if (!this.waktu) {
+    await this.presentAlert();
+    return;
+  }
+
+  // Validasi tanggal valid
+  const selectedDate = new Date(this.tanggal);
+  if (isNaN(selectedDate.getTime())) {
+    await this.presentAlert();
+    return;
+  }
+
+  const now = new Date();
+
+  if (selectedDate.toDateString() === now.toDateString()) {
+    const [hourStr, minuteStr] = this.waktu.split(':');
+    const reservasiHour = Number(hourStr);
+    const reservasiMinute = Number(minuteStr);
+
+    const reservasiDate = new Date();
+    reservasiDate.setHours(reservasiHour, reservasiMinute, 0, 0);
+
+    if (now > reservasiDate) {
+      await this.showTokoTutupAlert();
       return;
     }
-
-    this.router.navigate(['/menu'], {
-      queryParams: {
-        tanggal: this.tanggal,
-        waktu: this.waktu,
-        jumlahTamu: this.jumlahTamu,
-        tempat: this.tempat,
-        idMeja: this.idMeja
-      }
-    });
   }
+
+  // Semua valid, lanjut ke halaman menu
+  this.router.navigate(['/menu'], {
+    queryParams: {
+      tanggal: this.tanggal,
+      waktu: this.waktu,
+      jumlahTamu: this.jumlahTamu,
+      tempat: this.tempat,
+      idMeja: this.idMeja
+    }
+  });
+}
+
 }
