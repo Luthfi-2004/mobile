@@ -23,14 +23,21 @@
           <ion-button size="small" fill="clear" (click)="increaseQty(i)">+</ion-button>
         </div>
 
-        <div class="edit-delete">
-          <ion-button size="small" fill="outline" color="primary" (click)="editItem(i)">
-            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
-          </ion-button>
-          <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
-            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-          </ion-button>
-        </div>
+ <div class="edit-delete">
+  <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
+    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+  </ion-button>
+</div>
+
+<!-- Input catatan -->
+<ion-item lines="none" class="note-input">
+  <ion-label position="stacked">Catatan</ion-label>
+  <ion-textarea
+    [(ngModel)]="item.note"
+    autoGrow="true"
+    placeholder="Contoh: Jangan terlalu pedas, saus dipisah, dll.">
+  </ion-textarea>
+</ion-item>
       </div>
     </div>
 

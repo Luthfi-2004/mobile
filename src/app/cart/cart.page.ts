@@ -25,6 +25,7 @@ export class CartPage {
         this.cart = nav.extras.state['cart'].map((item: any) => ({
           ...item,
           quantity: item.quantity || 1,
+          note: item.note || '' // Tambahkan note kosong jika belum ada
         }));
       }
 
@@ -168,7 +169,7 @@ export class CartPage {
     const transaksi = {
       id: Date.now(),
       tanggal: new Date().toLocaleString(),
-      items: [...this.cart],
+      items: [...this.cart], // note termasuk di sini
       total: this.total,
       dibayar: dibayar,
       sisaBayar: sisaBayar,
@@ -184,7 +185,7 @@ export class CartPage {
     // Kosongkan cart
     this.cart = [];
 
-    // Navigasi ke halaman invoice dengan state transaksi dan reservasi (termasuk idMeja)
+    // Navigasi ke halaman invoice dengan state transaksi dan reservasi
     this.router.navigate(['/tabs/invoice'], {
       state: {
         transaksi,
@@ -194,7 +195,7 @@ export class CartPage {
   }
 
   updateTotals() {
-    // Getter subtotal dan total sudah otomatis, tapi jika ada logic lain bisa ditambah di sini
+    // Getter subtotal dan total otomatis, tidak perlu perhitungan ulang di sini
   }
 
   goBack() {

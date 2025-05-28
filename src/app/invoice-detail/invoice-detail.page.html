@@ -23,7 +23,7 @@
       <p>No. Telepon: {{ pelanggan.telp }}</p>
     </div>
 
-    <div class="receipt-section">
+    <div class="receipt-section"> 
       <h3>Detail Reservasi</h3>
       <p>Tanggal: {{ reservasi.tanggal }}</p>
       <p>Waktu Datang: {{ reservasi.waktu }}</p>
@@ -35,12 +35,14 @@
     <div class="receipt-section">
       <h3>Pesanan</h3>
       <div class="item-row" *ngFor="let item of transaksi?.items">
-        <span>{{ item.nama }} x{{ item.quantity }}</span>
+        <div>
+          {{ item.nama }} x{{ item.quantity }}<br />
+          <span *ngIf="item.note">*catatan: {{ item.note }}</span>
+        </div>
         <span>Rp{{ (item.harga * item.quantity) | number:'1.0-0' }}</span>
       </div>
       <hr />
     </div>
-
     <div class="receipt-section">
       <h3>Ringkasan Pembayaran</h3>
       <p>Subtotal Makanan <span class="right">Rp{{ subtotal | number:'1.0-0' }}</span></p>
