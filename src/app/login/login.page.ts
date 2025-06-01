@@ -19,6 +19,8 @@ export class LoginPage {
   ) {}
 
   goToHome() {
+    // Simpan status login di localStorage
+    localStorage.setItem('isLoggedIn', 'true');
     this.router.navigate(['/tabs/home']);
   }
 
@@ -26,21 +28,55 @@ export class LoginPage {
     this.showPassword = !this.showPassword;
   }
 
-  onLogin() {
+  async onLogin() {
     if (!this.email || !this.password) {
-      console.warn('Email dan password wajib diisi');
+      const alert = await this.alertController.create({
+        header: 'Login Gagal',
+        message: 'Email dan password wajib diisi',
+        buttons: ['OK']
+      });
+      await alert.present();
       return;
     }
-    console.log('Authenticating:', this.email);
-    // Pindah ke home setelah login
-    this.goToHome();
+
+    // Validasi sederhana - bisa disesuaikan
+    if (this.email.includes('@') && this.password.length >= 6) {
+      // Simpan data user sederhana di localStorage
+      localStorage.setItem('userData', JSON.stringify({
+        email: this.email,
+        loggedIn: true
+      }));
+      
+      const alert = await this.alertController.create({
+        header: 'Login Berhasil',
+        message: 'Anda akan diarahkan ke halaman utama',
+        buttons: ['OK']
+      });
+      await alert.present();
+      
+      this.goToHome();
+    } else {
+      const alert = await this.alertController.create({
+        header: 'Login Gagal',
+        message: 'Email atau password tidak valid',
+        buttons: ['OK']
+      });
+      await alert.present();
+    }
   }
 
-  // Fungsi baru untuk login Google
+  // Fungsi untuk login Google
   async loginWithGoogle() {
     try {
       // Simulasi login Google berhasil
       console.log('Login with Google clicked');
+      
+      // Simpan data user sederhana di localStorage
+      localStorage.setItem('userData', JSON.stringify({
+        email: 'google_user@example.com',
+        loggedIn: true,
+        provider: 'google'
+      }));
       
       // Tampilkan alert sukses
       const alert = await this.alertController.create({
@@ -54,6 +90,12 @@ export class LoginPage {
       this.goToHome();
     } catch (error) {
       console.error('Google login error:', error);
+      const alert = await this.alertController.create({
+        header: 'Login Gagal',
+        message: 'Terjadi kesalahan saat login dengan Google',
+        buttons: ['OK']
+      });
+      await alert.present();
     }
   }
 }

@@ -25,6 +25,7 @@
     "@capacitor/core": "7.2.0",
     "@capacitor/haptics": "7.0.1",
     "@capacitor/keyboard": "7.0.1",
+    "@capacitor/local-notifications": "^7.0.1",
     "@capacitor/status-bar": "7.0.1",
     "@ionic/angular": "^8.0.0",
     "animate.css": "^4.1.1",
@@ -36,6 +37,7 @@
     "swiper": "^7.4.1",
     "tslib": "^2.3.0",
     "webpack-dev-server": "^5.2.1",
+    "xml2js": "0.4.23",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
