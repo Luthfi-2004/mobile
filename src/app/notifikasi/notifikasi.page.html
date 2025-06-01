@@ -9,22 +9,18 @@
 
 <ion-content class="ion-padding notif-content">
   <!-- Daftar notifikasi -->
-  <div *ngFor="let notif of notifikasi" class="notif-card" (click)="goToDetail(notif)">
+  <div *ngFor="let notif of notifikasi" class="notif-card">
     <ion-icon class="notif-icon" name="notifications-outline"></ion-icon>
     <div class="notif-text">
       <h4>{{ notif.judul }}</h4>
       <p>{{ notif.deskripsi }}</p>
       <p><strong>{{ notif.tanggal }}</strong></p>
-      <ion-badge color="primary">{{ notif.status }}</ion-badge>
+      <ion-badge [color]="getBadgeColor(notif.status)">{{ notif.status }}</ion-badge>
+
+      <!-- Info total pembayaran jika ada -->
       <div *ngIf="notif.totalPembayaran">
         <p>Total Pembayaran: Rp{{ notif.totalPembayaran | number }}</p>
       </div>
-
-      <!-- Tombol jika pembayaran diperlukan -->
-      <ion-button *ngIf="notif.status === 'Pending'" color="danger" (click)="goToInvoice(notif)">Bayar Sekarang</ion-button>
-      
-      <!-- Tombol untuk memberi rating jika selesai -->
-      <ion-button *ngIf="notif.status === 'Berhasil'" color="success" (click)="goToRating(notif)">Beri Penilaian</ion-button>
     </div>
   </div>
 </ion-content>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -7,50 +7,119 @@ import { Router } from '@angular/router';
   styleUrls: ['./notifikasi.page.scss'],
   standalone: false
 })
-export class NotifikasiPage {
+export class NotifikasiPage implements OnInit {
   notifikasi: any[] = [];
 
-  constructor(private router: Router) {
+  constructor(private router: Router) {}
+
+  ngOnInit() {
     this.loadNotifikasi();
+    this.jadwalkanPengingat1Jam();
   }
 
-  // Fungsi untuk mengambil data dari localStorage dan menambahkan notifikasi
   loadNotifikasi() {
-    // Ambil data transaksi dari localStorage
     const transaksi = JSON.parse(localStorage.getItem('lastTransaction') || 'null');
+    const existingNotif = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
+    this.notifikasi = existingNotif;
 
     if (transaksi) {
-      // Pastikan data transaksi memiliki nilai yang dibutuhkan
-      const status = transaksi.status || 'Pembayaran Sukses'; // Menangani jika status tidak ada
-      const tanggal = transaksi.tanggal || new Date().toLocaleDateString(); // Tanggal default jika tidak ada
-      const dibayar = transaksi.dibayar || 0; // Nilai default untuk dibayar jika tidak ada
+      const status = transaksi.status || 'Pembayaran Sukses';
+      const tanggal = transaksi.tanggal || new Date().toLocaleDateString();
+      const dibayar = transaksi.dibayar || 0;
+      const transaksiId = transaksi.id || 0;
 
-      // Buat notifikasi berdasarkan data transaksi yang valid
-      const newNotif = {
-        judul: 'Pembayaran Diterima',
-        deskripsi: `Pembayaran Anda sebesar Rp${dibayar} untuk reservasi pada tanggal ${tanggal} telah diterima.`,
-        tanggal: tanggal,
-        status: status,
-        id: transaksi.id || 0, // ID default jika tidak ada
-        totalPembayaran: dibayar
-      };
+      const sudahAda = existingNotif.some(
+        (n: any) => n.id === transaksiId && n.tipe === 'pembayaran'
+      );
 
-      this.notifikasi.push(newNotif);
+      if (!sudahAda) {
+        const newNotif = {
+          judul: 'Pembayaran Diterima',
+          deskripsi: `Pembayaran Anda sebesar Rp${dibayar} untuk reservasi pada tanggal ${tanggal} telah diterima.`,
+          tanggal: tanggal,
+          status: status,
+          id: transaksiId,
+          totalPembayaran: dibayar,
+          tipe: 'pembayaran'
+        };
+        this.notifikasi.unshift(newNotif);
+
+        // Pengingat awal (umum)
+        if (transaksi.waktu) {
+          const jadwalDatang = new Date(transaksi.waktu);
+          const jamDatang = jadwalDatang.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const tanggalDatang = jadwalDatang.toLocaleDateString();
+
+          const newReminderNotif = {
+            judul: 'Pengingat Kehadiran',
+            deskripsi: `Jangan lupa hadir sebelum pukul ${jamDatang} pada ${tanggalDatang}. Disarankan datang 2 jam lebih awal.`,
+            tanggal: new Date().toLocaleDateString(),
+            status: 'Pengingat',
+            id: transaksiId,
+            totalPembayaran: 0,
+            tipe: 'pengingat'
+          };
+
+          this.notifikasi.unshift(newReminderNotif);
+        }
+
+        // Simpan kembali
+        localStorage.setItem('notifikasiList', JSON.stringify(this.notifikasi));
+      }
     }
   }
 
-  // Navigasi ke halaman detail pesanan ketika notifikasi diklik
-  goToDetail(notif: any) {
-    this.router.navigate(['/detail-pesanan'], { state: { data: notif } });
+  jadwalkanPengingat1Jam() {
+    const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
+    const existingNotif = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
+
+    let updated = false;
+
+    history.forEach((trx: any) => {
+      if (trx.reservasi && trx.reservasi.waktu) {
+        const waktuReservasi = new Date(trx.reservasi.waktu).getTime();
+        const waktuSekarang = new Date().getTime();
+        const satuJamSebelum = waktuReservasi - 60 * 60 * 1000;
+
+        const sudahAda = existingNotif.some(
+          (n: any) => n.id === trx.id && n.tipe === 'pengingat1jam'
+        );
+
+        if (waktuSekarang >= satuJamSebelum && waktuSekarang < waktuReservasi && !sudahAda) {
+          const waktuDatang = new Date(trx.reservasi.waktu);
+          const jamDatang = waktuDatang.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const tanggalDatang = waktuDatang.toLocaleDateString();
+
+          const reminderNotif = {
+            judul: 'Pengingat Kehadiran (1 Jam Sebelum)',
+            deskripsi: `Acara Anda dimulai pukul ${jamDatang} pada ${tanggalDatang}. Segera bersiap-siap!`,
+            tanggal: new Date().toLocaleDateString(),
+            status: 'Pengingat',
+            id: trx.id,
+            totalPembayaran: 0,
+            tipe: 'pengingat1jam'
+          };
+
+          existingNotif.unshift(reminderNotif);
+          updated = true;
+        }
+      }
+    });
+
+    if (updated) {
+      this.notifikasi = existingNotif;
+      localStorage.setItem('notifikasiList', JSON.stringify(existingNotif));
+    }
   }
 
-  // Navigasi ke halaman invoice ketika notifikasi menunjukkan pembayaran pending
-  goToInvoice(notif: any) {
-    this.router.navigate(['/invoice'], { state: { data: notif } });
+  getBadgeColor(status: string): string {
+    switch (status) {
+      case 'Pending': return 'danger';
+      case 'Berhasil': return 'success';
+      case 'Pembayaran Sukses': return 'primary';
+      case 'Pengingat': return 'warning';
+      default: return 'medium';
+    }
   }
 
-  // Navigasi ke halaman ulasan ketika status notifikasi adalah selesai
-  goToRating(notif: any) {
-    this.router.navigate(['/ulasan'], { state: { data: notif } });
-  }
 }

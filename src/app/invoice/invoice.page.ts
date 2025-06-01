@@ -59,6 +59,13 @@ export class InvoicePage implements OnInit {
   simpanTransaksi(trx: any) {
     const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
     const isAlreadyStored = history.some((h: any) => h.id === trx.id);
+    localStorage.setItem('lastTransaction', JSON.stringify({
+    id: trx.id,
+    status: trx.status,
+    tanggal: trx.tanggal,
+    dibayar: trx.dibayar,
+    waktu: trx.reservasi?.waktu || null // pastikan waktu disimpan juga
+  }));
     if (!isAlreadyStored) {
       history.unshift(trx);
       localStorage.setItem('transactionHistory', JSON.stringify(history));
