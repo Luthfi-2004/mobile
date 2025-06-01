@@ -1,72 +1,163 @@
 ion-content {
-    --background: #a3d9ff;
-    color: #000;
-    font-family: 'Arial', sans-serif;
-  }
-  
-  .register-wrapper {
-    padding: 20px;
-  }
-  
-  .back-icon {
-    font-size: 24px;
-    margin-bottom: 10px;
-  }
-  
-  .title {
-    font-size: 32px;
-    font-weight: bold;
-    margin-bottom: 30px;
-  }
-  
-  .custom-input {
-    margin-bottom: 20px;
-    --background: transparent;
-    --highlight-color-focused: #000;
-    --color: #000;
-    border-bottom: 2px solid #555;
-    padding-bottom: 5px;
-  }
-  
-  .custom-input ion-label {
-    color: #7a7a7a;
-    font-weight: 500;
-    margin-bottom: 4px;
-    font-size: 14px;
-  }
-  
-  .custom-input ion-input {
-    color: #000;
-    font-size: 16px;
-  }
-  
-  .custom-input ion-icon {
-    font-size: 20px;
-    color: #333;
-  }
-  
-  .register-btn {
-    --background: #fff;
-    margin-top: 30px;
-    height: 50px;
-      border-radius: 20px;
-      padding: 12px;
-      font-size: 16px;
-      font-weight: bold;
-      color: black;
-      width: 100%;
-      margin-bottom: 20px;
-  }
-  
-  .login-link {
-    text-align: center;
-    margin-top: 25px;
-    color: #444;
-    font-weight: 500;
-    font-size: 15px;
-  }
-  
-  .login-link a {
-    color: #000;
-    text-decoration: none;
-  }
+  --background: #a3d9ff;
+  color: #000;
+  font-family: 'Arial', sans-serif;
+}
+
+.register-wrapper {
+  padding: 20px;
+}
+
+.back-icon {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #000;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: #000;
+}
+
+/* Styling dasar ion-input */
+ion-input {
+  margin-bottom: 20px;
+  --highlight-color-focused: #000 !important;
+  --color: #000;
+  --background: transparent;
+  font-size: 16px;
+  color: #000;
+}
+
+/* Styling native input element dalam ion-input */
+ion-input::part(native) {
+  padding: 8px 0;
+  border-bottom: 2px solid #555;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+/* Saat ion-input fokus, garis bawah tetap hitam */
+ion-input:focus::part(native),
+ion-input:focus-within::part(native) {
+  border-bottom-color: #000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Label styling */
+ion-label {
+  color: #7a7a7a;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Icon toggle password */
+ion-icon {
+  font-size: 20px;
+  color: #333;
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* Tombol daftar */
+.register-btn {
+  --background: #fff;
+  margin-top: 30px;
+  height: 50px;
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  color: black;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+/* Link ke login */
+.login-link {
+  text-align: center;
+  margin-top: 25px;
+  color: #444;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.login-link a {
+  color: #000;
+  text-decoration: none;
+}
+
+/* Styling toggle icon untuk password */
+.toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 18px;
+  font-size: 22px;
+  color: #000 !important;
+  z-index: 10;
+  cursor: pointer;
+}
+
+/* Jika pakai ion-item pembungkus */
+ion-item {
+  --highlight-color-focused: #000 !important;
+  --border-color: #000 !important;
+  border-bottom: 2px solid #555 !important;
+  box-shadow: none !important;
+}
+
+/* Saat ion-item fokus */
+ion-item.ion-focused {
+  border-color: #000 !important;
+  box-shadow: none !important;
+}
+
+/* Kursor teks input tetap hitam */
+input {
+  caret-color: #000 !important;
+}
+
+/* Reset warna primary Ionic supaya tidak hijau */
+:root {
+  --ion-color-primary: #000 !important;
+  --ion-color-primary-shade: #000 !important;
+  --ion-color-primary-tint: #000 !important;
+}
+
+/* Password wrapper supaya icon toggle muncul rapi */
+.password-wrapper {
+  position: relative;
+  margin-bottom: 20px;
+}
+ion-input::part(native),
+ion-textarea::part(native) {
+  border-bottom: 2px solid #555 !important;
+  box-shadow: none !important;
+  color: #000 !important;
+  caret-color: #000 !important;
+  background: transparent !important;
+}
+
+ion-input:focus::part(native),
+ion-textarea:focus::part(native) {
+  border-bottom-color: #000 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+ion-input,
+ion-textarea {
+  --highlight-color-focused: #000 !important;
+  --color-focused: #000 !important;
+  --placeholder-color-focused: #666 !important;
+}
+
+ion-input:focus,
+ion-textarea:focus {
+  --highlight-color-focused: #000 !important;
+}

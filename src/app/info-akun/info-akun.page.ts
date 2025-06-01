@@ -1,6 +1,7 @@
 import { Component, ElementRef, ViewChild, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AlertController, LoadingController } from '@ionic/angular';
+import { NavController } from '@ionic/angular';
 
 @Component({
   selector: 'app-info-akun',
@@ -17,39 +18,51 @@ export class InfoAkunPage {
   currentEditingField: string | null = null;
   originalValues: any = {}; // Menyimpan nilai awal sebelum edit
 
+  private currentUserEmail: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private alertController: AlertController,
-    private loadingController: LoadingController
+    private loadingController: LoadingController,
+    private navCtrl: NavController
   ) {
-    // Inisialisasi form dengan nilai dari localStorage jika ada
+    const loggedUser = localStorage.getItem('userData');
+    const currentUser = loggedUser ? JSON.parse(loggedUser) : null;
+    this.currentUserEmail = currentUser?.email || null;
+
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const userData = users.find((u: any) => u.email === this.currentUserEmail);
+
     this.form = this.fb.group({
-      username: [localStorage.getItem('username') || 'user123', [Validators.required, Validators.minLength(3)]],
-      email: ['user@example.com', [Validators.required, Validators.email]],
-      phone: ['081234567890', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10)]],
+      username: [userData?.username || 'user123', [Validators.required, Validators.minLength(3)]],
+      email: [{value: userData?.email || '', disabled: true}, [Validators.required, Validators.email]],
+      phone: [userData?.phone || '', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10)]],
       currentPassword: [''],
       newPassword: ['', [Validators.minLength(6)]],
       confirmPassword: [''],
     }, { validators: this.passwordMatchValidator });
 
-    // Simpan nilai awal untuk fitur "batal edit"
+    this.profileImage = userData?.profileImage || this.profileImage;
+
     this.saveOriginalValues();
   }
 
-  /**
-   * Menyimpan nilai awal form
-   */
+  isChanged(): boolean {
+    return (
+      this.form.get('username')?.value !== this.originalValues.username ||
+      this.form.get('phone')?.value !== this.originalValues.phone ||
+      this.profileImage !== this.originalValues.profileImage
+    );
+  }
+
   saveOriginalValues() {
     this.originalValues = {
       username: this.form.get('username')?.value,
-      email: this.form.get('email')?.value,
       phone: this.form.get('phone')?.value,
+      profileImage: this.profileImage
     };
   }
 
-  /**
-   * Validasi kesesuaian password baru & konfirmasi password
-   */
   passwordMatchValidator(form: FormGroup) {
     const newPassword = form.get('newPassword')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
@@ -60,46 +73,30 @@ export class InfoAkunPage {
     return null;
   }
 
-  /**
-   * Cek apakah field sedang dalam mode edit
-   */
   isEditing(field: string): boolean {
     return this.currentEditingField === field;
   }
 
-  /**
-   * Toggle mode edit (aktif/non-aktif)
-   */
   toggleEdit(field: string) {
     if (this.isEditing(field)) {
-      // Jika sedang edit, batalkan dan kembalikan nilai awal
       this.form.get(field)?.setValue(this.originalValues[field]);
       this.currentEditingField = null;
     } else {
-      // Jika belum edit, aktifkan mode edit
       this.currentEditingField = field;
+      this.form.get(field)?.markAsTouched();
     }
   }
 
-  /**
-   * Ganti foto profil
-   */
   changeProfilePicture() {
     this.fileInput.nativeElement.click();
   }
 
-  /**
-   * Handle perubahan gambar
-   */
   handleImageChange(event: any) {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e: any) => {
         this.profileImage = e.target.result;
-        // Simpan ke localStorage
-        localStorage.setItem('profileImage', this.profileImage);
-        // Emit event untuk update komponen lain
         this.profileUpdated.emit({
           username: this.form.get('username')?.value,
           profileImage: this.profileImage
@@ -109,11 +106,7 @@ export class InfoAkunPage {
     }
   }
 
-  /**
-   * Simpan perubahan data
-   */
   async saveChanges() {
-    // Validasi form
     if (this.form.invalid) {
       const alert = await this.alertController.create({
         header: 'Form Tidak Valid',
@@ -124,7 +117,6 @@ export class InfoAkunPage {
       return;
     }
 
-    // Validasi perubahan password
     const newPassword = this.form.get('newPassword')?.value;
     const currentPassword = this.form.get('currentPassword')?.value;
 
@@ -138,34 +130,65 @@ export class InfoAkunPage {
       return;
     }
 
-    // Tampilkan loading
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const userIndex = users.findIndex((u: any) => u.email === this.currentUserEmail);
+
+    if (userIndex === -1) {
+      const alert = await this.alertController.create({
+        header: 'Error',
+        message: 'User tidak ditemukan',
+        buttons: ['OK'],
+      });
+      await alert.present();
+      return;
+    }
+
+    if (newPassword) {
+      if (users[userIndex].password !== currentPassword) {
+        const alert = await this.alertController.create({
+          header: 'Password Salah',
+          message: 'Password saat ini yang Anda masukkan tidak sesuai',
+          buttons: ['OK'],
+        });
+        await alert.present();
+        return;
+      }
+    }
+
     const loading = await this.loadingController.create({
       message: 'Menyimpan perubahan...',
       spinner: 'crescent',
     });
     await loading.present();
 
-    // Simulasi proses penyimpanan (ganti dengan API call di production)
     setTimeout(async () => {
       await loading.dismiss();
 
-      // Simpan username ke localStorage
-      const newUsername = this.form.get('username')?.value;
-      localStorage.setItem('username', newUsername);
+      users[userIndex].username = this.form.get('username')?.value;
+      users[userIndex].phone = this.form.get('phone')?.value;
+      users[userIndex].profileImage = this.profileImage;
 
-      // Emit event untuk update komponen lain
+      if (newPassword) {
+        users[userIndex].password = newPassword;
+      }
+
+      localStorage.setItem('users', JSON.stringify(users));
+
+      localStorage.setItem('userData', JSON.stringify({
+        email: users[userIndex].email,
+        username: users[userIndex].username,
+        loggedIn: true,
+        profileImage: this.profileImage,
+      }));
+
       this.profileUpdated.emit({
-        username: newUsername,
+        username: users[userIndex].username,
         profileImage: this.profileImage
       });
 
-      // Simpan nilai baru sebagai "originalValues"
       this.saveOriginalValues();
-      
-      // Reset mode edit
       this.currentEditingField = null;
 
-      // Reset form password jika berhasil
       if (newPassword) {
         this.form.patchValue({
           currentPassword: '',
@@ -174,13 +197,14 @@ export class InfoAkunPage {
         });
       }
 
-      // Tampilkan notifikasi sukses
       const alert = await this.alertController.create({
         header: 'Berhasil',
         message: 'Perubahan berhasil disimpan',
         buttons: ['OK'],
       });
       await alert.present();
+      await alert.onDidDismiss();
+      this.navCtrl.navigateBack('/tabs/akun');
     }, 1500);
   }
 }

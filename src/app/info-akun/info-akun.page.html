@@ -1,14 +1,14 @@
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/akun" color="light"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/akun" color="light"></ion-back-button>
     </ion-buttons>
     <ion-title class="ion-text-center" color="light">Info Akun</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="saveChanges()" [disabled]="!form.valid" color="light">
-        <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+<ion-buttons slot="end">
+  <ion-button [disabled]="!isChanged()" (click)="saveChanges()">
+    <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+  </ion-button>
+</ion-buttons>
   </ion-toolbar>
 </ion-header>
 

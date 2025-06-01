@@ -3,53 +3,83 @@
     <ion-icon name="arrow-back-outline" class="back-icon"></ion-icon>
     <h1 class="title">Daftar</h1>
 
-    <ion-item lines="none" class="custom-input">
-      <ion-label position="stacked">Username</ion-label>
-      <ion-input type="text" placeholder="Masukkan Username"></ion-input>
-    </ion-item>
+    <!-- Username -->
+    <ion-input
+    
+      label="Username"
+      labelPlacement="floating"
+      placeholder="Masukkan Username"
+      [counter]="true"
+      maxlength="20"
+      [counterFormatter]="customCounterFormatter"
+      [(ngModel)]="username"
+    ></ion-input>
 
-    <ion-item lines="none" class="custom-input">
-      <ion-label position="stacked">Nomer Telepon</ion-label>
-      <ion-input type="tel" placeholder="Masukkan Nomer Telepon"></ion-input>
-    </ion-item>
+    <!-- Nomor Telepon -->
+    <ion-input
+      label="Nomor Telepon"
+      labelPlacement="floating"
+      type="tel"
+      placeholder="Masukkan Nomor Telepon"
+      [counter]="true"
+      maxlength="15"
+      [counterFormatter]="customCounterFormatter"
+      [(ngModel)]="telp"
+    ></ion-input>
 
-    <ion-item lines="none" class="custom-input">
-      <ion-label position="stacked">Email</ion-label>
-      <ion-input type="email" placeholder="Masukkan Email"></ion-input>
-    </ion-item>
+    <!-- Email -->
+    <ion-input
+      label="Email"
+      labelPlacement="floating"
+      type="email"
+      placeholder="Masukkan Email"
+      [counter]="true"
+      maxlength="50"
+      [counterFormatter]="customCounterFormatter"
+      [(ngModel)]="email"
+    ></ion-input>
 
     <!-- Password -->
-<ion-item class="custom-input" lines="none">
-  <ion-label position="stacked">Password</ion-label>
-  <ion-input
-    [type]="showPassword ? 'text' : 'password'"
-    placeholder="Masukkan Password"
-  ></ion-input>
-  <ion-icon
-    slot="end"
-    [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
-    (click)="togglePasswordVisibility()"
-  ></ion-icon>
-</ion-item>
+    <div class="password-wrapper">
+      <ion-input
+        label="Password"
+        labelPlacement="floating"
+        [type]="showPassword ? 'text' : 'password'"
+        placeholder="Masukkan Password"
+        [counter]="true"
+        maxlength="20"
+        [counterFormatter]="customCounterFormatter"
+        [(ngModel)]="password"
+      ></ion-input>
+      <ion-icon
+        [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+        class="toggle-icon"
+        (click)="togglePasswordVisibility()"
+      ></ion-icon>
+    </div>
 
-<!-- Confirm Password -->
-<ion-item class="custom-input" lines="none">
-  <ion-label position="stacked">Confirm Password</ion-label>
-  <ion-input
-    [type]="showConfirmPassword ? 'text' : 'password'"
-    placeholder="Ulangi Password"
-  ></ion-input>
-  <ion-icon
-    slot="end"
-    [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
-    (click)="toggleConfirmPasswordVisibility()"
-  ></ion-icon>
-</ion-item>
+    <!-- Confirm Password -->
+    <div class="password-wrapper">
+      <ion-input
+        label="Confirm Password"
+        labelPlacement="floating"
+        [type]="showConfirmPassword ? 'text' : 'password'"
+        placeholder="Ulangi Password"
+        [counter]="true"
+        maxlength="20"
+        [counterFormatter]="customCounterFormatter"
+        [(ngModel)]="confirmPassword"
+      ></ion-input>
+      <ion-icon
+        [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+        class="toggle-icon"
+        (click)="toggleConfirmPasswordVisibility()"
+      ></ion-icon>
+    </div>
 
-<ion-button expand="block" class="register-btn" (click)="goToLogin()">
-  Daftar
-</ion-button>
-
+    <ion-button expand="block" class="register-btn" (click)="registerUser()">
+      Daftar
+    </ion-button>
 
     <p class="login-link">
       Sudah Punya Akun? <a routerLink="/login"><strong>Masuk</strong></a>

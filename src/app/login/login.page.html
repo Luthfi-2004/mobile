@@ -5,14 +5,24 @@
     <h1 class="title">Masuk</h1>
 
     <div class="input-wrapper">
-      <label class="input-label">Nomer Telepon/Username/Email</label>
-      <input type="text" class="input-field" />
+      <label class="input-label">Nomer Telepon / Username / Email</label>
+      <input 
+        type="text" 
+        class="input-field" 
+        [(ngModel)]="emailOrUsername" 
+        placeholder="Masukkan nomor telepon, username, atau email" 
+      />
     </div>
 
     <div class="input-wrapper">
       <label class="input-label">Password</label>
       <div class="password-field">
-        <input [type]="showPassword ? 'text' : 'password'" class="input-field" />
+        <input 
+          [type]="showPassword ? 'text' : 'password'" 
+          class="input-field" 
+          [(ngModel)]="password" 
+          placeholder="Masukkan password"
+        />
         <ion-icon
           name="{{ showPassword ? 'eye-outline' : 'eye-off-outline' }}"
           class="toggle-password"
@@ -23,14 +33,14 @@
 
     <p class="forgot-password">Lupa Password?</p>
 
-    <button class="login-button" (click)="goToHome()">Masuk</button>
+    <button class="login-button" (click)="onLogin()">Masuk</button>
 
     <p class="signup-link">
       Belum Punya Akun?
       <a routerLink="/registrasi"><strong>Daftar</strong></a>
     </p>    
 
-    <!-- Tambahan tombol Google -->
+    <!-- Tombol Google -->
     <ion-button 
       expand="block" 
       color="danger" 

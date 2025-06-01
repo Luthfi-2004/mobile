@@ -8,28 +8,51 @@ import { AlertController, NavController } from '@ionic/angular';
   standalone: false,
 })
 export class AkunPage {
+  currentUser: any = null;
+  profileImage: string = 'assets/img/default-profile.jpg'; // default image
 
   constructor(
     private alertController: AlertController,
     private navCtrl: NavController
   ) {}
 
-  // Fungsi untuk navigasi ke halaman Info Akun
+  // Lifecycle hook, dijalankan tiap halaman muncul
+  ionViewWillEnter() {
+    this.loadUserData();
+  }
+  ionViewDidEnter() {
+  this.loadUserData();
+}
+  loadUserData() {
+    const userData = localStorage.getItem('userData');
+    if (userData) {
+      this.currentUser = JSON.parse(userData);
+    } else {
+      this.currentUser = null;
+    }
+
+    const savedImage = localStorage.getItem('profileImage');
+    if (savedImage) {
+      this.profileImage = savedImage;
+    } else {
+      this.profileImage = 'assets/img/default-profile.jpg';
+    }
+  }
+
+  // Navigasi halaman
   goToInfoAkun() {
     this.navCtrl.navigateForward('/info-akun');
   }
 
-  // Fungsi untuk navigasi ke halaman Bantuan
   goToBantuan() {
     this.navCtrl.navigateForward('/bantuan');
   }
 
-  // Fungsi untuk navigasi ke halaman Tentang Kami
   goToTentangKami() {
     this.navCtrl.navigateForward('/tentang-kami');
   }
 
-  // Fungsi konfirmasi logout dengan AlertController
+  // Konfirmasi logout
   async confirmLogout() {
     const alert = await this.alertController.create({
       header: 'Konfirmasi Logout',
@@ -51,18 +74,16 @@ export class AkunPage {
           }
         }
       ],
-      backdropDismiss: false // Prevent closing by tapping outside
+      backdropDismiss: false
     });
 
     await alert.present();
   }
 
-  // Fungsi untuk proses logout
+  // Logout: hapus data login dan kembali ke halaman login
   private performLogout() {
-    console.log('Proses logout dilakukan');
-    // Tambahkan logika logout sebenarnya di sini, contoh:
-    // 1. Clear token/local storage
-    // 2. Redirect ke halaman login
+    localStorage.removeItem('userData');
+    localStorage.removeItem('isLoggedIn');
     this.navCtrl.navigateRoot('/login');
   }
 }

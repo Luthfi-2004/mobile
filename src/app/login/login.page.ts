@@ -10,16 +10,15 @@ import { AlertController } from '@ionic/angular';
 })
 export class LoginPage {
   showPassword = false;
-  email = '';
+  emailOrUsername = '';  // bisa email, username, atau nomor telepon
   password = '';
-  
+
   constructor(
     private router: Router,
     private alertController: AlertController
   ) {}
 
   goToHome() {
-    // Simpan status login di localStorage
     localStorage.setItem('isLoggedIn', 'true');
     this.router.navigate(['/tabs/home']);
   }
@@ -28,74 +27,61 @@ export class LoginPage {
     this.showPassword = !this.showPassword;
   }
 
+  // Method alert agar kode lebih rapi
+  async showAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
+
   async onLogin() {
-    if (!this.email || !this.password) {
-      const alert = await this.alertController.create({
-        header: 'Login Gagal',
-        message: 'Email dan password wajib diisi',
-        buttons: ['OK']
-      });
-      await alert.present();
+    if (!this.emailOrUsername || !this.password) {
+      await this.showAlert('Login Gagal', 'Email/Username/No Telp dan password wajib diisi');
       return;
     }
 
-    // Validasi sederhana - bisa disesuaikan
-    if (this.email.includes('@') && this.password.length >= 6) {
-      // Simpan data user sederhana di localStorage
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+
+    // Cari user berdasarkan email, username, atau nomor telepon + password
+    const user = users.find((u: any) =>
+      (u.email === this.emailOrUsername ||
+       u.username === this.emailOrUsername ||
+       u.telp === this.emailOrUsername) &&
+       u.password === this.password
+    );
+
+    if (user) {
       localStorage.setItem('userData', JSON.stringify({
-        email: this.email,
+        email: user.email,
+        username: user.username,
         loggedIn: true
       }));
-      
-      const alert = await this.alertController.create({
-        header: 'Login Berhasil',
-        message: 'Anda akan diarahkan ke halaman utama',
-        buttons: ['OK']
-      });
-      await alert.present();
-      
+
+      await this.showAlert('Login Berhasil', 'Anda akan diarahkan ke halaman utama');
       this.goToHome();
     } else {
-      const alert = await this.alertController.create({
-        header: 'Login Gagal',
-        message: 'Email atau password tidak valid',
-        buttons: ['OK']
-      });
-      await alert.present();
+      await this.showAlert('Login Gagal', 'Email/Username/No Telp atau password tidak valid');
     }
   }
 
-  // Fungsi untuk login Google
   async loginWithGoogle() {
     try {
-      // Simulasi login Google berhasil
       console.log('Login with Google clicked');
-      
-      // Simpan data user sederhana di localStorage
+
       localStorage.setItem('userData', JSON.stringify({
         email: 'google_user@example.com',
         loggedIn: true,
         provider: 'google'
       }));
-      
-      // Tampilkan alert sukses
-      const alert = await this.alertController.create({
-        header: 'Login Berhasil',
-        message: 'Anda login menggunakan Google',
-        buttons: ['OK']
-      });
-      await alert.present();
-      
-      // Pindah ke home setelah login
+
+      await this.showAlert('Login Berhasil', 'Anda login menggunakan Google');
       this.goToHome();
     } catch (error) {
       console.error('Google login error:', error);
-      const alert = await this.alertController.create({
-        header: 'Login Gagal',
-        message: 'Terjadi kesalahan saat login dengan Google',
-        buttons: ['OK']
-      });
-      await alert.present();
+      await this.showAlert('Login Gagal', 'Terjadi kesalahan saat login dengan Google');
     }
   }
 }
