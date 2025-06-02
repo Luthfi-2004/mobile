@@ -20,21 +20,15 @@ export class AkunPage {
   ionViewWillEnter() {
     this.loadUserData();
   }
-  ionViewDidEnter() {
-  this.loadUserData();
-}
+
   loadUserData() {
-    const userData = localStorage.getItem('userData');
-    if (userData) {
-      this.currentUser = JSON.parse(userData);
+    const userDataStr = localStorage.getItem('userData');
+    if (userDataStr) {
+      const userData = JSON.parse(userDataStr);
+      this.currentUser = userData;
+      this.profileImage = userData.profileImage || 'assets/img/default-profile.jpg';
     } else {
       this.currentUser = null;
-    }
-
-    const savedImage = localStorage.getItem('profileImage');
-    if (savedImage) {
-      this.profileImage = savedImage;
-    } else {
       this.profileImage = 'assets/img/default-profile.jpg';
     }
   }

@@ -16,7 +16,7 @@ export class InfoAkunPage {
   profileImage = localStorage.getItem('profileImage') || 'assets/img/default-profile.jpg';
   form: FormGroup;
   currentEditingField: string | null = null;
-  originalValues: any = {}; // Menyimpan nilai awal sebelum edit
+  originalValues: any = {};
 
   private currentUserEmail: string | null = null;
 
@@ -35,7 +35,7 @@ export class InfoAkunPage {
 
     this.form = this.fb.group({
       username: [userData?.username || 'user123', [Validators.required, Validators.minLength(3)]],
-      email: [{value: userData?.email || '', disabled: true}, [Validators.required, Validators.email]],
+      email: [{ value: userData?.email || '', disabled: true }, [Validators.required, Validators.email]],
       phone: [userData?.phone || '', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10)]],
       currentPassword: [''],
       newPassword: ['', [Validators.minLength(6)]],
@@ -177,6 +177,7 @@ export class InfoAkunPage {
       localStorage.setItem('userData', JSON.stringify({
         email: users[userIndex].email,
         username: users[userIndex].username,
+        phone: users[userIndex].phone,
         loggedIn: true,
         profileImage: this.profileImage,
       }));
@@ -204,7 +205,7 @@ export class InfoAkunPage {
       });
       await alert.present();
       await alert.onDidDismiss();
-      this.navCtrl.navigateBack('/tabs/akun');
+      this.navCtrl.navigateRoot('/tabs/akun');
     }, 1500);
   }
 }

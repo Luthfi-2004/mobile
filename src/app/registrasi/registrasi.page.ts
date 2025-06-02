@@ -10,7 +10,7 @@ import { AlertController } from '@ionic/angular';
 })
 export class RegistrasiPage {
   username = '';
-  telp = '';
+  phone = ''; // ← Ganti dari "telp" menjadi "phone"
   email = '';
   password = '';
   confirmPassword = '';
@@ -37,7 +37,7 @@ export class RegistrasiPage {
   }
 
   async registerUser() {
-    if (!this.username || !this.telp || !this.email || !this.password || !this.confirmPassword) {
+    if (!this.username || !this.phone || !this.email || !this.password || !this.confirmPassword) {
       await this.showAlert('Mohon isi semua data!');
       return;
     }
@@ -59,7 +59,7 @@ export class RegistrasiPage {
 
     users.push({
       username: this.username,
-      telp: this.telp,
+      phone: this.phone, // ← Simpan sebagai "phone"
       email: this.email,
       password: this.password,
     });
