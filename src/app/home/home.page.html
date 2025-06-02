@@ -4,11 +4,9 @@
       <img src="assets/img/logo.jpg" class="app-logo" alt="Logo" />
     </ion-title>
     <ion-buttons slot="end">
-<ion-button [routerLink]="'/notifikasi'" (click)="markNotificationsAsRead()">
+<ion-button (click)="goToNotifikasi()" class="notif-btn">
   <ion-icon name="notifications-outline"></ion-icon>
-  <ion-badge *ngIf="unreadNotificationCount > 0" color="danger" slot="end">
-    {{ unreadNotificationCount }}
-  </ion-badge>
+  <span *ngIf="unreadNotificationCount > 0" class="notif-badge"></span>
 </ion-button>
       <ion-button>
         <ion-icon name="cart-outline"></ion-icon>

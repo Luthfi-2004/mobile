@@ -340,3 +340,17 @@ ion-segment {
     }
   }
 }
+.notif-btn {
+  position: relative;
+
+  .notif-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 10px;
+    height: 10px;
+    background: red;
+    border-radius: 50%;
+    z-index: 10;
+  }
+}

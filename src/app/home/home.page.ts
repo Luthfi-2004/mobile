@@ -29,7 +29,6 @@ export class HomePage implements OnInit {
   ) {
     this.startImageSlider();
 
-    // Tangani tombol back Android untuk keluar aplikasi
     this.platform.backButton.subscribeWithPriority(10, async () => {
       const alert = await this.alertController.create({
         header: 'Konfirmasi',
@@ -57,17 +56,24 @@ export class HomePage implements OnInit {
 
     this.loadUnreadNotifications();
   }
-
+    ionViewWillEnter() {
+  this.loadUnreadNotifications();
+}
   loadUnreadNotifications() {
-    const notifikasi = JSON.parse(localStorage.getItem('notifikasi') || '[]');
+    const notifikasi = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
     this.unreadNotificationCount = notifikasi.filter((n: any) => !n.read).length;
   }
 
   markNotificationsAsRead() {
-    const notifikasi = JSON.parse(localStorage.getItem('notifikasi') || '[]');
+    const notifikasi = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
     const updated = notifikasi.map((n: any) => ({ ...n, read: true }));
-    localStorage.setItem('notifikasi', JSON.stringify(updated));
+    localStorage.setItem('notifikasiList', JSON.stringify(updated));
     this.unreadNotificationCount = 0;
+  }
+
+  goToNotifikasi() {
+    this.markNotificationsAsRead();
+    this.router.navigate(['/notifikasi']);
   }
 
   startImageSlider() {

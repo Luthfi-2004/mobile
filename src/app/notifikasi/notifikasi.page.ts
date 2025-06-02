@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
+
 @Component({
   selector: 'app-notifikasi',
   templateUrl: './notifikasi.page.html',
