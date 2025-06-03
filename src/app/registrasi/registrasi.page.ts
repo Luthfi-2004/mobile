@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { AuthService, RegisterData } from '../auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-registrasi',
@@ -10,11 +11,12 @@ import { AuthService, RegisterData } from '../auth.service';
   styleUrls: ['./registrasi.page.scss'],
   standalone: false
 })
-export class RegistrasiPage implements OnInit {
-  registerForm: FormGroup;
+export class RegistrasiPage implements OnInit, OnDestroy {
+  registerForm!: FormGroup;
   showPassword = false;
   showConfirmPassword = false;
   isSubmitting = false;
+  private authSubscription?: Subscription;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -24,15 +26,7 @@ export class RegistrasiPage implements OnInit {
     private loadingController: LoadingController,
     private toastController: ToastController
   ) {
-    this.registerForm = this.formBuilder.group({
-      nama: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(255)]],
-      nomor_hp: ['', [Validators.pattern(/^[0-9\+\-\s]+$/), Validators.maxLength(20)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(255)]],
-      password: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(255)]],
-      password_confirmation: ['', [Validators.required, Validators.maxLength(255)]]
-    }, {
-      validators: this.passwordMatchValidator
-    });
+    this.initializeForm();
   }
 
   ngOnInit() {
@@ -42,20 +36,101 @@ export class RegistrasiPage implements OnInit {
     }
   }
 
+  ngOnDestroy() {
+    // Clean up subscription
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
+  }
+
+  // Initialize the registration form
+  private initializeForm() {
+    this.registerForm = this.formBuilder.group({
+      nama: [
+        '', 
+        [
+          Validators.required, 
+          Validators.minLength(2), 
+          Validators.maxLength(255),
+          this.noSpecialCharsValidator
+        ]
+      ],
+      nomor_hp: [
+        '', 
+        [
+          Validators.pattern(/^(\+62|62|0)[0-9]{8,13}$/),
+          Validators.maxLength(20)
+        ]
+      ],
+      email: [
+        '', 
+        [
+          Validators.required, 
+          Validators.email, 
+          Validators.maxLength(255)
+        ]
+      ],
+      password: [
+        '', 
+        [
+          Validators.required, 
+          Validators.minLength(8), 
+          Validators.maxLength(255),
+          this.strongPasswordValidator
+        ]
+      ],
+      password_confirmation: [
+        '', 
+        [
+          Validators.required, 
+          Validators.maxLength(255)
+        ]
+      ]
+    }, {
+      validators: this.passwordMatchValidator
+    });
+  }
+
+  // Custom validator untuk nama (tidak boleh ada karakter special)
+  private noSpecialCharsValidator(control: AbstractControl): { [key: string]: any } | null {
+    if (!control.value) return null;
+    
+    const pattern = /^[a-zA-Z\s]+$/;
+    if (!pattern.test(control.value)) {
+      return { 'specialChars': true };
+    }
+    return null;
+  }
+
+  // Custom validator untuk password yang kuat
+  private strongPasswordValidator(control: AbstractControl): { [key: string]: any } | null {
+    if (!control.value) return null;
+    
+    const value = control.value;
+    const hasUpperCase = /[A-Z]/.test(value);
+    const hasLowerCase = /[a-z]/.test(value);
+    const hasNumber = /[0-9]/.test(value);
+    
+    if (value.length >= 8 && hasUpperCase && hasLowerCase && hasNumber) {
+      return null;
+    }
+    
+    return { 'weakPassword': true };
+  }
+
   // Validator custom untuk mencocokkan password dan konfirmasi password
-  passwordMatchValidator(form: FormGroup) {
+  private passwordMatchValidator(form: FormGroup): { [key: string]: any } | null {
     const password = form.get('password');
     const confirmPassword = form.get('password_confirmation');
     
     if (password && confirmPassword && password.value !== confirmPassword.value) {
-      confirmPassword.setErrors({ mismatch: true });
+      confirmPassword.setErrors({ ...confirmPassword.errors, mismatch: true });
       return { mismatch: true };
     } else {
       if (confirmPassword?.errors?.['mismatch']) {
-        delete confirmPassword.errors['mismatch'];
-        if (Object.keys(confirmPassword.errors).length === 0) {
-          confirmPassword.setErrors(null);
-        }
+        const { mismatch, ...otherErrors } = confirmPassword.errors;
+        const hasOtherErrors = Object.keys(otherErrors).length > 0;
+        confirmPassword.setErrors(hasOtherErrors ? otherErrors : null);
       }
       return null;
     }
@@ -75,6 +150,46 @@ export class RegistrasiPage implements OnInit {
     return `${inputLength} / ${maxLength}`;
   }
 
+  // Get error message for specific field
+  getErrorMessage(fieldName: string): string {
+    const field = this.registerForm.get(fieldName);
+    if (!field || !field.errors || !field.touched) return '';
+
+    const errors = field.errors;
+    
+    if (errors['required']) return `${this.getFieldLabel(fieldName)} wajib diisi.`;
+    if (errors['email']) return 'Format email tidak valid.';
+    if (errors['minlength']) return `${this.getFieldLabel(fieldName)} minimal ${errors['minlength'].requiredLength} karakter.`;
+    if (errors['maxlength']) return `${this.getFieldLabel(fieldName)} maksimal ${errors['maxlength'].requiredLength} karakter.`;
+    if (errors['pattern']) {
+      if (fieldName === 'nomor_hp') return 'Format nomor HP tidak valid. Contoh: 08123456789 atau +6281234567890';
+      return 'Format tidak valid.';
+    }
+    if (errors['specialChars']) return 'Nama tidak boleh mengandung karakter khusus atau angka.';
+    if (errors['weakPassword']) return 'Password harus mengandung huruf besar, huruf kecil, dan angka.';
+    if (errors['mismatch']) return 'Konfirmasi password tidak cocok.';
+    
+    return 'Input tidak valid.';
+  }
+
+  // Get field label
+  private getFieldLabel(fieldName: string): string {
+    const labels: { [key: string]: string } = {
+      'nama': 'Nama',
+      'nomor_hp': 'Nomor HP',
+      'email': 'Email',
+      'password': 'Password',
+      'password_confirmation': 'Konfirmasi Password'
+    };
+    return labels[fieldName] || fieldName;
+  }
+
+  // Check if field has error
+  hasError(fieldName: string): boolean {
+    const field = this.registerForm.get(fieldName);
+    return !!(field && field.errors && field.touched);
+  }
+
   // Logic saat tombol submit ditekan
   async onRegister() {
     if (this.registerForm.valid && !this.isSubmitting) {
@@ -82,12 +197,12 @@ export class RegistrasiPage implements OnInit {
       
       const loading = await this.loadingController.create({
         message: 'Mendaftarkan akun...',
-        spinner: 'circles'
+        spinner: 'circles',
+        backdropDismiss: false
       });
       await loading.present();
 
-      
-
+      // Prepare registration data
       const registerData: RegisterData = {
         nama: this.registerForm.value.nama.trim(),
         email: this.registerForm.value.email.trim().toLowerCase(),
@@ -96,54 +211,66 @@ export class RegistrasiPage implements OnInit {
         password_confirmation: this.registerForm.value.password_confirmation
       };
 
-      this.authService.register(registerData).subscribe({
+      // Remove empty nomor_hp if not provided
+      if (!registerData.nomor_hp) {
+        delete registerData.nomor_hp;
+      }
+
+      this.authSubscription = this.authService.register(registerData).subscribe({
         next: async (response) => {
           await loading.dismiss();
           this.isSubmitting = false;
           
           // Tampilkan toast sukses
-          await this.showToast(`Selamat datang, ${response.user.nama}! Akun berhasil dibuat.`);
+          await this.showToast(
+            `Selamat datang, ${response.user.nama}! Akun berhasil dibuat.`,
+            'success'
+          );
+          
+          // Reset form
+          this.registerForm.reset();
+          
           // Redirect ke dashboard
-          this.router.navigate(['/tabs/home']);
+          setTimeout(() => {
+            this.router.navigate(['/tabs/home']);
+          }, 1000);
         },
         error: async (error) => {
           await loading.dismiss();
           this.isSubmitting = false;
           
-          let errorMessage = 'Terjadi kesalahan saat mendaftar.';
-          
           console.error('Registration error:', error);
           
-          if (error.status === 422 && error.error?.errors) {
-            // Handle Laravel validation errors
-            const errors = error.error.errors;
-            const errorMessages: string[] = [];
-            
-            Object.keys(errors).forEach(field => {
-              if (Array.isArray(errors[field])) {
-                errorMessages.push(...errors[field]);
-              } else {
-                errorMessages.push(errors[field]);
-              }
-            });
-            
-            errorMessage = errorMessages.join('\n');
-          } else if (error.error?.message) {
-            errorMessage = error.error.message;
-          } else if (error.status === 0) {
-            errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
-          } else if (error.status === 500) {
-            errorMessage = 'Terjadi kesalahan pada server. Silakan coba lagi nanti.';
-          }
-
+          // Use the user-friendly error message from AuthService
+          const errorMessage = error.userMessage || 'Terjadi kesalahan saat mendaftar.';
           await this.showAlert('Registrasi Gagal', errorMessage);
         }
       });
     } else {
       // Tandai semua kontrol agar menampilkan pesan error bila ada yang invalid
       this.markFormGroupTouched(this.registerForm);
-      await this.showAlert('Form Tidak Valid', 'Mohon periksa kembali data yang Anda masukkan.');
+      
+      const firstErrorField = this.getFirstErrorField();
+      if (firstErrorField) {
+        const errorMessage = this.getErrorMessage(firstErrorField);
+        await this.showAlert('Form Tidak Valid', errorMessage);
+      } else {
+        await this.showAlert('Form Tidak Valid', 'Mohon periksa kembali data yang Anda masukkan.');
+      }
     }
+  }
+
+  // Get first field with error
+  private getFirstErrorField(): string | null {
+    const fieldOrder = ['nama', 'email', 'nomor_hp', 'password', 'password_confirmation'];
+    
+    for (const fieldName of fieldOrder) {
+      const field = this.registerForm.get(fieldName);
+      if (field && field.errors) {
+        return fieldName;
+      }
+    }
+    return null;
   }
 
   // Tandai setiap kontrol di form sebagai touched untuk men-trigger validasi
@@ -156,6 +283,7 @@ export class RegistrasiPage implements OnInit {
 
   // Navigasi ke halaman login
   goToLogin() {
+    if (this.isSubmitting) return;
     this.router.navigate(['/login']);
   }
 
@@ -164,7 +292,8 @@ export class RegistrasiPage implements OnInit {
     const alert = await this.alertController.create({
       header,
       message,
-      buttons: ['OK']
+      buttons: ['OK'],
+      backdropDismiss: false
     });
     await alert.present();
   }
@@ -175,8 +304,33 @@ export class RegistrasiPage implements OnInit {
       message,
       duration: 3000,
       color,
-      position: 'top'
+      position: 'top',
+      buttons: [
+        {
+          text: 'OK',
+          role: 'cancel'
+        }
+      ]
     });
     await toast.present();
+  }
+
+  // Format nomor HP while typing
+  onNomorHpInput(event: any) {
+    let value = event.target.value;
+    
+    // Remove all non-numeric characters except +
+    value = value.replace(/[^\d+]/g, '');
+    
+    // Format Indonesian phone number
+    if (value.startsWith('0')) {
+      // Keep as is for local format
+    } else if (value.startsWith('8') && !value.startsWith('+')) {
+      value = '+62' + value;
+    } else if (value.startsWith('62') && !value.startsWith('+')) {
+      value = '+' + value;
+    }
+    
+    this.registerForm.patchValue({ nomor_hp: value });
   }
 }
