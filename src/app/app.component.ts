@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
+import { AuthService } from './auth.service';
 
 @Component({
   selector: 'app-root',
@@ -11,7 +12,8 @@ import { Router } from '@angular/router';
 export class AppComponent {
   constructor(
     private platform: Platform,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {
     this.initializeApp();
   }
@@ -24,18 +26,23 @@ export class AppComponent {
   }
 
   private checkLoginStatus() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    
-    if (isLoggedIn === 'true') {
-      // Jika sudah login, pastikan di halaman home
-      if (this.router.url === '/login') {
-        this.router.navigate(['/home']);
+    // Wait a bit to ensure auth service is initialized
+    setTimeout(() => {
+      const isLoggedIn = this.authService.isLoggedIn();
+      const currentUrl = this.router.url;
+      
+      if (isLoggedIn) {
+        // Jika sudah login dan masih di halaman login/splash, redirect ke home
+        if (currentUrl === '/login' || currentUrl === '/splash' || currentUrl === '/') {
+          this.router.navigate(['/tabs/home']);
+        }
+      } else {
+        // Jika belum login dan bukan di halaman publik, redirect ke splash
+        const publicRoutes = ['/login', '/registrasi', '/splash'];
+        if (!publicRoutes.includes(currentUrl)) {
+          this.router.navigate(['/splash']);
+        }
       }
-    } else {
-      // Jika belum login, arahkan ke halaman login
-      if (this.router.url !== '/login') {
-        this.router.navigate(['/login']);
-      }
-    }
+    }, 100);
   }
 }
