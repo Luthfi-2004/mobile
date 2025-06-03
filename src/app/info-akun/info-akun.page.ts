@@ -106,106 +106,139 @@ export class InfoAkunPage {
     }
   }
 
-  async saveChanges() {
-    if (this.form.invalid) {
-      const alert = await this.alertController.create({
-        header: 'Form Tidak Valid',
-        message: 'Harap periksa kembali data yang Anda masukkan',
-        buttons: ['OK'],
-      });
-      await alert.present();
-      return;
-    }
+async saveChanges() {
+  const usernameChanged = this.form.get('username')?.value !== this.originalValues.username;
+  const phoneChanged = this.form.get('phone')?.value !== this.originalValues.phone;
+  const imageChanged = this.profileImage !== this.originalValues.profileImage;
 
-    const newPassword = this.form.get('newPassword')?.value;
-    const currentPassword = this.form.get('currentPassword')?.value;
+  const newPassword = this.form.get('newPassword')?.value;
+  const confirmPassword = this.form.get('confirmPassword')?.value;
+  const currentPassword = this.form.get('currentPassword')?.value;
 
-    if (newPassword && !currentPassword) {
+  // Jika username atau phone diubah, validasi dulu
+  if ((usernameChanged || phoneChanged) && (this.form.get('username')?.invalid || this.form.get('phone')?.invalid)) {
+    const alert = await this.alertController.create({
+      header: 'Form Tidak Valid',
+      message: 'Harap isi Username dan Nomor Telepon dengan benar.',
+      buttons: ['OK'],
+    });
+    await alert.present();
+    return;
+  }
+
+  // Validasi password jika diisi
+  if (newPassword || confirmPassword) {
+    if (!currentPassword) {
       const alert = await this.alertController.create({
         header: 'Password Saat Ini Diperlukan',
-        message: 'Anda harus memasukkan password saat ini untuk mengubah password',
+        message: 'Masukkan password saat ini untuk mengubah password',
         buttons: ['OK'],
       });
       await alert.present();
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const userIndex = users.findIndex((u: any) => u.email === this.currentUserEmail);
-
-    if (userIndex === -1) {
+    if (newPassword.length < 6) {
       const alert = await this.alertController.create({
-        header: 'Error',
-        message: 'User tidak ditemukan',
+        header: 'Password Terlalu Pendek',
+        message: 'Password baru minimal 6 karakter',
         buttons: ['OK'],
       });
       await alert.present();
       return;
     }
 
-    if (newPassword) {
-      if (users[userIndex].password !== currentPassword) {
-        const alert = await this.alertController.create({
-          header: 'Password Salah',
-          message: 'Password saat ini yang Anda masukkan tidak sesuai',
-          buttons: ['OK'],
-        });
-        await alert.present();
-        return;
-      }
-    }
-
-    const loading = await this.loadingController.create({
-      message: 'Menyimpan perubahan...',
-      spinner: 'crescent',
-    });
-    await loading.present();
-
-    setTimeout(async () => {
-      await loading.dismiss();
-
-      users[userIndex].username = this.form.get('username')?.value;
-      users[userIndex].phone = this.form.get('phone')?.value;
-      users[userIndex].profileImage = this.profileImage;
-
-      if (newPassword) {
-        users[userIndex].password = newPassword;
-      }
-
-      localStorage.setItem('users', JSON.stringify(users));
-
-      localStorage.setItem('userData', JSON.stringify({
-        email: users[userIndex].email,
-        username: users[userIndex].username,
-        phone: users[userIndex].phone,
-        loggedIn: true,
-        profileImage: this.profileImage,
-      }));
-
-      this.profileUpdated.emit({
-        username: users[userIndex].username,
-        profileImage: this.profileImage
-      });
-
-      this.saveOriginalValues();
-      this.currentEditingField = null;
-
-      if (newPassword) {
-        this.form.patchValue({
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
-        });
-      }
-
+    if (newPassword !== confirmPassword) {
       const alert = await this.alertController.create({
-        header: 'Berhasil',
-        message: 'Perubahan berhasil disimpan',
+        header: 'Konfirmasi Password Salah',
+        message: 'Password baru dan konfirmasi tidak cocok',
         buttons: ['OK'],
       });
       await alert.present();
-      await alert.onDidDismiss();
-      this.navCtrl.navigateRoot('/tabs/akun');
-    }, 1500);
+      return;
+    }
   }
+
+  // Cek apakah ada perubahan
+  if (!usernameChanged && !phoneChanged && !imageChanged && !newPassword) {
+    const alert = await this.alertController.create({
+      header: 'Tidak Ada Perubahan',
+      message: 'Tidak ada data yang diubah.',
+      buttons: ['OK'],
+    });
+    await alert.present();
+    return;
+  }
+
+  const users = JSON.parse(localStorage.getItem('users') || '[]');
+  const userIndex = users.findIndex((u: any) => u.email === this.currentUserEmail);
+
+  if (userIndex === -1) {
+    const alert = await this.alertController.create({
+      header: 'Error',
+      message: 'User tidak ditemukan',
+      buttons: ['OK'],
+    });
+    await alert.present();
+    return;
+  }
+
+  if (newPassword && users[userIndex].password !== currentPassword) {
+    const alert = await this.alertController.create({
+      header: 'Password Salah',
+      message: 'Password saat ini yang Anda masukkan tidak sesuai',
+      buttons: ['OK'],
+    });
+    await alert.present();
+    return;
+  }
+
+  const loading = await this.loadingController.create({
+    message: 'Menyimpan perubahan...',
+    spinner: 'crescent',
+  });
+  await loading.present();
+
+  setTimeout(async () => {
+    await loading.dismiss();
+
+    if (usernameChanged) users[userIndex].username = this.form.get('username')?.value;
+    if (phoneChanged) users[userIndex].phone = this.form.get('phone')?.value;
+    if (imageChanged) users[userIndex].profileImage = this.profileImage;
+    if (newPassword) users[userIndex].password = newPassword;
+
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('userData', JSON.stringify({
+      email: users[userIndex].email,
+      username: users[userIndex].username,
+      phone: users[userIndex].phone,
+      loggedIn: true,
+      profileImage: users[userIndex].profileImage,
+    }));
+
+    this.profileUpdated.emit({
+      username: users[userIndex].username,
+      profileImage: users[userIndex].profileImage,
+    });
+
+    this.saveOriginalValues();
+    this.currentEditingField = null;
+
+    this.form.patchValue({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    });
+
+    const alert = await this.alertController.create({
+      header: 'Berhasil',
+      message: 'Perubahan berhasil disimpan',
+      buttons: ['OK'],
+    });
+    await alert.present();
+    await alert.onDidDismiss();
+    this.navCtrl.navigateRoot('/tabs/akun');
+  }, 1500);
+}
+
 }
