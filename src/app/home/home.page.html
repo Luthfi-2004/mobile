@@ -4,14 +4,13 @@
       <img src="assets/img/logo.jpg" class="app-logo" alt="Logo" />
     </ion-title>
     <ion-buttons slot="end">
-<ion-button (click)="goToNotifikasi()" class="notif-btn">
-  <ion-icon name="notifications-outline"></ion-icon>
-  <span *ngIf="unreadNotificationCount > 0" class="notif-badge"></span>
-</ion-button>
+      <ion-button (click)="goToNotifikasi()" class="notif-btn">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span *ngIf="unreadNotificationCount > 0" class="notif-badge"></span>
+      </ion-button>
       <ion-button>
         <ion-icon name="cart-outline"></ion-icon>
       </ion-button>
-    
       <ion-button [routerLink]="'/info-akun'">
         <ion-icon name="person-circle-outline"></ion-icon>
       </ion-button>
@@ -19,149 +18,170 @@
   </ion-toolbar>
 </ion-header>
 
-
 <ion-content [fullscreen]="true" class="ion-padding">
+  
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
-  <!-- AREA -->
-<div class="slider-container">
-  <div
-    class="slider-track"
-    [style.transform]="'translateX(-' + currentImageIndex * 100 + '%)'"
-  >
-    <div class="slide" *ngFor="let item of images; let i = index">
-      <img [src]="item.src" alt="Food Image" class="food-image" />
-      <div class="badge" [class]="'badge-' + item.type">
-        {{ item.text || item.type | uppercase }}
+  <!-- AREA SLIDER -->
+  <div class="slider-container">
+    <div
+      class="slider-track"
+      [style.transform]="'translateX(-' + currentImageIndex * 100 + '%)'"
+    >
+      <div class="slide" *ngFor="let item of images; let i = index">
+        <img [src]="item.src" alt="Food Image" class="food-image" />
+        <div class="badge" [class]="'badge-' + item.type">
+          {{ item.text || item.type | uppercase }}
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Best Seller Section -->
-<ion-segment scrollable value="best-seller">
-  <ion-segment-button value="best-seller">
-    <ion-label>Best Seller</ion-label>
-  </ion-segment-button>
-</ion-segment>
+  <!-- Best Seller Section -->
+  <ion-segment scrollable value="best-seller">
+    <ion-segment-button value="best-seller">
+      <ion-label>Best Seller</ion-label>
+    </ion-segment-button>
+  </ion-segment>
 
-<div class="horizontal-scroll">
-  <div class="scroll-wrapper">
-    <!-- Card 1 -->
-    <ion-card class="horizontal-card">
-      <img src="assets/img/makan.jpg" />
-      <ion-card-header>
-        <ion-card-title>Nasi Goreng Special</ion-card-title>
-        <ion-card-subtitle>Best Seller</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">Porsi 2-3 orang</ion-text>
-        <div class="price-tag">
-          <ion-text class="price">Rp 45.000</ion-text>
-          <ion-badge color="success">TOP</ion-badge>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Card 2 -->
-    <ion-card class="horizontal-card">
-      <img src="assets/img/makan2.jpg" />
-      <ion-card-header>
-        <ion-card-title>Salad Buah Jumbo</ion-card-title>
-        <ion-card-subtitle>Best Seller</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">Porsi 4-5 orang</ion-text>
-        <div class="price-tag">
-          <ion-text class="price">Rp 65.000</ion-text>
-          <ion-badge color="warning">FAV</ion-badge>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Card 3 -->
-    <ion-card class="horizontal-card">
-      <img src="assets/img/makan3.jpg" />
-      <ion-card-header>
-        <ion-card-title>Ayam Bakar Madu</ion-card-title>
-        <ion-card-subtitle>Best Seller</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">1 ekor ayam utuh</ion-text>
-        <div class="price-tag">
-          <ion-text class="price">Rp 75.000</ion-text>
-          <ion-badge color="danger">NEW</ion-badge>
-        </div>
-      </ion-card-content>
-    </ion-card>
+  <!-- Loading Skeleton for Best Seller -->
+  <div *ngIf="isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <ion-card class="horizontal-card" *ngFor="let item of [1,2,3]">
+        <ion-skeleton-text animated style="height: 120px; width: 100%;"></ion-skeleton-text>
+        <ion-card-header>
+          <ion-skeleton-text animated style="width: 80%; height: 20px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 60%; height: 16px;"></ion-skeleton-text>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-skeleton-text animated style="width: 70%; height: 14px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 50%; height: 16px;"></ion-skeleton-text>
+        </ion-card-content>
+      </ion-card>
+    </div>
   </div>
-</div>
 
-<!-- Discount Section -->
-<ion-segment scrollable value="discount">
-  <ion-segment-button value="discount">
-    <ion-label>Discount</ion-label>
-  </ion-segment-button>
-</ion-segment>
+  <!-- Best Seller Cards -->
+  <div *ngIf="!isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <!-- No Data Message -->
+      <div *ngIf="bestSellerMenus.length === 0" class="no-data-message">
+        <ion-text color="medium">
+          <p>Belum ada menu best seller tersedia</p>
+        </ion-text>
+      </div>
 
-<div class="horizontal-scroll">
-  <div class="scroll-wrapper">
-    <!-- Card 1 -->
-    <ion-card class="horizontal-card discount">
-      <img src="assets/img/makan3.jpg" />
-      <ion-card-header>
-        <ion-card-title>Paket Hemat 1</ion-card-title>
-        <ion-card-subtitle>Diskon 20%</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">Nasi Goreng + 2 Minum</ion-text>
-        <div class="price-tag">
-          <ion-text class="original-price">Rp 60.000</ion-text>
-          <ion-text class="discount-price">Rp 48.000</ion-text>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Card 2 -->
-    <ion-card class="horizontal-card discount">
-      <img src="assets/img/makan2.jpg" />
-      <ion-card-header>
-        <ion-card-title>Paket Keluarga</ion-card-title>
-        <ion-card-subtitle>Diskon 15%</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">4 Nasi Goreng + 4 Minum</ion-text>
-        <div class="price-tag">
-          <ion-text class="original-price">Rp 180.000</ion-text>
-          <ion-text class="discount-price">Rp 153.000</ion-text>
-        </div>
-      </ion-card-content>
-    </ion-card>
-
-    <!-- Card 3 -->
-    <ion-card class="horizontal-card discount">
-      <img src="assets/img/makan.jpg" />
-      <ion-card-header>
-        <ion-card-title>Paket Romantis</ion-card-title>
-        <ion-card-subtitle>Diskon 10%</ion-card-subtitle>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-text color="medium">Makan malam untuk 2</ion-text>
-        <div class="price-tag">
-          <ion-text class="original-price">Rp 120.000</ion-text>
-          <ion-text class="discount-price">Rp 108.000</ion-text>
-        </div>
-      </ion-card-content>
-    </ion-card>
+      <!-- Dynamic Best Seller Cards -->
+      <ion-card 
+        class="horizontal-card" 
+        *ngFor="let menu of bestSellerMenus; trackBy: trackByMenuId"
+        (click)="onMenuItemClick(menu)"
+      >
+        <img 
+          [src]="menu.image_url || 'assets/img/default-food.png'" 
+          [alt]="menu.name"
+          onerror="this.src='assets/img/default-food.png'"
+        />
+        <ion-card-header>
+          <ion-card-title>{{ menu.name }}</ion-card-title>
+          <ion-card-subtitle>{{ getCategoryDisplayName(menu.category) }}</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-text color="medium" *ngIf="menu.description">
+            {{ menu.description | slice:0:50 }}{{ menu.description.length > 50 ? '...' : '' }}
+          </ion-text>
+          <div class="price-tag">
+            <ion-text class="price">{{ formatCurrency(menu.discounted_price || menu.price) }}</ion-text>
+            <ion-badge color="success">TOP</ion-badge>
+          </div>
+          <div *ngIf="menu.preparation_time" class="prep-time">
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-text color="medium">{{ menu.preparation_time }} menit</ion-text>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
   </div>
-</div>
- <div class="reservation-button-spacer"></div>
+
+  <!-- Discount Section -->
+  <ion-segment scrollable value="discount">
+    <ion-segment-button value="discount">
+      <ion-label>Discount</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Loading Skeleton for Discount -->
+  <div *ngIf="isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <ion-card class="horizontal-card discount" *ngFor="let item of [1,2,3]">
+        <ion-skeleton-text animated style="height: 120px; width: 100%;"></ion-skeleton-text>
+        <ion-card-header>
+          <ion-skeleton-text animated style="width: 80%; height: 20px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 60%; height: 16px;"></ion-skeleton-text>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-skeleton-text animated style="width: 70%; height: 14px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 50%; height: 16px;"></ion-skeleton-text>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Discount Cards -->
+  <div *ngIf="!isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <!-- No Data Message -->
+      <div *ngIf="discountMenus.length === 0" class="no-data-message">
+        <ion-text color="medium">
+          <p>Belum ada menu discount tersedia</p>
+        </ion-text>
+      </div>
+
+      <!-- Dynamic Discount Cards -->
+      <ion-card 
+        class="horizontal-card discount" 
+        *ngFor="let menu of discountMenus; trackBy: trackByMenuId"
+        (click)="onMenuItemClick(menu)"
+      >
+        <img 
+          [src]="menu.image_url || 'assets/img/default-food.png'" 
+          [alt]="menu.name"
+          onerror="this.src='assets/img/default-food.png'"
+        />
+        <ion-card-header>
+          <ion-card-title>{{ menu.name }}</ion-card-title>
+          <ion-card-subtitle>Diskon {{ menu.discount_percentage }}%</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-text color="medium" *ngIf="menu.description">
+            {{ menu.description | slice:0:50 }}{{ menu.description.length > 50 ? '...' : '' }}
+          </ion-text>
+          <div class="price-tag">
+            <ion-text class="original-price" *ngIf="menu.discount_percentage > 0">
+              {{ formatCurrency(menu.price) }}
+            </ion-text>
+            <ion-text class="discount-price">
+              {{ formatCurrency(menu.discounted_price || menu.price) }}
+            </ion-text>
+          </div>
+          <div *ngIf="menu.preparation_time" class="prep-time">
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-text color="medium">{{ menu.preparation_time }} menit</ion-text>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <div class="reservation-button-spacer"></div>
 </ion-content> 
 
-  <!-- Tombol Reservasi Fixed -->
+<!-- Tombol Reservasi Fixed -->
 <div class="reservation-button-fixed">
   <ion-button expand="block" shape="round" color="light" (click)="goToReservasi()">
     <strong>Reservasi Sekarang</strong>
   </ion-button>
 </div>
-
-
