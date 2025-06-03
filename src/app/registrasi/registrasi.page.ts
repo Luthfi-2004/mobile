@@ -86,6 +86,8 @@ export class RegistrasiPage implements OnInit {
       });
       await loading.present();
 
+      
+
       const registerData: RegisterData = {
         nama: this.registerForm.value.nama.trim(),
         email: this.registerForm.value.email.trim().toLowerCase(),
