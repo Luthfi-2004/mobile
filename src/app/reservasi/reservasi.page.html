@@ -4,49 +4,86 @@
       <ion-back-button defaultHref="/tabs/home"></ion-back-button>
     </ion-buttons>
     <ion-title>Reservasi</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="refreshTables()" [disabled]="isLoading">
+        <ion-icon name="refresh" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding custom-bg">
-  <div *ngFor="let section of sections" class="section">
-    <h2 class="section-title">{{ section | titlecase }}</h2>
-    <p class="notes">{{ getNotes(section) }}</p>
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Memuat data meja...</p>
+  </div>
 
-    <div class="scroll-container">
-      <div class="tables">
-        <div
-          *ngFor="let table of tables[section]"
-          class="table"
-          [ngClass]="{
-            'full': table.full,
-            'selected': table.selected
-          }"
-          (click)="selectTable(table)">
-          <div class="table-content">
-            <div class="table-id">{{ table.id }}</div>
-            <div class="table-seats">({{ table.seats }} kursi)</div>
+  <!-- Error State -->
+  <div *ngIf="!isLoading && sections.length === 0" class="error-container">
+    <ion-icon name="alert-circle" color="warning"></ion-icon>
+    <p>Tidak ada data meja tersedia</p>
+    <ion-button fill="outline" (click)="refreshTables()">
+      <ion-icon name="refresh" slot="start"></ion-icon>
+      Coba Lagi
+    </ion-button>
+  </div>
+
+  <!-- Table Sections -->
+  <div *ngIf="!isLoading && sections.length > 0">
+    <div *ngFor="let section of sections" class="section">
+      <h2 class="section-title">{{ section | titlecase }}</h2>
+      <p class="notes">{{ getNotes(section) }}</p>
+
+      <div class="scroll-container">
+        <div class="tables">
+          <div
+            *ngFor="let table of tables[section]"
+            class="table"
+            [ngClass]="{
+              'full': table.full,
+              'selected': table.selected,
+              'available': !table.full
+            }"
+            (click)="selectTable(table)">
+            <div class="table-content">
+              <div class="table-id">{{ table.id }}</div>
+              <div class="table-seats">({{ table.seats }} kursi)</div>
+              <div class="table-status" *ngIf="table.status !== 'tersedia'">
+                {{ getStatusText(table.status) }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="box full"></div> Full
-    </div>
-    <div class="legend-item">
-      <div class="box selected"></div> Dipilih
-    </div>
-    <div class="legend-item">
-      <div class="box available"></div> Tersedia
-    </div>
-  </div>
 
-  <div class="total-seats">
-    Total kursi dipilih: {{ getTotalSelectedSeats() }}
-  </div>
+    <!-- Legend -->
+    <div class="legend">
+      <div class="legend-item">
+        <div class="box full"></div> Tidak Tersedia
+      </div>
+      <div class="legend-item">
+        <div class="box selected"></div> Dipilih
+      </div>
+      <div class="legend-item">
+        <div class="box available"></div> Tersedia
+      </div>
+    </div>
 
-  <ion-button expand="block" class="confirm-btn" (click)="confirm()" [disabled]="getSelectedTables().length === 0">
-    Konfirmasi
-  </ion-button>
+    <!-- Total Selected -->
+    <div class="total-seats" *ngIf="getTotalSelectedSeats() > 0">
+      Total kursi dipilih: {{ getTotalSelectedSeats() }}
+    </div>
+
+    <!-- Confirm Button -->
+    <ion-button 
+      expand="block" 
+      class="confirm-btn" 
+      (click)="confirm()" 
+      [disabled]="getSelectedTables().length === 0 || isLoading">
+      <ion-icon name="checkmark" slot="start"></ion-icon>
+      Konfirmasi Reservasi
+    </ion-button>
+  </div>
 </ion-content>
