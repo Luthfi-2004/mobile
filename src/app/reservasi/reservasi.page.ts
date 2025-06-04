@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
-import { NavController } from '@ionic/angular';
+import { Component, OnInit } from '@angular/core';
+import { NavController, LoadingController, AlertController } from '@ionic/angular';
+import { MejaService, Table } from '../services/meja.service';
 
-type Table = { id: string; full: boolean; seats: number; selected?: boolean };
 type Section = 'indoor' | 'outdoor' | 'vvip';
 
 @Component({
@@ -10,47 +10,76 @@ type Section = 'indoor' | 'outdoor' | 'vvip';
   styleUrls: ['./reservasi.page.scss'],
   standalone: false,
 })
-export class ReservasiPage {
-  constructor(private navCtrl: NavController) {}
+export class ReservasiPage implements OnInit {
+  sections: Section[] = [];
+  tables: Record<string, Table[]> = {};
+  isLoading = false;
 
-  sections: Section[] = ['indoor', 'outdoor', 'vvip'];
+  constructor(
+    private navCtrl: NavController,
+    private mejaService: MejaService,
+    private loadingCtrl: LoadingController,
+    private alertCtrl: AlertController
+  ) {}
 
-  tables: Record<Section, Table[]> = {
-    indoor: [
-      { id: 'A01', full: false, seats: 4 },
-      { id: 'A02', full: false, seats: 2 },
-      { id: 'A03', full: false, seats: 4 },
-      { id: 'A04', full: true, seats: 2 },
-      { id: 'A05', full: false, seats: 4 },
-      { id: 'A06', full: false, seats: 2 },
-      { id: 'A07', full: false, seats: 4 },
-      { id: 'A08', full: true, seats: 2 }
-    ],
-    outdoor: [
-      { id: 'B01', full: false, seats: 4 },
-      { id: 'B02', full: true, seats: 2 },
-      { id: 'B03', full: false, seats: 4 },
-      { id: 'B04', full: false, seats: 2 },
-      { id: 'B05', full: false, seats: 4 },
-      { id: 'B06', full: true, seats: 2 },
-      { id: 'B07', full: false, seats: 4 },
-      { id: 'B08', full: false, seats: 2 }
-    ],
-    vvip: [
-      { id: 'VVIP01', full: false, seats: 10 },
-      { id: 'VVIP02', full: false, seats: 10 }
-    ]
-  };
+  ngOnInit() {
+    this.loadTables();
+  }
 
-  getNotes(section: Section): string {
-    switch (section) {
+  async loadTables() {
+    const loading = await this.loadingCtrl.create({
+      message: 'Loading tables...'
+    });
+    await loading.present();
+
+    try {
+      this.mejaService.getTables().subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.tables = response.data;
+            this.sections = Object.keys(response.data) as Section[];
+          } else {
+            this.showError('Failed to load tables');
+          }
+          loading.dismiss();
+        },
+        error: (error) => {
+          console.error('Error loading tables:', error);
+          this.showError('Failed to load tables');
+          loading.dismiss();
+        }
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      this.showError('Failed to load tables');
+      loading.dismiss();
+    }
+  }
+
+  async showError(message: string) {
+    const alert = await this.alertCtrl.create({
+      header: 'Error',
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
+
+  getNotes(section: string): string {
+    // Dinamis berdasarkan kapasitas meja yang ada
+    const tablesInSection = this.tables[section] || [];
+    if (tablesInSection.length === 0) return '';
+    
+    const capacities = [...new Set(tablesInSection.map(t => t.seats))].sort();
+    
+    switch (section.toLowerCase()) {
       case 'indoor':
       case 'outdoor':
-        return '1 Meja + 4/2 Kursi';
+        return `1 Meja + ${capacities.join('/')} Kursi`;
       case 'vvip':
-        return '1 Meja + 10 Kursi';
+        return `1 Meja + ${capacities.join('/')} Kursi`;
       default:
-        return '';
+        return `1 Meja + ${capacities.join('/')} Kursi`;
     }
   }
 
@@ -61,8 +90,9 @@ export class ReservasiPage {
 
   getSelectedTables(): Table[] {
     let selected: Table[] = [];
-    for (const sec of this.sections) {
-      selected = selected.concat(this.tables[sec].filter(t => t.selected));
+    for (const section of this.sections) {
+      const sectionTables = this.tables[section] || [];
+      selected = selected.concat(sectionTables.filter(t => t.selected));
     }
     return selected;
   }
@@ -74,25 +104,31 @@ export class ReservasiPage {
   getSelectedSections(): string[] {
     const selectedSections = new Set<string>();
     this.getSelectedTables().forEach(table => {
-      if (table.id.startsWith('A')) {
-        selectedSections.add('INDOOR');
-      } else if (table.id.startsWith('B')) {
-        selectedSections.add('OUTDOOR');
-      } else if (table.id.includes('VVIP')) {
-        selectedSections.add('VVIP');
+      // Find which section this table belongs to
+      for (const section of this.sections) {
+        const sectionTables = this.tables[section] || [];
+        if (sectionTables.some(t => t.id === table.id)) {
+          selectedSections.add(section.toUpperCase());
+          break;
+        }
       }
     });
     return Array.from(selectedSections);
   }
 
-  confirm() {
+  async confirm() {
     const selectedTables = this.getSelectedTables();
     if (selectedTables.length === 0) {
-      alert('Silakan pilih minimal 1 meja terlebih dahulu!');
+      const alert = await this.alertCtrl.create({
+        header: 'Peringatan',
+        message: 'Silakan pilih minimal 1 meja terlebih dahulu!',
+        buttons: ['OK']
+      });
+      await alert.present();
       return;
     }
 
-    const idMeja = selectedTables.map(t => t.id).join(','); // Gabung jika pilih lebih dari 1 meja
+    const idMeja = selectedTables.map(t => t.id).join(',');
     const tempat = this.getSelectedSections().join(',');
     const jumlahKursi = this.getTotalSelectedSeats();
 
@@ -103,5 +139,18 @@ export class ReservasiPage {
         jumlahKursi
       }
     });
+  }
+
+  getStatusText(status: string): string {
+    switch (status) {
+      case 'terisi': return 'Terisi';
+      case 'dipesan': return 'Dipesan';
+      case 'nonaktif': return 'Nonaktif';
+      default: return 'Tersedia';
+    }
+  }
+
+  async refreshTables() {
+    await this.loadTables();
   }
 }
