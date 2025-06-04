@@ -16,7 +16,7 @@ export class ReservasiJadwalPage implements OnInit {
   waktu: string = '';
   jumlahTamu: number = 0;
   tempat: string = '';
-  idMeja: string = ''; 
+  idMeja: string = '';  // misal "4,8,9"
   catatan: string = '';
 
   originalWaktuList = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
@@ -59,7 +59,6 @@ export class ReservasiJadwalPage implements OnInit {
         this.filteredTempatList = this.tempatList.filter(t =>
           selectedPlaces.includes(t)
         );
-
         if (this.filteredTempatList.length > 0 && !this.tempat) {
           this.tempat = this.filteredTempatList[0];
         }
@@ -67,9 +66,12 @@ export class ReservasiJadwalPage implements OnInit {
         this.filteredTempatList = [...this.tempatList];
       }
 
+      // Ambil idMeja (string "4,8,9")
       if (params['idMeja']) {
         this.idMeja = params['idMeja'];
       }
+
+      console.log('Debug ngOnInit: idMeja =', this.idMeja);
     });
   }
 
@@ -84,15 +86,10 @@ export class ReservasiJadwalPage implements OnInit {
         const [hour, minute] = waktu.split(':').map(Number);
         const waktuDate = new Date();
         waktuDate.setHours(hour, minute, 0, 0);
-
-        return {
-          label: waktu,
-          disabled: now > waktuDate
-        };
+        return { label: waktu, disabled: now > waktuDate };
       });
-
-      const selectedWaktuObj = this.waktuList.find(w => w.label === this.waktu);
-      if (!selectedWaktuObj || selectedWaktuObj.disabled) {
+      const sel = this.waktuList.find(w => w.label === this.waktu);
+      if (!sel || sel.disabled) {
         this.waktu = '';
       }
     } else {
@@ -110,7 +107,6 @@ export class ReservasiJadwalPage implements OnInit {
       message: message,
       buttons: ['OK']
     });
-
     await alert.present();
   }
 
@@ -134,45 +130,32 @@ export class ReservasiJadwalPage implements OnInit {
   }
 
   private formatWaktuKedatangan(): string {
-    // Pastikan format sesuai dengan yang diharapkan Laravel: YYYY-MM-DD HH:mm:ss
     if (!this.tanggal || !this.waktu) {
       throw new Error('Tanggal dan waktu harus diisi');
     }
-
-    // Parse tanggal dari ISO format (YYYY-MM-DD)
-    const dateOnly = this.tanggal.split('T')[0]; // Ambil bagian tanggal saja jika ada 'T'
-    
-    // Parse waktu dan pastikan format HH:mm
+    const dateOnly = this.tanggal.split('T')[0];
     const [hour, minute] = this.waktu.split(':');
     const formattedHour = hour.padStart(2, '0');
     const formattedMinute = minute.padStart(2, '0');
-    
-    const result = `${dateOnly} ${formattedHour}:${formattedMinute}:00`;
-    
-    console.log('Formatted waktu_kedatangan:', result);
-    return result;
+    return `${dateOnly} ${formattedHour}:${formattedMinute}:00`;
   }
 
   private validateDateTime(): { isValid: boolean; message?: string } {
     if (!this.tanggal || !this.waktu) {
       return { isValid: false, message: 'Tanggal dan waktu harus diisi' };
     }
-
     try {
-      const waktuKedatangan = new Date(this.formatWaktuKedatangan());
+      const wk = new Date(this.formatWaktuKedatangan());
       const now = new Date();
-      const minTime = new Date(now.getTime() + 15 * 60 * 1000); // 15 menit dari sekarang
-
-      if (isNaN(waktuKedatangan.getTime())) {
+      const minTime = new Date(now.getTime() + 15 * 60 * 1000);
+      if (isNaN(wk.getTime())) {
         return { isValid: false, message: 'Format tanggal/waktu tidak valid' };
       }
-
-      if (waktuKedatangan < minTime) {
+      if (wk < minTime) {
         return { isValid: false, message: 'Waktu reservasi minimal 15 menit dari sekarang' };
       }
-
       return { isValid: true };
-    } catch (error) {
+    } catch {
       return { isValid: false, message: 'Format tanggal/waktu tidak valid' };
     }
   }
@@ -182,14 +165,12 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
 
-    // Validasi form
     if (!this.tanggal || !this.tempat) {
       await this.presentAlert('Harap lengkapi semua data reservasi!');
       return;
     }
 
     const adaWaktuAktif = this.waktuList.some(w => !w.disabled);
-
     if (!adaWaktuAktif) {
       await this.showTokoTutupAlert();
       return;
@@ -200,26 +181,20 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
 
-    // Validasi datetime
     const validation = this.validateDateTime();
     if (!validation.isValid) {
       await this.presentAlert(validation.message || 'Format tanggal/waktu tidak valid');
       return;
     }
 
-    // Validasi untuk hari ini
-    const selectedDate = new Date(this.tanggal.split('T')[0]);
+    const selDate = new Date(this.tanggal.split('T')[0]);
     const now = new Date();
-
-    if (selectedDate.toDateString() === now.toDateString()) {
-      const [hourStr, minuteStr] = this.waktu.split(':');
-      const reservasiHour = Number(hourStr);
-      const reservasiMinute = Number(minuteStr);
-
-      const reservasiDate = new Date();
-      reservasiDate.setHours(reservasiHour, reservasiMinute, 0, 0);
-
-      if (now > reservasiDate) {
+    if (selDate.toDateString() === now.toDateString()) {
+      const [hStr, mStr] = this.waktu.split(':');
+      const rh = Number(hStr), rm = Number(mStr);
+      const rd = new Date();
+      rd.setHours(rh, rm, 0, 0);
+      if (now > rd) {
         await this.showTokoTutupAlert();
         return;
       }
@@ -233,20 +208,31 @@ export class ReservasiJadwalPage implements OnInit {
       message: 'Membuat reservasi...',
       spinner: 'crescent'
     });
-
     await loading.present();
     this.isSubmitting = true;
 
     try {
       const waktuKedatangan = this.formatWaktuKedatangan();
-      
+
+      // Parse idMeja menjadi array number
+      let mejaIdArray: number[] = [];
+      if (this.idMeja) {
+        mejaIdArray = this.idMeja
+          .split(',')
+          .map(s => parseInt(s.trim(), 10))
+          .filter(n => !isNaN(n));
+      }
+
+      console.log('Debug submitReservation: mejaIdArray =', mejaIdArray);
+
       const reservationData: ReservationData = {
         waktu_kedatangan: waktuKedatangan,
         jumlah_tamu: this.jumlahTamu,
-        catatan: this.catatan || undefined
+        catatan: this.catatan || undefined,
+        id_meja: mejaIdArray
       };
 
-      console.log('Sending reservation data:', reservationData);
+      console.log('Debug submitReservation: reservationData =', reservationData);
 
       const response = await this.reservationService.createReservation(reservationData).toPromise();
 
@@ -255,8 +241,6 @@ export class ReservasiJadwalPage implements OnInit {
 
       if (response && response.reservasi) {
         await this.presentToast('Reservasi berhasil dibuat!', 'success');
-        
-        // Navigate ke halaman menu dengan data reservasi
         this.router.navigate(['/menu'], {
           queryParams: {
             reservasiId: response.reservasi.id,
@@ -265,35 +249,31 @@ export class ReservasiJadwalPage implements OnInit {
             waktu: this.waktu,
             jumlahTamu: this.jumlahTamu,
             tempat: this.tempat,
-            idMeja: response.reservasi.meja_id
+            // Kirim kembali string daftar meja agar di next page bisa di‐parse ulang bila perlu
+            idMeja: response.reservasi.meja.map(m => m.id).join(',')
           }
         });
       }
-
     } catch (error: any) {
       await loading.dismiss();
       this.isSubmitting = false;
-
       console.error('Reservation error:', error);
 
       let errorMessage = 'Terjadi kesalahan saat membuat reservasi.';
-      
       if (error.error) {
         if (error.error.message) {
           errorMessage = error.error.message;
         } else if (error.error.errors) {
-          // Handle Laravel validation errors
-          const errors = error.error.errors;
-          const firstErrorKey = Object.keys(errors)[0];
-          const firstError = errors[firstErrorKey];
-          if (Array.isArray(firstError) && firstError.length > 0) {
-            errorMessage = firstError[0];
+          const errs = error.error.errors;
+          const firstKey = Object.keys(errs)[0];
+          const firstErr = errs[firstKey];
+          if (Array.isArray(firstErr) && firstErr.length > 0) {
+            errorMessage = firstErr[0];
           }
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
-
       await this.presentAlert(errorMessage);
     }
   }

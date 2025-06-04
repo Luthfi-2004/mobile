@@ -2,15 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-//
 
 export interface Table {
-  id: string;
+  id: string;            // nomor_meja untuk tampilan
   full: boolean;
   seats: number;
   selected?: boolean;
   status: string;
-  database_id: number;
+  database_id: number;   // primary key pada tabel `meja`
 }
 
 export interface ApiResponse<T> {
