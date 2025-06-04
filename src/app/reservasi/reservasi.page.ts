@@ -32,28 +32,22 @@ export class ReservasiPage implements OnInit {
     });
     await loading.present();
 
-    try {
-      this.mejaService.getTables().subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.tables = response.data;
-            this.sections = Object.keys(response.data) as Section[];
-          } else {
-            this.showError('Failed to load tables');
-          }
-          loading.dismiss();
-        },
-        error: (error) => {
-          console.error('Error loading tables:', error);
+    this.mejaService.getTables().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.tables = response.data;
+          this.sections = Object.keys(response.data) as Section[];
+        } else {
           this.showError('Failed to load tables');
-          loading.dismiss();
         }
-      });
-    } catch (error) {
-      console.error('Error:', error);
-      this.showError('Failed to load tables');
-      loading.dismiss();
-    }
+        loading.dismiss();
+      },
+      error: (error) => {
+        console.error('Error loading tables:', error);
+        this.showError('Failed to load tables');
+        loading.dismiss();
+      }
+    });
   }
 
   async showError(message: string) {
@@ -66,21 +60,10 @@ export class ReservasiPage implements OnInit {
   }
 
   getNotes(section: string): string {
-    // Dinamis berdasarkan kapasitas meja yang ada
     const tablesInSection = this.tables[section] || [];
     if (tablesInSection.length === 0) return '';
-    
     const capacities = [...new Set(tablesInSection.map(t => t.seats))].sort();
-    
-    switch (section.toLowerCase()) {
-      case 'indoor':
-      case 'outdoor':
-        return `1 Meja + ${capacities.join('/')} Kursi`;
-      case 'vvip':
-        return `1 Meja + ${capacities.join('/')} Kursi`;
-      default:
-        return `1 Meja + ${capacities.join('/')} Kursi`;
-    }
+    return `1 Meja + ${capacities.join('/')} Kursi`;
   }
 
   selectTable(table: Table) {
@@ -104,7 +87,6 @@ export class ReservasiPage implements OnInit {
   getSelectedSections(): string[] {
     const selectedSections = new Set<string>();
     this.getSelectedTables().forEach(table => {
-      // Find which section this table belongs to
       for (const section of this.sections) {
         const sectionTables = this.tables[section] || [];
         if (sectionTables.some(t => t.id === table.id)) {
@@ -128,8 +110,10 @@ export class ReservasiPage implements OnInit {
       return;
     }
 
-    const idMeja = selectedTables.map(t => t.id).join(',');
-    const tempat = this.getSelectedSections().join(',');
+    // Kirim array database_id (primary key) dari Table
+    const idMejaArr: string[] = selectedTables.map(t => t.database_id.toString());
+    const idMeja    = idMejaArr.join(',');    // misal "4,8,9"
+    const tempat    = this.getSelectedSections().join(',');
     const jumlahKursi = this.getTotalSelectedSeats();
 
     this.navCtrl.navigateForward('/reservasi-jadwal', {

@@ -7,6 +7,7 @@ export interface ReservationData {
   waktu_kedatangan: string;
   jumlah_tamu: number;
   catatan?: string;
+  id_meja: number[];   // Array of meja IDs (primary key)
 }
 
 export interface ReservationResponse {
@@ -14,7 +15,15 @@ export interface ReservationResponse {
   reservasi: {
     id: number;
     user_id: number;
-    meja_id: number;
+    // sekarang relasi meja banyak → server bisa kembalikan array `meja`
+    meja: Array<{
+      id: number;
+      nomor_meja: string;
+      area: string;
+      kapasitas: number;
+      status: string;
+      // pivot: { reservasi_id: number; meja_id: number; created_at: string; updated_at: string }
+    }>;
     nama_pelanggan: string;
     waktu_kedatangan: string;
     jumlah_tamu: number;
