@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Notifikasi</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding notif-content">
+  <!-- Daftar notifikasi -->
+  <div *ngFor="let notif of notifikasi" class="notif-card">
+    <ion-icon class="notif-icon" name="notifications-outline"></ion-icon>
+    <div class="notif-text">
+      <h4>{{ notif.judul }}</h4>
+      <p>{{ notif.deskripsi }}</p>
+      <p><strong>{{ notif.tanggal }}</strong></p>
+      <ion-badge [color]="getBadgeColor(notif.status)">{{ notif.status }}</ion-badge>
+
+      <!-- Info total pembayaran jika ada -->
+      <div *ngIf="notif.totalPembayaran">
+        <p>Total Pembayaran: Rp{{ notif.totalPembayaran | number }}</p>
+      </div>
+    </div>
+  </div>
+</ion-content>

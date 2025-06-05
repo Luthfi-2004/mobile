@@ -1,0 +1,99 @@
+<ion-header translucent>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/menu"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center">Ringkasan Pemesanan dan Pembayaran</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="cart-content">
+  <div class="cart-wrapper">
+    <h3>{{ cart.length }} Item</h3>
+
+    <div *ngFor="let item of cart; let i = index" class="cart-item">
+      <img [src]="item.image_url || 'assets/img/default-food.png'" alt="Menu Image" />
+      <div class="item-detail">
+        <h4>{{ item.nama }}</h4>
+        <p>Rp{{ item.harga | number }}</p>
+
+        <div class="qty-control">
+          <ion-button size="small" fill="clear" (click)="decreaseQty(i)">-</ion-button>
+          <span>{{ item.quantity }}</span>
+          <ion-button size="small" fill="clear" (click)="increaseQty(i)">+</ion-button>
+        </div>
+
+ <div class="edit-delete">
+  <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
+    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+  </ion-button>
+</div>
+
+<!-- Input catatan -->
+<ion-item lines="none" class="note-input">
+  <ion-label position="stacked">Catatan</ion-label>
+  <ion-textarea
+    [(ngModel)]="item.note"
+    autoGrow="true"
+    placeholder="Contoh: Jangan terlalu pedas, saus dipisah, dll.">
+  </ion-textarea>
+</ion-item>
+      </div>
+    </div>
+
+    <ion-list lines="none" class="payment-summary">
+      <ion-item>
+        <ion-label>Subtotal Item:</ion-label>
+        <ion-text>Rp{{ subtotal | number }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label>Biaya Layanan:</ion-label>
+        <ion-text>Rp{{ serviceFee | number }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label><strong>Total Pembayaran:</strong></ion-label>
+        <ion-text><strong>Rp{{ total | number }}</strong></ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label color="success"><strong>Total Dibayar Sekarang (50%):</strong></ion-label>
+        <ion-text color="success"><strong>Rp{{ (total * 0.5) | number }}</strong></ion-text>
+      </ion-item>
+    </ion-list>
+
+    <div class="payment-method">
+      <h4>Pilih Metode Pembayaran</h4>
+      <ion-list lines="none">
+        <ion-item button (click)="toggleQrisOptions()" [class.selected]="paymentMethodGroup === 'qris'">
+          <ion-icon name="qr-code-outline" slot="start"></ion-icon>
+          <ion-label>
+            {{ paymentMethodGroup === 'qris' && paymentMethod ? (paymentMethod | titlecase) : 'QRIS' }}
+          </ion-label>
+          <ion-icon [name]="showQrisOptions ? 'chevron-up-outline' : 'chevron-down-outline'" slot="end"></ion-icon>
+        </ion-item>
+
+        <div *ngIf="showQrisOptions" class="qris-sub-options">
+          <ion-item button (click)="selectPayment('shopeepay')" [class.sub-selected]="paymentMethod === 'shopeepay'">
+            <ion-label>ShopeePay</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('gopay')" [class.sub-selected]="paymentMethod === 'gopay'">
+            <ion-label>GoPay</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('dana')" [class.sub-selected]="paymentMethod === 'dana'">
+            <ion-label>DANA</ion-label>
+          </ion-item>
+          <ion-item button (click)="selectPayment('ovo')" [class.sub-selected]="paymentMethod === 'ovo'">
+            <ion-label>OVO</ion-label>
+          </ion-item>
+        </div>
+      </ion-list>
+    </div>
+
+    <p class="info-note">
+      <ion-icon name="information-circle-outline" color="medium"></ion-icon>
+      Pembayaran ini hanya sebesar <strong>50%</strong> dari total. Pelunasan dilakukan saat hari reservasi. 
+      Jika Anda tidak hadir, uang yang dibayarkan tidak dapat dikembalikan.
+    </p>
+
+    <ion-button expand="block" class="checkout-btn" (click)="checkout()">Bayar 50% Sekarang</ion-button>
+  </div>
+</ion-content>

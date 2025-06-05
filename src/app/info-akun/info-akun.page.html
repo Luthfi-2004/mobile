@@ -1,0 +1,103 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/akun" color="light"></ion-back-button>
+    </ion-buttons>
+    <ion-title class="ion-text-center" color="light">Info Akun</ion-title>
+<ion-buttons slot="end">
+  <ion-button [disabled]="!isChanged()" (click)="saveChanges()">
+    <ion-icon slot="icon-only" name="checkmark-outline"></ion-icon>
+  </ion-button>
+</ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" [fullscreen]="true">
+  <div class="profile-container">
+    <form [formGroup]="form">
+      <!-- Foto Profil -->
+      <div class="avatar-section">
+        <div class="avatar-wrapper">
+          <ion-avatar (click)="changeProfilePicture()">
+            <img [src]="profileImage" alt="Foto Profil" />
+            <div class="edit-overlay">
+              <ion-icon name="camera-outline"></ion-icon>
+            </div>
+          </ion-avatar>
+        </div>
+        <input type="file" accept="image/*" (change)="handleImageChange($event)" #fileInput style="display: none"/>
+        <ion-text color="medium" class="edit-hint">Klik foto untuk mengubah</ion-text>
+      </div>
+
+      <!-- Informasi Akun -->
+      <ion-card class="account-card">
+        <ion-card-header>
+          <ion-card-title>Informasi Akun</ion-card-title>
+        </ion-card-header>
+        
+        <ion-card-content>
+          <!-- Username -->
+          <ion-item lines="none" class="form-item">
+           <ion-icon slot="start" name="person-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Username</ion-label>
+              <ion-input formControlName="username" type="text" [readonly]="!isEditing('username')"></ion-input>
+            <ion-button fill="clear" slot="end" (click)="toggleEdit('username')" color="medium">
+              <ion-icon [name]="isEditing('username') ? 'close-outline' : 'create-outline'"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <!-- Email -->
+          <ion-item lines="none" class="form-item">
+            <ion-icon slot="start" name="mail-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input formControlName="email" type="email" [readonly]="!isEditing('email')"></ion-input>
+            <ion-button *ngIf="!isEditing('email')" fill="clear" slot="end" (click)="toggleEdit('email')" color="medium">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+
+          <!-- Nomor Handphone -->
+          <ion-item lines="none" class="form-item">
+            <ion-icon slot="start" name="call-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Nomor Handphone</ion-label>
+            <ion-input formControlName="phone" type="tel" [readonly]="!isEditing('phone')"></ion-input>
+            <ion-button *ngIf="!isEditing('phone')" fill="clear" slot="end" (click)="toggleEdit('phone')" color="medium">
+              <ion-icon name="create-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+        </ion-card-content>
+      </ion-card>
+
+      <!-- Ganti Password -->
+      <ion-card class="password-card">
+        <ion-card-header>
+          <ion-card-title>Ganti Kata Sandi</ion-card-title>
+        </ion-card-header>
+        
+        <ion-card-content>
+          <ion-item lines="none" class="form-item">
+            <ion-icon slot="start" name="lock-closed-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Kata Sandi Saat Ini</ion-label>
+            <ion-input formControlName="currentPassword" type="password" [clearOnEdit]="true"></ion-input>
+          </ion-item>
+
+          <ion-item lines="none" class="form-item">
+            <ion-icon slot="start" name="key-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Kata Sandi Baru</ion-label>
+            <ion-input formControlName="newPassword" type="password" [clearOnEdit]="true"></ion-input>
+          </ion-item>
+
+          <ion-item lines="none" class="form-item">
+            <ion-icon slot="start" name="checkmark-circle-outline" color="primary"></ion-icon>
+            <ion-label position="stacked">Konfirmasi Kata Sandi</ion-label>
+            <ion-input formControlName="confirmPassword" type="password" [clearOnEdit]="true"></ion-input>
+          </ion-item>
+
+          <ion-note color="danger" *ngIf="form.hasError('mismatch')">
+            Kata sandi baru dan konfirmasi tidak cocok
+          </ion-note>
+        </ion-card-content>
+      </ion-card>
+    </form>
+  </div>
+</ion-content>

@@ -1,0 +1,51 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-title>Akun</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="profile-section" *ngIf="currentUser; else notLoggedIn">
+    <ion-avatar class="profile-avatar">
+      <img [src]="profileImage" alt="Profile Picture" />
+    </ion-avatar>
+    <h2 class="profile-name">{{ currentUser.username }}</h2>
+    <p class="profile-email">{{ currentUser.email }}</p>
+  </div>
+
+  <ng-template #notLoggedIn>
+    <div class="profile-section">
+      <ion-avatar class="profile-avatar">
+        <img [src]="profileImage" alt="Profile Picture" />
+      </ion-avatar>
+      <h2 class="profile-name">Guest</h2>
+      <p class="profile-email">Silakan login untuk melihat info akun</p>
+    </div>
+  </ng-template>
+
+  <ion-list lines="full" class="menu-list">
+    <!-- Info Akun -->
+    <ion-item button detail="true" (click)="goToInfoAkun()">
+      <ion-icon slot="start" name="person-circle-outline"></ion-icon>
+      <ion-label>Info Akun</ion-label>
+    </ion-item>
+
+    <!-- Bantuan -->
+    <ion-item button detail="true" (click)="goToBantuan()">
+      <ion-icon slot="start" name="help-circle"></ion-icon>
+      <ion-label>Bantuan</ion-label>
+    </ion-item>
+
+    <!-- Tentang Kami -->
+    <ion-item button detail="true" (click)="goToTentangKami()">
+      <ion-icon slot="start" name="information-circle-outline"></ion-icon>
+      <ion-label>Tentang Kami</ion-label>
+    </ion-item>
+
+    <!-- Keluar -->
+    <ion-item button detail="true" (click)="confirmLogout()" color="danger">
+      <ion-icon slot="start" name="log-out-outline"></ion-icon>
+      <ion-label>Keluar</ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

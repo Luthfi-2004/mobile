@@ -1,0 +1,66 @@
+ion-content {
+  --background: #90caf9;
+  text-align: center;
+}
+
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 0;
+  margin-bottom: 20px;
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 15px;
+}
+
+.profile-name {
+  margin: 0;
+  font-weight: 600;
+  color: #333;
+}
+
+.menu-list {
+  background: transparent;
+  ion-item {
+    --background: #fff;
+    --border-radius: 8px;
+    margin-bottom: 10px;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    
+    ion-icon {
+      color: var(--ion-color-primary);
+      font-size: 1.2rem;
+    }
+  }
+}
+
+.logout-item {
+  --background: rgba(var(--ion-color-danger-rgb), 0.1);
+  --color: var(--ion-color-danger);
+  
+  ion-icon {
+    color: var(--ion-color-danger);
+  }
+}
+
+/* Style untuk tab yang aktif */
+ion-tab-button[tab="akun"][selected] {
+  --color-selected: #000000; /* Warna hitam */
+  
+  ion-icon, ion-label {
+    color: #000000 !important;
+  }
+}
+
+.danger {
+  color: var(--ion-color-danger);
+}
+
+.secondary {
+  color: var(--ion-color-secondary);
+}

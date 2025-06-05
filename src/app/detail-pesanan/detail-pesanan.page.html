@@ -1,0 +1,46 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/riwayat"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Detail Pesanan</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <ion-card *ngIf="pesanan">
+    <ion-card-header>
+      <ion-card-title>Pesanan #{{ pesanan.id }}</ion-card-title>
+      <ion-card-subtitle>{{ pesanan.tanggal }}</ion-card-subtitle>
+    </ion-card-header>
+
+    <ion-card-content>
+      <p><strong>Status:</strong> {{ pesanan.status }}</p>
+      <p><strong>Metode Pembayaran:</strong> {{ pesanan.metode | titlecase }}</p>
+      <p><strong>Total:</strong> Rp{{ pesanan.total | number }}</p>
+
+      <ion-list>
+        <ion-item-divider color="light">
+          <ion-label><strong>Daftar Pesanan</strong></ion-label>
+        </ion-item-divider>
+
+        <ion-item *ngFor="let item of pesanan.items">
+          <ion-label>
+            <h3>{{ item.nama }}</h3>
+            <p>Harga: Rp{{ item.harga | number }} x {{ item.quantity }}</p>
+          </ion-label>
+          <ion-note slot="end" color="dark">
+            Rp{{ (item.harga * item.quantity) | number }}
+          </ion-note>
+        </ion-item>
+      </ion-list>
+
+      <ion-button *ngIf="isBisaDibatalkan()" expand="full" color="danger" (click)="cancelOrder()" style="margin-top: 16px;">
+  Batalkan Pesanan
+</ion-button>
+
+    </ion-card-content>
+  </ion-card>
+
+</ion-content>

@@ -1,0 +1,144 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/akun"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Bantuan</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- FAQ Section -->
+  <ion-accordion-group>
+    <ion-accordion value="reservasi">
+      <ion-item slot="header">
+        <ion-label>Bagaimana cara melakukan reservasi?</ion-label>
+      </ion-item>
+      <div slot="content">
+        <p>1. Buka halaman Reservasi pada menu home
+        </p>
+        <p>2. Pilih meja</p>
+        <p>3. Pilih jadwal kedatangan</p>
+        <p>4. Pilih menu</p>
+        <p>5. Bayar 50%</p>
+      </div>
+    </ion-accordion>
+  </ion-accordion-group>
+
+  <ion-accordion-group>
+    <ion-accordion value="reservasi">
+      <ion-item slot="header">
+        <ion-label>Apakah bisa mengubah/membatalkan reservasi?</ion-label>
+      </ion-item>
+      <div slot="content">
+        <p>Anda bisa membatalkan reservasi tetapi uang yang sudah dibayarkan tidak bisa kembali</p>
+      </div>
+    </ion-accordion>
+  </ion-accordion-group>
+
+  <ion-accordion-group>
+    <ion-accordion value="reservasi">
+      <ion-item slot="header">
+        <ion-label>Aplikasi tidak bisa dibuka, apa yang harus dilakukan?</ion-label>
+      </ion-item>
+      <div slot="content">
+        <p>Pastikan anda mempunyai koneksi internet dan aplikasi yang anda punya saat ini adalah versi terbaru dari aplikasi kami</p>
+      </div>
+    </ion-accordion>
+  </ion-accordion-group>
+
+  <!-- Card Informasi Kontak -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title class="ion-text-center">
+        <ion-icon name="headset" class="contact-icon"></ion-icon>
+        <br>
+        Hubungi Kami
+      </ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <!-- Telepon -->
+      <ion-item class="contact-item">
+        <ion-icon name="call" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2>Telepon</h2>
+          <a href="tel:081234567890">0812-3456-7890</a>
+        </ion-label>
+      </ion-item>
+
+      <!-- Email -->
+      <ion-item class="contact-item">
+        <ion-icon name="mail" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2>Email</h2>
+          <a href="mailto:support&#64;restaurant.com">support&#64;restaurant.com</a>
+        </ion-label>
+      </ion-item>
+
+      <!-- Alamat -->
+      <ion-item class="contact-item">
+        <ion-icon name="location" slot="start" color="primary"></ion-icon>
+        <ion-label>
+          <h2>Alamat Restoran</h2>
+          <p>Jl. Uniersitas Buana Perjuangan</p>
+        </ion-label>
+      </ion-item>
+    </ion-card-content>
+  </ion-card>
+
+  <!-- Formulir Feedback (Opsional) -->
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title class="ion-text-center">
+        <ion-icon name="chatbubbles" class="contact-icon"></ion-icon>
+        <br>
+        Kirim Pesan
+      </ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <ion-item>
+        <ion-input label="Nama" placeholder="Masukkan nama Anda"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-input label="Email" type="email" placeholder="email@contoh.com"></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-textarea 
+          label="Pesan" 
+          placeholder="Tulis pesan Anda di sini..."
+          rows="5"
+        ></ion-textarea>
+      </ion-item>
+
+      <ion-button expand="block" color="primary" class="submit-button">
+        Kirim
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+  <!-- Versi Aplikasi -->
+  <div class="section">
+    <h2 class="section-title">Versi Aplikasi</h2>
+    <p class="section-content">1.0.0</p>
+  </div>
+
+  <!-- Kebijakan Privasi -->
+  <div class="section">
+    <h2 class="section-title">Kebijakan Privasi</h2>
+    <p class="section-content">
+      Aplikasi ini menghormati privasi pengguna. Data yang dikumpulkan hanya digunakan untuk keperluan fungsionalitas aplikasi.
+    </p>
+  </div>
+
+  <!-- Syarat & Ketentuan -->
+  <div class="section">
+    <h2 class="section-title">Syarat & Ketentuan</h2>
+    <p class="section-content">
+      Dengan menggunakan aplikasi ini, Anda menyetujui semua ketentuan yang berlaku. Dilarang menyalahgunakan fitur.
+    </p>
+  </div>
+</ion-content>

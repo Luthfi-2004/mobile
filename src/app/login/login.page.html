@@ -1,0 +1,77 @@
+<ion-content [fullscreen]="true" class="login-page">
+  <div class="container">
+        <ion-icon name="arrow-back-outline" class="back-icon" (click)="navigateToSplash()"></ion-icon>
+        <h1 class="title">Masuk</h1>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+      <div class="input-wrapper">
+        <label class="input-label">Email / Nomor Telepon</label>
+        <input 
+          type="text" 
+          class="input-field" 
+          formControlName="email"
+          placeholder="Masukkan email atau nomor telepon" 
+          [class.error]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+        />
+        <div *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" class="error-message">
+          <small *ngIf="loginForm.get('email')?.errors?.['required']">
+            Email atau nomor telepon wajib diisi
+          </small>
+                  </div>
+      </div>
+
+      <div class="input-wrapper">
+        <label class="input-label">Password</label>
+        <div class="password-field">
+          <input 
+            [type]="showPassword ? 'text' : 'password'" 
+            class="input-field" 
+            formControlName="password"
+            placeholder="Masukkan password"
+            [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+          />
+          <ion-icon
+            [name]="showPassword ? 'eye-outline' : 'eye-off-outline'"
+            class="toggle-password"
+            (click)="togglePassword()"
+          ></ion-icon>
+        </div>
+        <div *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched" class="error-message">
+          <small *ngIf="loginForm.get('password')?.errors?.['required']">
+            Password wajib diisi
+          </small>
+          <small *ngIf="loginForm.get('password')?.errors?.['minlength']">
+            Password minimal 8 karakter
+          </small>
+        </div>
+      </div>
+
+      <p class="forgot-password">Lupa Password?</p>       <button 
+        type="submit" 
+        class="login-button" 
+        [disabled]="!loginForm.valid || isSubmitting"
+        [class.loading]="isSubmitting"
+      >
+        <span *ngIf="!isSubmitting">Masuk</span>
+        <span *ngIf="isSubmitting">Memproses...</span>
+      </button>
+    </form>
+
+    <p class="signup-link">
+      Belum Punya Akun?
+      <a routerLink="/registrasi"><strong>Daftar</strong></a>
+    </p>    
+
+    <ion-button 
+      expand="block" 
+      color="danger" 
+      class="ion-margin-top"
+      (click)="loginWithGoogle()"
+      [disabled]="isSubmitting"
+    >
+      <ion-icon slot="start" name="logo-google"></ion-icon>
+      Login with Google
+    </ion-button>
+    
+  </div>
+</ion-content>

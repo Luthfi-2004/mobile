@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Detail Invoice</ion-title>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/invoice"></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="receipt-container" *ngIf="transaksi">
+    <div class="receipt-header">
+      <img src="assets/img/logo.jpg" alt="Logo Restoran" class="logo" />
+      <h2>INVOICE RESERVASI</h2>
+      <p class="invoice-id">No. Invoice: #{{ transaksi?.id }}</p>
+      <hr />
+    </div>
+
+    <div class="receipt-section">
+      <h3>Informasi Pelanggan</h3>
+      <p>Nama: {{ pelanggan.nama }}</p>
+      <p>Email: {{ pelanggan.email }}</p>
+      <p>No. Telepon: {{ pelanggan.telp }}</p>
+    </div>
+
+    <div class="receipt-section"> 
+      <h3>Detail Reservasi</h3>
+      <p>Tanggal: {{ reservasi.tanggal }}</p>
+      <p>Waktu Datang: {{ reservasi.waktu }}</p>
+      <p>Area Meja: {{ reservasi.area }}</p>
+      <p>ID Meja: {{ reservasi.idMeja || 'Tidak tersedia' }}</p>
+      <p>Jumlah Tamu: {{ reservasi.tamu }} orang</p>
+    </div>
+
+    <div class="receipt-section">
+      <h3>Pesanan</h3>
+      <div class="item-row" *ngFor="let item of transaksi?.items">
+        <div>
+          {{ item.nama }} x{{ item.quantity }}<br />
+          <span *ngIf="item.note">*catatan: {{ item.note }}</span>
+        </div>
+        <span>Rp{{ (item.harga * item.quantity) | number:'1.0-0' }}</span>
+      </div>
+      <hr />
+    </div>
+    <div class="receipt-section">
+      <h3>Ringkasan Pembayaran</h3>
+      <p>Subtotal Makanan <span class="right">Rp{{ subtotal | number:'1.0-0' }}</span></p>
+      <p>Biaya Pelayanan <span class="right">Rp{{ serviceFee | number:'1.0-0' }}</span></p>
+      <p>Metode Pembayaran <span class="right">{{ transaksi.metode | uppercase }}</span></p>
+      <hr />
+      <p><strong>TOTAL <span class="right">Rp{{ total | number:'1.0-0' }}</span></strong></p>
+      <p><strong>DOWN PAYMENT (50%) <span class="right">Rp{{ downPayment | number:'1.0-0' }}</span></strong></p>
+    </div>
+
+    <div class="receipt-qr">
+      <h3>QR Code</h3>
+      <img [src]="getQrCodeData(transaksi.id)" alt="QR Code" />
+      <p>Scan untuk verifikasi invoice</p>
+    </div>
+  </div>
+</ion-content>

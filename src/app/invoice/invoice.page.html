@@ -1,0 +1,40 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Invoice</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+
+  <!-- HISTORI INVOICE -->
+  <div class="history-section" *ngIf="transaksiHistory.length > 0">
+    <div class="card-riwayat" *ngFor="let trx of transaksiHistory">
+      <div class="header">
+        <h2>Invoice #{{ trx.id }}</h2>
+        <div class="status">{{ trx.metode }}</div>
+      </div>
+      <p>{{ trx.tanggal || '(Tanggal tidak tersedia)' }}</p>
+
+      <div class="items">
+        <div *ngFor="let item of trx.items">
+          <span>{{ item.nama }} x{{ item.quantity }}</span>
+          <span>Rp{{ item.harga * item.quantity | number:'1.0-0' }}</span>
+        </div>
+      </div>
+
+      <div class="total">Total: Rp{{ trx.total | number:'1.0-0' }}</div>
+
+      <img [src]="getQrCodeData(trx.id)" alt="QR Code" style="width: 100px; margin: 10px auto; display: block;" />
+
+      <div class="actions">
+        <ion-button size="small" (click)="lihatDetailInvoice(trx)">Detail Invoice</ion-button>
+        <ion-button size="small" color="danger" (click)="hapusInvoice(trx.id)">Hapus</ion-button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!transaksi && transaksiHistory.length === 0" style="text-align: center; margin-top: 40px; color: #666;">
+  <p>Tidak ada invoice yang tersimpan.</p>
+</div>
+
+</ion-content>

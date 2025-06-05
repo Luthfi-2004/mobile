@@ -1,0 +1,89 @@
+<ion-content [fullscreen]="true">
+  <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+    <div class="register-wrapper">
+      <ion-icon name="arrow-back-outline" class="back-icon"></ion-icon>
+      <h1 class="title">Daftar</h1>
+
+      <!-- Username -->
+      <ion-input
+        label="Username"
+        labelPlacement="floating"
+        placeholder="Masukkan Username"
+        formControlName="nama"
+        [counter]="true"
+        maxlength="20"
+        [counterFormatter]="customCounterFormatter"
+      ></ion-input>
+
+      <!-- Nomor Telepon -->
+      <ion-input
+        label="Nomor Telepon"
+        labelPlacement="floating"
+        type="tel"
+        placeholder="Masukkan Nomor Telepon"
+        formControlName="nomor_hp"
+        [counter]="true"
+        maxlength="15"
+        [counterFormatter]="customCounterFormatter"
+      ></ion-input>
+
+      <!-- Email -->
+      <ion-input
+        label="Email"
+        labelPlacement="floating"
+        type="email"
+        placeholder="Masukkan Email"
+        formControlName="email"
+        [counter]="true"
+        maxlength="50"
+        [counterFormatter]="customCounterFormatter"
+      ></ion-input>
+
+      <!-- Password -->
+      <div class="password-wrapper">
+        <ion-input
+          label="Password"
+          labelPlacement="floating"
+          [type]="showPassword ? 'text' : 'password'"
+          placeholder="Masukkan Password"
+          formControlName="password"
+          [counter]="true"
+          maxlength="20"
+          [counterFormatter]="customCounterFormatter"
+        ></ion-input>
+        <ion-icon
+          [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+          class="toggle-icon"
+          (click)="togglePassword()"
+        ></ion-icon>
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="password-wrapper">
+        <ion-input
+          label="Confirm Password"
+          labelPlacement="floating"
+          [type]="showConfirmPassword ? 'text' : 'password'"
+          placeholder="Ulangi Password"
+          formControlName="password_confirmation"
+          [counter]="true"
+          maxlength="20"
+          [counterFormatter]="customCounterFormatter"
+        ></ion-input>
+        <ion-icon
+          [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
+          class="toggle-icon"
+          (click)="toggleConfirmPassword()"
+        ></ion-icon>
+      </div>
+
+      <ion-button expand="block" class="register-btn" type="submit" [disabled]="registerForm.invalid || isSubmitting">
+        Daftar
+      </ion-button>
+
+      <p class="login-link">
+        Sudah Punya Akun? <a routerLink="/login"><strong>Masuk</strong></a>
+      </p>
+    </div>
+  </form>
+</ion-content>

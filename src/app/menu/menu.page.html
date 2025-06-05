@@ -1,0 +1,181 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/reservasi-jadwal"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Menu</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="menu-page">
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Header -->
+  <div class="header">
+    <ion-searchbar 
+      [(ngModel)]="searchText" 
+      placeholder="Cari Menu..."
+      (ionInput)="onSearchChange()"
+      debounce="500">
+    </ion-searchbar>
+  </div>
+
+  <!-- Category Tabs -->
+  <div class="tabs">
+    <ion-chip 
+      *ngFor="let kategori of kategoriListWithAll"
+      [class.active]="kategori.value === selectedKategori"
+      (click)="selectKategori(kategori.value)"
+      [color]="kategori.value === selectedKategori ? 'primary' : 'medium'">
+      {{ kategori.label }}
+    </ion-chip>
+  </div>
+
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading && menuList.length === 0" class="loading-container">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Memuat menu...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && menuList.length === 0" class="empty-state">
+    <ion-icon name="restaurant-outline" size="large"></ion-icon>
+    <p>Tidak ada menu yang tersedia</p>
+  </div>
+
+  <!-- Menu Items -->
+  <div class="menu-list" *ngIf="menuList.length > 0">
+    <ion-card 
+      *ngFor="let item of getFilteredMenu(); trackBy: trackByMenuId" 
+      class="menu-card"
+    >
+      <div class="card-image-container">
+        <img 
+          [src]="item.image_url || 'assets/img/default-food.png'" 
+          [alt]="item.name" 
+          class="menu-image"
+          (error)="onImageError($event)" 
+        />
+
+        <!-- Discount Badge -->
+        <div 
+          *ngIf="item.discount_percentage && item.discount_percentage > 0" 
+          class="discount-badge"
+        >
+          -{{ item.discount_percentage }}%
+        </div>
+
+        <!-- Availability Status -->
+        <div *ngIf="!item.is_available" class="unavailable-overlay">
+          <span>Tidak Tersedia</span>
+        </div>
+      </div>
+
+      <ion-card-header>
+        <ion-card-title>{{ item.name }}</ion-card-title>
+        <ion-card-subtitle>
+          {{ getCategoryDisplayName(item.category) }}
+          <span *ngIf="item.preparation_time" class="prep-time">
+            • {{ item.preparation_time }} menit
+          </span>
+        </ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content class="card-content">
+        <p *ngIf="item.description" class="description">
+          {{ item.description }}
+        </p>
+
+        <div class="price-container">
+          <!-- Original price (jika ada diskon) -->
+          <span 
+            *ngIf="item.discount_percentage && item.discount_percentage > 0" 
+            class="original-price"
+          >
+            {{ formatCurrency(item.price) }}
+          </span>
+
+          <!-- Final price -->
+          <span class="final-price">
+            {{ formatCurrency(item.final_price || item.discounted_price || item.price) }}
+          </span>
+        </div>
+
+        <!-- Quantity Controls -->
+        <div class="quantity-controls" *ngIf="item.is_available">
+          <ion-button 
+            size="small" 
+            fill="clear" 
+            color="danger"
+            (click)="removeFromCart(item)"
+            [disabled]="getItemQuantity(item) === 0"
+          >
+            <ion-icon name="remove-circle-outline"></ion-icon>
+          </ion-button>
+
+          <span class="quantity-display">{{ getItemQuantity(item) }}</span>
+
+          <ion-button 
+            size="small" 
+            fill="clear" 
+            color="primary"
+            (click)="addToCart(item)"
+          >
+            <ion-icon name="add-circle-outline"></ion-icon>
+          </ion-button>
+        </div>
+
+        <!-- Unavailable message -->
+        <div *ngIf="!item.is_available" class="unavailable-message">
+          <ion-text color="medium">Menu tidak tersedia</ion-text>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Load More Button -->
+  <div *ngIf="hasMoreData && !isLoading" class="load-more-container">
+    <ion-button 
+      expand="block" 
+      fill="outline" 
+      (click)="loadMoreMenus()"
+    >
+      Muat Lebih Banyak
+    </ion-button>
+  </div>
+
+  <!-- Loading more indicator -->
+  <div *ngIf="isLoading && menuList.length > 0" class="loading-more">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+</ion-content>
+
+<!-- Checkout Footer -->
+<ion-footer class="checkout-footer" *ngIf="cart.length > 0">
+  <ion-toolbar>
+    <div class="footer-inner">
+      <div class="total-info">
+        <div class="total-harga">
+          <strong>
+            Total: {{ formatCurrency(getTotalHarga()) }}
+          </strong>
+        </div>
+        <div class="item-count">
+          {{ cart.length }} item{{ cart.length > 1 ? 's' : '' }}
+        </div>
+      </div>
+      <ion-button 
+        shape="round" 
+        color="primary" 
+        (click)="goToCart()" 
+        [disabled]="cart.length === 0"
+      >
+        <ion-icon name="cart-outline" slot="start"></ion-icon>
+        Check Out
+      </ion-button>
+    </div>
+  </ion-toolbar>
+</ion-footer>

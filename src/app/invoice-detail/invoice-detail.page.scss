@@ -1,0 +1,62 @@
+ion-content {
+  --background: #90caf9;
+}
+.receipt-container {
+  max-width: 420px;
+  margin: auto;
+  background: #fff;
+  padding: 20px;
+  font-family: 'Courier New', monospace;
+  border: 1px dashed #ccc;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.receipt-header {
+  text-align: center;
+}
+
+.logo {
+  width: 64px;
+  margin-bottom: 10px;
+}
+
+.invoice-id {
+  font-size: 14px;
+  margin-top: 4px;
+  color: #555;
+}
+
+.receipt-section {
+  margin-top: 20px;
+  font-size: 15px;
+}
+
+.item-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 4px 0;
+}
+
+.right {
+  float: right;
+}
+
+.receipt-qr {
+  text-align: center;
+  margin-top: 24px;
+}
+
+.receipt-qr img {
+  width: 130px;
+  height: 130px;
+  margin-top: 10px;
+}
+
+.thanks {
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 20px;
+  color: #666;
+}

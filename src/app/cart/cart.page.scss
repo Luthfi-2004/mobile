@@ -1,0 +1,121 @@
+ion-content {
+  --background: #90caf9;
+}
+
+.cart-wrapper {
+  padding: 16px;
+  max-width: 600px; /* Optional: batasi max lebar agar rapi di layar besar */
+  margin: 0 auto;   /* center container */
+  box-sizing: border-box;
+}
+
+.cart-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.cart-item img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-right: 12px;
+}
+
+.item-detail {
+  flex: 1;
+}
+
+.qty-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.edit-delete {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Perbaikan di sini */
+.payment-summary {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0; /* Hilangkan margin kiri-kanan, hanya atas bawah */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 100%;    /* Penuhi container .cart-wrapper */
+  box-sizing: border-box;
+}
+
+.payment-summary ion-item {
+  --background: transparent;
+  --inner-padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+.payment-method {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 0 20px 0; /* Hilangkan margin kiri-kanan */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  width: 100%;    /* Penuhi container .cart-wrapper */
+  box-sizing: border-box;
+}
+
+.payment-method h4 {
+  margin-bottom: 12px;
+}
+
+.qris-sub-options ion-item {
+  padding-left: 20px;
+}
+
+.payment-method ion-item.selected {
+  background-color: #d0eaff;
+  border-radius: 8px;
+}
+
+.payment-method ion-item.sub-selected {
+  background-color: #a0cfff;
+  border-radius: 8px;
+}
+
+.warning-note {
+  font-size: 0.8rem;
+  color: #ff3b30; /* merah lembut */
+  margin: 10px 16px;
+  text-align: center;
+  font-style: italic;
+}
+
+ion-item.selected {
+  background-color: #e0f7fa;
+}
+
+ion-item.sub-selected {
+  background-color: #c8e6c9;
+}
+
+.qris-sub-options {
+  margin-left: 16px;
+}
+.note-input {
+  margin-top: 10px;
+  --background: transparent;
+  ion-label {
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+  ion-textarea {
+    font-size: 14px;
+  }
+}

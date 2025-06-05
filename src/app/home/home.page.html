@@ -1,0 +1,187 @@
+<ion-header>
+  <ion-toolbar color="light">
+    <ion-title>
+      <img src="assets/img/logo.jpg" class="app-logo" alt="Logo" />
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="goToNotifikasi()" class="notif-btn">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <span *ngIf="unreadNotificationCount > 0" class="notif-badge"></span>
+      </ion-button>
+      <ion-button>
+        <ion-icon name="cart-outline"></ion-icon>
+      </ion-button>
+      <ion-button [routerLink]="'/info-akun'">
+        <ion-icon name="person-circle-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  
+  <!-- Pull to Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- AREA SLIDER -->
+  <div class="slider-container">
+    <div
+      class="slider-track"
+      [style.transform]="'translateX(-' + currentImageIndex * 100 + '%)'"
+    >
+      <div class="slide" *ngFor="let item of images; let i = index">
+        <img [src]="item.src" alt="Food Image" class="food-image" />
+        <div class="badge" [class]="'badge-' + item.type">
+          {{ item.text || item.type | uppercase }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Best Seller Section -->
+  <ion-segment scrollable value="best-seller">
+    <ion-segment-button value="best-seller">
+      <ion-label>Best Seller</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Loading Skeleton for Best Seller -->
+  <div *ngIf="isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <ion-card class="horizontal-card" *ngFor="let item of [1,2,3]">
+        <ion-skeleton-text animated style="height: 120px; width: 100%;"></ion-skeleton-text>
+        <ion-card-header>
+          <ion-skeleton-text animated style="width: 80%; height: 20px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 60%; height: 16px;"></ion-skeleton-text>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-skeleton-text animated style="width: 70%; height: 14px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 50%; height: 16px;"></ion-skeleton-text>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Best Seller Cards -->
+  <div *ngIf="!isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <!-- No Data Message -->
+      <div *ngIf="bestSellerMenus.length === 0" class="no-data-message">
+        <ion-text color="medium">
+          <p>Belum ada menu best seller tersedia</p>
+        </ion-text>
+      </div>
+
+      <!-- Dynamic Best Seller Cards -->
+      <ion-card 
+        class="horizontal-card" 
+        *ngFor="let menu of bestSellerMenus; trackBy: trackByMenuId"
+        (click)="onMenuItemClick(menu)"
+      >
+        <img 
+          [src]="menu.image_url || 'assets/img/default-food.png'" 
+          [alt]="menu.name"
+          onerror="this.src='assets/img/default-food.png'"
+        />
+        <ion-card-header>
+          <ion-card-title>{{ menu.name }}</ion-card-title>
+          <ion-card-subtitle>{{ getCategoryDisplayName(menu.category) }}</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-text color="medium" *ngIf="menu.description">
+            {{ menu.description | slice:0:50 }}{{ menu.description.length > 50 ? '...' : '' }}
+          </ion-text>
+          <div class="price-tag">
+            <ion-text class="price">{{ formatCurrency(menu.discounted_price || menu.price) }}</ion-text>
+            <ion-badge color="success">TOP</ion-badge>
+          </div>
+          <div *ngIf="menu.preparation_time" class="prep-time">
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-text color="medium">{{ menu.preparation_time }} menit</ion-text>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Discount Section -->
+  <ion-segment scrollable value="discount">
+    <ion-segment-button value="discount">
+      <ion-label>Discount</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <!-- Loading Skeleton for Discount -->
+  <div *ngIf="isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <ion-card class="horizontal-card discount" *ngFor="let item of [1,2,3]">
+        <ion-skeleton-text animated style="height: 120px; width: 100%;"></ion-skeleton-text>
+        <ion-card-header>
+          <ion-skeleton-text animated style="width: 80%; height: 20px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 60%; height: 16px;"></ion-skeleton-text>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-skeleton-text animated style="width: 70%; height: 14px;"></ion-skeleton-text>
+          <ion-skeleton-text animated style="width: 50%; height: 16px;"></ion-skeleton-text>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <!-- Discount Cards -->
+  <div *ngIf="!isLoading" class="horizontal-scroll">
+    <div class="scroll-wrapper">
+      <!-- No Data Message -->
+      <div *ngIf="discountMenus.length === 0" class="no-data-message">
+        <ion-text color="medium">
+          <p>Belum ada menu discount tersedia</p>
+        </ion-text>
+      </div>
+
+      <!-- Dynamic Discount Cards -->
+      <ion-card 
+        class="horizontal-card discount" 
+        *ngFor="let menu of discountMenus; trackBy: trackByMenuId"
+        (click)="onMenuItemClick(menu)"
+      >
+        <img 
+          [src]="menu.image_url || 'assets/img/default-food.png'" 
+          [alt]="menu.name"
+          onerror="this.src='assets/img/default-food.png'"
+        />
+        <ion-card-header>
+          <ion-card-title>{{ menu.name }}</ion-card-title>
+          <ion-card-subtitle>Diskon {{ menu.discount_percentage }}%</ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <ion-text color="medium" *ngIf="menu.description">
+            {{ menu.description | slice:0:50 }}{{ menu.description.length > 50 ? '...' : '' }}
+          </ion-text>
+          <div class="price-tag">
+            <ion-text class="original-price" *ngIf="menu.discount_percentage > 0">
+              {{ formatCurrency(menu.price) }}
+            </ion-text>
+            <ion-text class="discount-price">
+              {{ formatCurrency(menu.discounted_price || menu.price) }}
+            </ion-text>
+          </div>
+          <div *ngIf="menu.preparation_time" class="prep-time">
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-text color="medium">{{ menu.preparation_time }} menit</ion-text>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+
+  <div class="reservation-button-spacer"></div>
+</ion-content> 
+
+<!-- Tombol Reservasi Fixed -->
+<div class="reservation-button-fixed">
+  <ion-button expand="block" shape="round" color="light" (click)="goToReservasi()">
+    <strong>Reservasi Yuk!</strong>
+  </ion-button>
+</div>
