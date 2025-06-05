@@ -63,6 +63,22 @@ export class MenuPage implements OnInit {
     await this.loadMenus();
   }
 
+  // Fungsi baru untuk mendapatkan URL gambar yang benar
+  getImageUrl(imageUrl: string | undefined): string {
+    if (!imageUrl) {
+      return 'assets/img/default-food.png';
+    }
+
+    // Jika URL sudah lengkap (http/https), gunakan langsung
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    // Jika relative path, tambahkan base URL API
+    // Ganti 'https://toko.com' dengan URL API Laravel Anda
+    return 'http://localhost:8000' + imageUrl;
+  }
+
   async loadMenus(refresh: boolean = false) {
     if (refresh) {
       this.currentPage = 1;
