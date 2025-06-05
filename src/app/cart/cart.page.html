@@ -12,7 +12,11 @@
     <h3>{{ cart.length }} Item</h3>
 
     <div *ngFor="let item of cart; let i = index" class="cart-item">
-      <img [src]="item.image" alt="Menu Image" />
+      <ion-img 
+      [src]="getImageUrl(item.image_url)" 
+      [alt]="item.name || item.nama"
+      (ionError)="onImageError($event)">
+      </ion-img>
       <div class="item-detail">
         <h4>{{ item.nama }}</h4>
         <p>Rp{{ item.harga | number }}</p>

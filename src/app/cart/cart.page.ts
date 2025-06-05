@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { environment } from '../../environments/environment'; // Pastikan file environment ada
 
 @Component({
   selector: 'app-cart',
@@ -19,13 +20,13 @@ export class CartPage {
   constructor(private router: Router, private alertController: AlertController) {
     const nav = this.router.getCurrentNavigation();
 
-    // Ambil data cart dan reservasi dari state navigation (dari halaman menu)
+    // Ambil data cart dan reservasi dari state navigation
     if (nav?.extras?.state) {
       if (nav.extras.state['cart']) {
         this.cart = nav.extras.state['cart'].map((item: any) => ({
           ...item,
           quantity: item.quantity || 1,
-          note: item.note || '' // Tambahkan note kosong jika belum ada
+          note: item.note || ''
         }));
       }
 
@@ -35,35 +36,54 @@ export class CartPage {
     }
   }
 
-  // Hitung subtotal (harga item x qty)
-  get subtotal(): number {
-    return this.cart.reduce((total, item) => total + item.harga * item.quantity, 0);
+  // Fungsi untuk mendapatkan URL gambar yang benar
+  getImageUrl(imageUrl: string | undefined): string {
+    if (!imageUrl) {
+      return 'assets/img/default-food.png'; // Gambar default jika tidak ada
+    }
+
+    // Jika URL sudah lengkap (http/https)
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+
+    // Jika relative path, tambahkan base URL dari environment
+    return 'http://localhost:8000' + imageUrl;
   }
 
-  // Hitung total termasuk service fee
+  // Handler ketika gambar gagal dimuat
+  onImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = 'assets/img/default-food.png';
+    }
+  }
+
+  get subtotal(): number {
+    return this.cart.reduce((total, item) => {
+      const price = item.final_price || item.discounted_price || item.price || item.harga;
+      return total + (price * item.quantity);
+    }, 0);
+  }
+
   get total(): number {
     return this.subtotal + this.serviceFee;
   }
 
-  // Tambah qty item
   increaseQty(index: number) {
     this.cart[index].quantity += 1;
-    this.updateTotals();
   }
 
-  // Kurangi qty item jika lebih dari 1
   decreaseQty(index: number) {
     if (this.cart[index].quantity > 1) {
       this.cart[index].quantity -= 1;
-      this.updateTotals();
     }
   }
 
-  // Edit qty dengan input alert
   async editItem(index: number) {
     const alert = await this.alertController.create({
       header: `Ubah Jumlah`,
-      subHeader: this.cart[index].nama,
+      subHeader: this.cart[index].name || this.cart[index].nama,
       inputs: [
         {
           name: 'qty',
@@ -88,7 +108,6 @@ export class CartPage {
               } else {
                 this.cart[index].quantity = parsedQty;
               }
-              this.updateTotals();
               if (this.cart.length === 0) {
                 this.router.navigate(['/menu']);
               }
@@ -101,11 +120,10 @@ export class CartPage {
     await alert.present();
   }
 
-  // Konfirmasi hapus item dari cart
   async deleteItem(index: number) {
     const alert = await this.alertController.create({
       header: 'Konfirmasi',
-      message: `Yakin ingin menghapus ${this.cart[index].nama} dari pesanan?`,
+      message: `Yakin ingin menghapus ${this.cart[index].name || this.cart[index].nama} dari pesanan?`,
       buttons: [
         {
           text: 'Batal',
@@ -115,7 +133,6 @@ export class CartPage {
           text: 'Hapus',
           handler: () => {
             this.cart.splice(index, 1);
-            this.updateTotals();
             if (this.cart.length === 0) {
               this.router.navigate(['/menu']);
             }
@@ -127,20 +144,17 @@ export class CartPage {
     await alert.present();
   }
 
-  // Toggle pilihan QRIS
   toggleQrisOptions() {
     this.showQrisOptions = !this.showQrisOptions;
     this.paymentMethodGroup = 'qris';
   }
 
-  // Pilih metode pembayaran
   selectPayment(method: string) {
     this.paymentMethod = method;
     this.paymentMethodGroup = 'qris';
     this.showQrisOptions = false; 
   }
 
-  // Proses checkout, simpan transaksi di localStorage, lalu navigasi ke invoice
   async checkout() {
     if (!this.paymentMethod) {
       const alert = await this.alertController.create({
@@ -163,39 +177,36 @@ export class CartPage {
       return;
     }
 
-    const dibayar = this.total * 0.5; // contoh bayar 50%
-    const sisaBayar = this.total - dibayar;
-
     const transaksi = {
       id: Date.now(),
       tanggal: new Date().toLocaleString(),
-      items: [...this.cart], // note termasuk di sini
+      items: this.cart.map(item => ({
+        id: item.id,
+        name: item.name || item.nama,
+        quantity: item.quantity,
+        price: item.final_price || item.discounted_price || item.price || item.harga,
+        image_url: item.image_url,
+        note: item.note || ''
+      })),
+      subtotal: this.subtotal,
+      serviceFee: this.serviceFee,
       total: this.total,
-      dibayar: dibayar,
-      sisaBayar: sisaBayar,
       metode: this.paymentMethod,
-      status: 'Belum Lunas',
+      status: 'Menunggu Pembayaran',
+      reservasi: this.reservasi
     };
 
-    // Simpan transaksi ke localStorage (riwayat)
+    // Simpan transaksi ke localStorage
     const existing = JSON.parse(localStorage.getItem('riwayat') || '[]');
     existing.push(transaksi);
     localStorage.setItem('riwayat', JSON.stringify(existing));
 
-    // Kosongkan cart
-    this.cart = [];
-
-    // Navigasi ke halaman invoice dengan state transaksi dan reservasi
-    this.router.navigate(['/tabs/invoice'], {
+    // Navigasi ke halaman invoice
+    this.router.navigate(['/invoice'], {
       state: {
-        transaksi,
-        reservasi: this.reservasi
+        transaksi
       }
     });
-  }
-
-  updateTotals() {
-    // Getter subtotal dan total otomatis, tidak perlu perhitungan ulang di sini
   }
 
   goBack() {
