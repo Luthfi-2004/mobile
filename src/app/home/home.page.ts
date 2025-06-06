@@ -23,6 +23,10 @@ export class HomePage implements OnInit {
   currentImageIndex = 0;
   unreadNotificationCount = 0;
 
+  // --- Start: Penambahan untuk Gambar Profil Dinamis ---
+  profileImage: string = 'assets/img/default-profile.jpg'; // Default image, harus sama dengan di info-akun.page.ts
+  // --- End: Penambahan untuk Gambar Profil Dinamis ---
+
   // Dynamic menu data
   bestSellerMenus: MenuItem[] = [];
   discountMenus: MenuItem[] = [];
@@ -50,6 +54,9 @@ export class HomePage implements OnInit {
 
     this.loadUnreadNotifications();
     await this.loadMenus();
+    // --- Start: Pemanggilan loadProfileImage saat ngOnInit ---
+    this.loadProfileImage();
+    // --- End: Pemanggilan loadProfileImage saat ngOnInit ---
   }
 
   async ionViewWillEnter() {
@@ -58,7 +65,29 @@ export class HomePage implements OnInit {
     if (this.bestSellerMenus.length === 0 && this.discountMenus.length === 0) {
       await this.loadMenus();
     }
+    // --- Start: Pemanggilan loadProfileImage saat ionViewWillEnter agar selalu update ---
+    this.loadProfileImage();
+    // --- End: Pemanggilan loadProfileImage saat ionViewWillEnter agar selalu update ---
   }
+
+  // --- Start: Method baru untuk memuat gambar profil ---
+  loadProfileImage() {
+    const storedProfileImage = localStorage.getItem('profileImage');
+    if (storedProfileImage) {
+      this.profileImage = storedProfileImage;
+    } else {
+      // Jika tidak ada di localStorage, coba ambil dari userData jika ada
+      const loggedUserDataString = localStorage.getItem('userData');
+      if (loggedUserDataString) {
+        const loggedUserData = JSON.parse(loggedUserDataString);
+        if (loggedUserData.profileImage) {
+          this.profileImage = loggedUserData.profileImage;
+          localStorage.setItem('profileImage', loggedUserData.profileImage); // Simpan juga ke profileImage terpisah
+        }
+      }
+    }
+  }
+  // --- End: Method baru untuk memuat gambar profil ---
 
   private setupBackButtonHandler() {
     this.platform.backButton.subscribeWithPriority(10, async () => {
@@ -226,6 +255,9 @@ export class HomePage implements OnInit {
   async doRefresh(event: any) {
     try {
       await this.loadMenus();
+      // --- Start: Pemanggilan loadProfileImage saat refresh ---
+      this.loadProfileImage();
+      // --- End: Pemanggilan loadProfileImage saat refresh ---
       await this.showToast('Menu berhasil diperbarui', 'success');
     } catch (error) {
       await this.showToast('Gagal memperbarui menu', 'danger');

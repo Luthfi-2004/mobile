@@ -11,6 +11,13 @@ ion-content {
   background: #f5f5f5;
 }
 
+.profile-image-home {
+  width: 20px;  /* Sesuaikan ukuran lebar */
+  height: 20px; /* Sesuaikan ukuran tinggi */
+  border-radius: 50%; /* Membuat gambar menjadi bulat */
+  object-fit: cover; /* Memastikan gambar mengisi area tanpa terdistorsi */
+  
+}
 /* Fake image placeholder */
 .food-placeholder {
   width: 100%;
