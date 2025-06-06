@@ -83,6 +83,16 @@ export class LoginPage implements OnInit {
           await loading.dismiss();
           this.isSubmitting = false;
           
+          // Simpan data pengguna ke localStorage setelah login berhasil
+          localStorage.setItem('userData', JSON.stringify({
+            email: response.user.email,
+            username: response.user.nama, // Asumsikan 'nama' adalah username dari respons API
+            phone: response.user.nomor_hp, // Asumsikan 'nomor_hp' adalah nomor telepon dari respons API
+            loggedIn: true,
+            profileImage: localStorage.getItem('profileImage') || 'assets/img/default-profile.jpg' // Pertahankan gambar profil jika sudah ada
+          }));
+          localStorage.setItem('userId', String(response.user.id)); // Simpan userId jika ada
+
           await this.showToast(`Selamat datang, ${response.user.nama}!`);
           this.router.navigate(['/tabs/home']);
         },
