@@ -1,12 +1,11 @@
 // src/app/reservasi-jadwal/reservasi-jadwal.page.ts
+
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import {
-  IonPopover,
-  AlertController,
-  ToastController
-} from '@ionic/angular';
-import { ReservationData } from '../services/reservation.service';
+import { IonPopover, AlertController, ToastController, LoadingController } from '@ionic/angular';
+
+// Import service dan interface yang dibutuhkan
+import { ReservationService, ReservationData, ReservationResponse, ApiErrorResponse } from '../services/reservation.service';
 
 @Component({
   selector: 'app-reservasi-jadwal',
@@ -39,11 +38,12 @@ export class ReservasiJadwalPage implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private alertController: AlertController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private loadingController: LoadingController, // Tambahkan LoadingController
+    private reservationService: ReservationService // Inject ReservationService
   ) {}
 
   ngOnInit() {
-    // Atur batas tanggal (hari ini + 10 hari ke depan)
     const today = new Date();
     const max = new Date();
     max.setDate(today.getDate() + 10);
@@ -51,10 +51,8 @@ export class ReservasiJadwalPage implements OnInit {
     this.minDate = today.toISOString().split('T')[0];
     this.maxDate = max.toISOString().split('T')[0];
 
-    // Inisialisasi daftar waktu (semua enabled)
     this.waktuList = this.originalWaktuList.map(w => ({ label: w, disabled: false }));
 
-    // Ambil params: jumlahKursi, tempat, idMeja
     this.route.queryParams.subscribe(params => {
       if (params['jumlahKursi']) {
         this.jumlahTamu = Number(params['jumlahKursi']);
@@ -71,7 +69,6 @@ export class ReservasiJadwalPage implements OnInit {
       if (params['idMeja']) {
         this.idMeja = params['idMeja'];
       }
-      console.log('Debug ngOnInit: idMeja =', this.idMeja);
     });
   }
 
@@ -80,7 +77,6 @@ export class ReservasiJadwalPage implements OnInit {
     const selectedDate = new Date(this.tanggal);
     const today = new Date();
 
-    // Jika tanggal sama dengan hari ini, disable waktu yang sudah lewat
     if (selectedDate.toDateString() === today.toDateString()) {
       const now = new Date();
       this.waktuList = this.originalWaktuList.map(waktu => {
@@ -102,9 +98,9 @@ export class ReservasiJadwalPage implements OnInit {
     }
   }
 
-  async presentAlert(message: string = 'Harap lengkapi semua data reservasi!') {
+  async presentAlert(message: string, header: string = 'Peringatan') {
     const alert = await this.alertController.create({
-      header: 'Peringatan',
+      header,
       message,
       buttons: ['OK']
     });
@@ -127,9 +123,7 @@ export class ReservasiJadwalPage implements OnInit {
     }
     const dateOnly = this.tanggal.split('T')[0];
     const [hour, minute] = this.waktu.split(':');
-    const formattedHour = hour.padStart(2, '0');
-    const formattedMinute = minute.padStart(2, '0');
-    return `${dateOnly} ${formattedHour}:${formattedMinute}:00`;
+    return `${dateOnly} ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:00`;
   }
 
   private validateDateTime(): { isValid: boolean; message?: string } {
@@ -152,23 +146,15 @@ export class ReservasiJadwalPage implements OnInit {
     }
   }
 
+  // --- FUNGSI UTAMA YANG DIPERBAIKI ---
   async konfirmasi() {
     if (this.isSubmitting) {
       return;
     }
 
     // Validasi input dasar
-    if (!this.tanggal || !this.tempat) {
+    if (!this.tanggal || !this.waktu || !this.tempat) {
       await this.presentAlert('Harap lengkapi semua data reservasi!');
-      return;
-    }
-    const adaWaktuAktif = this.waktuList.some(w => !w.disabled);
-    if (!adaWaktuAktif) {
-      await this.presentAlert('Toko tutup dan tidak menerima reservasi lagi pada hari ini.');
-      return;
-    }
-    if (!this.waktu) {
-      await this.presentAlert('Harap pilih waktu kedatangan!');
       return;
     }
     const validation = this.validateDateTime();
@@ -177,32 +163,20 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
 
-    const selDate = new Date(this.tanggal.split('T')[0]);
-    const now = new Date();
-    if (selDate.toDateString() === now.toDateString()) {
-      const [hStr, mStr] = this.waktu.split(':');
-      const rh = Number(hStr), rm = Number(mStr);
-      const rd = new Date();
-      rd.setHours(rh, rm, 0, 0);
-      if (now > rd) {
-        await this.presentAlert('Toko tutup dan tidak menerima reservasi lagi pada hari ini.');
-        return;
-      }
-    }
-
     this.isSubmitting = true;
+    const loading = await this.loadingController.create({
+      message: 'Membuat reservasi...',
+    });
+    await loading.present();
+
     try {
       const waktuKedatangan = this.formatWaktuKedatangan();
+      const mejaIdArray: number[] = this.idMeja
+        .split(',')
+        .map(s => parseInt(s.trim(), 10))
+        .filter(n => !isNaN(n));
 
-      // Parse idMeja menjadi array angka
-      let mejaIdArray: number[] = [];
-      if (this.idMeja) {
-        mejaIdArray = this.idMeja
-          .split(',')
-          .map(s => parseInt(s.trim(), 10))
-          .filter(n => !isNaN(n));
-      }
-
+      // Siapkan payload untuk dikirim ke API
       const reservationData: ReservationData = {
         waktu_kedatangan: waktuKedatangan,
         jumlah_tamu: this.jumlahTamu,
@@ -210,26 +184,38 @@ export class ReservasiJadwalPage implements OnInit {
         id_meja: mejaIdArray
       };
 
-      // Simpan sementara di localStorage
-      localStorage.setItem('pendingReservation', JSON.stringify({
-        ...reservationData,
-        tempat: this.tempat
-      }));
+      // Panggil service untuk membuat reservasi di backend
+      this.reservationService.createReservation(reservationData).subscribe({
+        next: async (response: ReservationResponse) => {
+          await loading.dismiss();
+          const createdReservation = response.reservasi;
 
-      // Tampilkan toast, lalu redirect ke halaman /menu
-      await this.presentToast('Data reservasi disimpan sementara. Silakan pilih menu dan lanjut ke keranjang.', 'primary');
-      this.router.navigate(['/menu'], {
-        queryParams: {
-          // Anda bisa terus meneruskan idMeja jika perlu di menu
-          idMeja: this.idMeja,
-          jumlahTamu: this.jumlahTamu,
-          tempat: this.tempat
+          await this.presentToast('Reservasi berhasil dibuat. Silakan pilih menu Anda.', 'success');
+
+          // Navigasi ke halaman menu dengan membawa data reservasi yang valid
+          // Menggunakan `state` untuk mengirim objek kompleks
+          this.router.navigate(['/menu'], {
+            state: {
+              reservasi: createdReservation
+            }
+          });
+        },
+        error: async (error: ApiErrorResponse) => {
+          await loading.dismiss();
+          console.error('Gagal membuat reservasi:', error);
+          // Tampilkan pesan error dari backend jika ada
+          const errorMessage = error.message || 'Gagal membuat reservasi. Meja mungkin sudah tidak tersedia atau terjadi kesalahan lain.';
+          await this.presentAlert(errorMessage, 'Reservasi Gagal');
+          this.isSubmitting = false;
+        },
+        complete: () => {
+          this.isSubmitting = false;
         }
       });
-    } catch (err) {
-      console.error('Error menyiapkan data reservasi:', err);
-      await this.presentAlert('Gagal menyiapkan data reservasi. Coba lagi.');
-    } finally {
+    } catch (err: any) {
+      await loading.dismiss();
+      console.error('Error saat menyiapkan data reservasi:', err);
+      await this.presentAlert('Gagal menyiapkan data untuk reservasi. Coba lagi.');
       this.isSubmitting = false;
     }
   }
