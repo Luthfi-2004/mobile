@@ -1,15 +1,21 @@
-import { Component } from '@angular/core';
+// cart.page.ts
+
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { environment } from '../../environments/environment'; // Pastikan file environment ada
+import { PaymentService } from 'src/app/services/payment.service'; // Pastikan path ini benar
+
+// Deklarasikan variabel global 'snap' dari Midtrans agar TypeScript tidak error
+declare var snap: any;
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.page.html',
   styleUrls: ['./cart.page.scss'],
-  standalone: false
+  standalone: false, // Memastikan komponen ini non-standalone
 })
-export class CartPage {
+export class CartPage implements OnInit {
+  // --- DEKLARASI PROPERTY YANG DIBUTUHKAN OLEH HTML ---
   cart: any[] = [];
   serviceFee: number = 9000;
   paymentMethod: string = '';
@@ -17,10 +23,13 @@ export class CartPage {
   showQrisOptions: boolean = false;
   reservasi: any = {};
 
-  constructor(private router: Router, private alertController: AlertController) {
+  constructor(
+    private router: Router,
+    private alertController: AlertController,
+    private paymentService: PaymentService
+  ) {
     const nav = this.router.getCurrentNavigation();
 
-    // Ambil data cart dan reservasi dari state navigation
     if (nav?.extras?.state) {
       if (nav.extras.state['cart']) {
         this.cart = nav.extras.state['cart'].map((item: any) => ({
@@ -32,26 +41,27 @@ export class CartPage {
 
       if (nav.extras.state['reservasi']) {
         this.reservasi = nav.extras.state['reservasi'];
+        console.log('Reservasi ID diterima:', this.reservasi.id);
       }
     }
   }
 
-  // Fungsi untuk mendapatkan URL gambar yang benar
+  ngOnInit() {
+    // Lifecycle hook, bisa dikosongkan jika tidak ada inisialisasi khusus
+  }
+
+  // --- SEMUA FUNGSI DAN GETTER YANG DIPANGGIL DARI HTML ---
+
   getImageUrl(imageUrl: string | undefined): string {
     if (!imageUrl) {
-      return 'assets/img/default-food.png'; // Gambar default jika tidak ada
+      return 'assets/img/default-food.png';
     }
-
-    // Jika URL sudah lengkap (http/https)
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-
-    // Jika relative path, tambahkan base URL dari environment
-    return 'http://localhost:8000' + imageUrl;
+    return 'http://localhost:8000' + imageUrl; // Pastikan URL backend benar
   }
 
-  // Handler ketika gambar gagal dimuat
   onImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     if (imgElement) {
@@ -80,55 +90,12 @@ export class CartPage {
     }
   }
 
-  async editItem(index: number) {
-    const alert = await this.alertController.create({
-      header: `Ubah Jumlah`,
-      subHeader: this.cart[index].name || this.cart[index].nama,
-      inputs: [
-        {
-          name: 'qty',
-          type: 'number',
-          placeholder: 'Jumlah',
-          value: this.cart[index].quantity,
-          min: 0
-        }
-      ],
-      buttons: [
-        {
-          text: 'Batal',
-          role: 'cancel'
-        },
-        {
-          text: 'Simpan',
-          handler: (data) => {
-            const parsedQty = parseInt(data.qty, 10);
-            if (!isNaN(parsedQty) && parsedQty >= 0) {
-              if (parsedQty === 0) {
-                this.cart.splice(index, 1);
-              } else {
-                this.cart[index].quantity = parsedQty;
-              }
-              if (this.cart.length === 0) {
-                this.router.navigate(['/menu']);
-              }
-            }
-          }
-        }
-      ]
-    });
-
-    await alert.present();
-  }
-
   async deleteItem(index: number) {
     const alert = await this.alertController.create({
       header: 'Konfirmasi',
       message: `Yakin ingin menghapus ${this.cart[index].name || this.cart[index].nama} dari pesanan?`,
       buttons: [
-        {
-          text: 'Batal',
-          role: 'cancel'
-        },
+        { text: 'Batal', role: 'cancel' },
         {
           text: 'Hapus',
           handler: () => {
@@ -140,7 +107,6 @@ export class CartPage {
         }
       ]
     });
-
     await alert.present();
   }
 
@@ -152,61 +118,89 @@ export class CartPage {
   selectPayment(method: string) {
     this.paymentMethod = method;
     this.paymentMethodGroup = 'qris';
-    this.showQrisOptions = false; 
+    this.showQrisOptions = false;
   }
 
+  // --- FUNGSI UTAMA UNTUK CHECKOUT KE MIDTRANS ---
+
   async checkout() {
-    if (!this.paymentMethod) {
-      const alert = await this.alertController.create({
-        header: 'Peringatan',
-        message: 'Silakan pilih metode pembayaran terlebih dahulu.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      return;
-    }
-
+    // Validasi dasar di frontend
     if (this.cart.length === 0) {
-      const alert = await this.alertController.create({
-        header: 'Keranjang Kosong',
-        message: 'Keranjang kosong! Silakan pilih menu terlebih dahulu.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      this.router.navigate(['/menu']);
+      this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu.');
       return;
     }
+    if (!this.reservasi || !this.reservasi.id) {
+      this.presentAlert('Error', 'ID Reservasi tidak ditemukan. Silakan ulangi proses reservasi.');
+      this.router.navigate(['/reservation']);
+      return;
+    }
+    if (!this.paymentMethod) {
+       this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran terlebih dahulu.');
+       return;
+    }
 
-    const transaksi = {
-      id: Date.now(),
-      tanggal: new Date().toLocaleString(),
-      items: this.cart.map(item => ({
+    // 1. Siapkan payload untuk dikirim ke backend Laravel.
+    const payload = {
+      reservasi_id: this.reservasi.id,
+      service_fee: this.serviceFee,
+      cart: this.cart.map(item => ({
         id: item.id,
-        name: item.name || item.nama,
         quantity: item.quantity,
-        price: item.final_price || item.discounted_price || item.price || item.harga,
-        image_url: item.image_url,
         note: item.note || ''
-      })),
-      subtotal: this.subtotal,
-      serviceFee: this.serviceFee,
-      total: this.total,
-      metode: this.paymentMethod,
-      status: 'Menunggu Pembayaran',
-      reservasi: this.reservasi
+      }))
     };
 
-    // Simpan transaksi ke localStorage
-    const existing = JSON.parse(localStorage.getItem('riwayat') || '[]');
-    existing.push(transaksi);
-    localStorage.setItem('riwayat', JSON.stringify(existing));
+    console.log('Sending payload to backend:', payload);
 
-    // Navigasi ke halaman invoice
-    this.router.navigate(['/invoice'], {
-      state: {
-        transaksi
+    // 2. Panggil service untuk memproses checkout di backend
+    this.paymentService.processCheckout(payload).subscribe({
+      next: (response) => {
+        // 3. Jika berhasil, backend akan mengembalikan snap_token
+        console.log('Backend response:', response);
+        if (response && response.snap_token) {
+          // 4. Buka popup pembayaran Midtrans menggunakan snap_token
+          snap.pay(response.snap_token, {
+            onSuccess: (result: any) => {
+              console.log('Payment Success:', result);
+              this.presentAlert('Pembayaran Berhasil', 'Pembayaran DP Anda telah diterima. Reservasi Anda telah dikonfirmasi.');
+              this.router.navigate(['/riwayat-transaksi']);
+            },
+            onPending: (result: any) => {
+              console.log('Payment Pending:', result);
+              this.presentAlert('Pembayaran Tertunda', 'Selesaikan pembayaran Anda sebelum batas waktu yang ditentukan.');
+              this.router.navigate(['/riwayat-transaksi']);
+            },
+            onError: (error: any) => {
+              console.error('Payment Error:', error);
+              this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran.');
+            },
+            onClose: () => {
+              console.log('Payment popup closed without finishing payment');
+              this.presentAlert('Info', 'Anda menutup jendela pembayaran sebelum selesai.');
+            }
+          });
+        } else {
+          this.presentAlert('Error', 'Gagal mendapatkan token pembayaran dari server.');
+        }
+      },
+      error: (error) => {
+        // 5. Tangani jika terjadi error saat memanggil API backend
+        console.error('API Error:', error);
+        const errorMsg = error.error?.message || 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+        this.presentAlert('Checkout Gagal', errorMsg);
       }
     });
+  }
+
+  // --- FUNGSI BANTUAN ---
+
+  async presentAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
   }
 
   goBack() {

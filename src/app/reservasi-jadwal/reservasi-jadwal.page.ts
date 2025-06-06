@@ -1,7 +1,12 @@
+// src/app/reservasi-jadwal/reservasi-jadwal.page.ts
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
-import { IonPopover, AlertController, LoadingController, ToastController } from '@ionic/angular';
-import { ReservationService, ReservationData } from '../services/reservation.service';
+import {
+  IonPopover,
+  AlertController,
+  ToastController
+} from '@ionic/angular';
+import { ReservationData } from '../services/reservation.service';
 
 @Component({
   selector: 'app-reservasi-jadwal',
@@ -16,7 +21,7 @@ export class ReservasiJadwalPage implements OnInit {
   waktu: string = '';
   jumlahTamu: number = 0;
   tempat: string = '';
-  idMeja: string = '';  // misal "4,8,9"
+  idMeja: string = '';  // e.g. "4,8,9"
   catatan: string = '';
 
   originalWaktuList = ['11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
@@ -34,12 +39,11 @@ export class ReservasiJadwalPage implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private alertController: AlertController,
-    private loadingController: LoadingController,
-    private toastController: ToastController,
-    private reservationService: ReservationService
+    private toastController: ToastController
   ) {}
 
   ngOnInit() {
+    // Atur batas tanggal (hari ini + 10 hari ke depan)
     const today = new Date();
     const max = new Date();
     max.setDate(today.getDate() + 10);
@@ -47,30 +51,26 @@ export class ReservasiJadwalPage implements OnInit {
     this.minDate = today.toISOString().split('T')[0];
     this.maxDate = max.toISOString().split('T')[0];
 
-    this.waktuList = this.originalWaktuList.map(waktu => ({ label: waktu, disabled: false }));
+    // Inisialisasi daftar waktu (semua enabled)
+    this.waktuList = this.originalWaktuList.map(w => ({ label: w, disabled: false }));
 
+    // Ambil params: jumlahKursi, tempat, idMeja
     this.route.queryParams.subscribe(params => {
       if (params['jumlahKursi']) {
         this.jumlahTamu = Number(params['jumlahKursi']);
       }
-
       if (params['tempat']) {
-        const selectedPlaces = params['tempat'].split(',');
-        this.filteredTempatList = this.tempatList.filter(t =>
-          selectedPlaces.includes(t)
-        );
+        const selectedPlaces = (params['tempat'] as string).split(',');
+        this.filteredTempatList = this.tempatList.filter(t => selectedPlaces.includes(t));
         if (this.filteredTempatList.length > 0 && !this.tempat) {
           this.tempat = this.filteredTempatList[0];
         }
       } else {
         this.filteredTempatList = [...this.tempatList];
       }
-
-      // Ambil idMeja (string "4,8,9")
       if (params['idMeja']) {
         this.idMeja = params['idMeja'];
       }
-
       console.log('Debug ngOnInit: idMeja =', this.idMeja);
     });
   }
@@ -80,6 +80,7 @@ export class ReservasiJadwalPage implements OnInit {
     const selectedDate = new Date(this.tanggal);
     const today = new Date();
 
+    // Jika tanggal sama dengan hari ini, disable waktu yang sudah lewat
     if (selectedDate.toDateString() === today.toDateString()) {
       const now = new Date();
       this.waktuList = this.originalWaktuList.map(waktu => {
@@ -104,16 +105,7 @@ export class ReservasiJadwalPage implements OnInit {
   async presentAlert(message: string = 'Harap lengkapi semua data reservasi!') {
     const alert = await this.alertController.create({
       header: 'Peringatan',
-      message: message,
-      buttons: ['OK']
-    });
-    await alert.present();
-  }
-
-  async showTokoTutupAlert() {
-    const alert = await this.alertController.create({
-      header: 'Peringatan',
-      message: 'Toko tutup dan tidak menerima reservasi lagi pada hari ini.',
+      message,
       buttons: ['OK']
     });
     await alert.present();
@@ -121,9 +113,9 @@ export class ReservasiJadwalPage implements OnInit {
 
   async presentToast(message: string, color: string = 'success') {
     const toast = await this.toastController.create({
-      message: message,
+      message,
       duration: 3000,
-      color: color,
+      color,
       position: 'top'
     });
     toast.present();
@@ -165,22 +157,20 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
 
+    // Validasi input dasar
     if (!this.tanggal || !this.tempat) {
       await this.presentAlert('Harap lengkapi semua data reservasi!');
       return;
     }
-
     const adaWaktuAktif = this.waktuList.some(w => !w.disabled);
     if (!adaWaktuAktif) {
-      await this.showTokoTutupAlert();
+      await this.presentAlert('Toko tutup dan tidak menerima reservasi lagi pada hari ini.');
       return;
     }
-
     if (!this.waktu) {
       await this.presentAlert('Harap pilih waktu kedatangan!');
       return;
     }
-
     const validation = this.validateDateTime();
     if (!validation.isValid) {
       await this.presentAlert(validation.message || 'Format tanggal/waktu tidak valid');
@@ -195,26 +185,16 @@ export class ReservasiJadwalPage implements OnInit {
       const rd = new Date();
       rd.setHours(rh, rm, 0, 0);
       if (now > rd) {
-        await this.showTokoTutupAlert();
+        await this.presentAlert('Toko tutup dan tidak menerima reservasi lagi pada hari ini.');
         return;
       }
     }
 
-    await this.submitReservation();
-  }
-
-  async submitReservation() {
-    const loading = await this.loadingController.create({
-      message: 'Membuat reservasi...',
-      spinner: 'crescent'
-    });
-    await loading.present();
     this.isSubmitting = true;
-
     try {
       const waktuKedatangan = this.formatWaktuKedatangan();
 
-      // Parse idMeja menjadi array number
+      // Parse idMeja menjadi array angka
       let mejaIdArray: number[] = [];
       if (this.idMeja) {
         mejaIdArray = this.idMeja
@@ -223,8 +203,6 @@ export class ReservasiJadwalPage implements OnInit {
           .filter(n => !isNaN(n));
       }
 
-      console.log('Debug submitReservation: mejaIdArray =', mejaIdArray);
-
       const reservationData: ReservationData = {
         waktu_kedatangan: waktuKedatangan,
         jumlah_tamu: this.jumlahTamu,
@@ -232,49 +210,27 @@ export class ReservasiJadwalPage implements OnInit {
         id_meja: mejaIdArray
       };
 
-      console.log('Debug submitReservation: reservationData =', reservationData);
+      // Simpan sementara di localStorage
+      localStorage.setItem('pendingReservation', JSON.stringify({
+        ...reservationData,
+        tempat: this.tempat
+      }));
 
-      const response = await this.reservationService.createReservation(reservationData).toPromise();
-
-      await loading.dismiss();
-      this.isSubmitting = false;
-
-      if (response && response.reservasi) {
-        await this.presentToast('Reservasi berhasil dibuat!', 'success');
-        this.router.navigate(['/menu'], {
-          queryParams: {
-            reservasiId: response.reservasi.id,
-            kodeReservasi: response.reservasi.kode_reservasi,
-            tanggal: this.tanggal,
-            waktu: this.waktu,
-            jumlahTamu: this.jumlahTamu,
-            tempat: this.tempat,
-            // Kirim kembali string daftar meja agar di next page bisa di‐parse ulang bila perlu
-            idMeja: response.reservasi.meja.map(m => m.id).join(',')
-          }
-        });
-      }
-    } catch (error: any) {
-      await loading.dismiss();
-      this.isSubmitting = false;
-      console.error('Reservation error:', error);
-
-      let errorMessage = 'Terjadi kesalahan saat membuat reservasi.';
-      if (error.error) {
-        if (error.error.message) {
-          errorMessage = error.error.message;
-        } else if (error.error.errors) {
-          const errs = error.error.errors;
-          const firstKey = Object.keys(errs)[0];
-          const firstErr = errs[firstKey];
-          if (Array.isArray(firstErr) && firstErr.length > 0) {
-            errorMessage = firstErr[0];
-          }
+      // Tampilkan toast, lalu redirect ke halaman /menu
+      await this.presentToast('Data reservasi disimpan sementara. Silakan pilih menu dan lanjut ke keranjang.', 'primary');
+      this.router.navigate(['/menu'], {
+        queryParams: {
+          // Anda bisa terus meneruskan idMeja jika perlu di menu
+          idMeja: this.idMeja,
+          jumlahTamu: this.jumlahTamu,
+          tempat: this.tempat
         }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      await this.presentAlert(errorMessage);
+      });
+    } catch (err) {
+      console.error('Error menyiapkan data reservasi:', err);
+      await this.presentAlert('Gagal menyiapkan data reservasi. Coba lagi.');
+    } finally {
+      this.isSubmitting = false;
     }
   }
 }
