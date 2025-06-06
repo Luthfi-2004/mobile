@@ -12,14 +12,16 @@
     <h3>{{ cart.length }} Item</h3>
 
     <div *ngFor="let item of cart; let i = index" class="cart-item">
-      <ion-img 
-      [src]="getImageUrl(item.image_url)" 
-      [alt]="item.name || item.nama"
-      (ionError)="onImageError($event)">
-      </ion-img>
+      <div class="image-container">
+        <ion-img 
+          [src]="getImageUrl(item.image_url)" 
+          [alt]="item.name || item.nama"
+          (ionError)="onImageError($event)">
+        </ion-img>
+      </div>
       <div class="item-detail">
-        <h4>{{ item.nama }}</h4>
-        <p>Rp{{ item.harga | number }}</p>
+        <h4>{{ item.name }}</h4>
+        <p>Rp{{ (item.discounted_price || item.price) }}</p>
 
         <div class="qty-control">
           <ion-button size="small" fill="clear" (click)="decreaseQty(i)">-</ion-button>
@@ -27,21 +29,20 @@
           <ion-button size="small" fill="clear" (click)="increaseQty(i)">+</ion-button>
         </div>
 
- <div class="edit-delete">
-  <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
-    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-  </ion-button>
-</div>
+        <div class="edit-delete">
+          <ion-button size="small" fill="outline" color="danger" (click)="deleteItem(i)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
 
-<!-- Input catatan -->
-<ion-item lines="none" class="note-input">
-  <ion-label position="stacked">Catatan</ion-label>
-  <ion-textarea
-    [(ngModel)]="item.note"
-    autoGrow="true"
-    placeholder="Contoh: Jangan terlalu pedas, saus dipisah, dll.">
-  </ion-textarea>
-</ion-item>
+        <ion-item lines="none" class="note-input">
+          <ion-label position="stacked">Catatan</ion-label>
+          <ion-textarea
+            [(ngModel)]="item.note"
+            autoGrow="true"
+            placeholder="Contoh: Jangan terlalu pedas, saus dipisah, dll.">
+          </ion-textarea>
+        </ion-item>
       </div>
     </div>
 

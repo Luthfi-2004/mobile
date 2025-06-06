@@ -4,8 +4,8 @@ ion-content {
 
 .cart-wrapper {
   padding: 16px;
-  max-width: 600px; /* Optional: batasi max lebar agar rapi di layar besar */
-  margin: 0 auto;   /* center container */
+  max-width: 600px;
+  margin: 0 auto;
   box-sizing: border-box;
 }
 
@@ -19,12 +19,30 @@ ion-content {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
-.cart-item img {
-  width: 80px;
-  height: 80px;
+.image-container {
+  width: 100px;
+  height: 100px;
+  min-width: 100px;
+  position: relative;
+  overflow: hidden;
   border-radius: 8px;
-  object-fit: cover;
   margin-right: 12px;
+  
+  ion-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  
+  &::before {
+    content: "";
+    display: block;
+    padding-top: 100%;
+  }
 }
 
 .item-detail {
@@ -44,14 +62,13 @@ ion-content {
   gap: 10px;
 }
 
-/* Perbaikan di sini */
 .payment-summary {
   background: #fff;
   border-radius: 12px;
   padding: 16px;
-  margin: 16px 0; /* Hilangkan margin kiri-kanan, hanya atas bawah */
+  margin: 16px 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  width: 100%;    /* Penuhi container .cart-wrapper */
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -65,9 +82,9 @@ ion-content {
   background: #fff;
   border-radius: 12px;
   padding: 16px;
-  margin: 0 0 20px 0; /* Hilangkan margin kiri-kanan */
+  margin: 0 0 20px 0;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  width: 100%;    /* Penuhi container .cart-wrapper */
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -91,7 +108,7 @@ ion-content {
 
 .warning-note {
   font-size: 0.8rem;
-  color: #ff3b30; /* merah lembut */
+  color: #ff3b30;
   margin: 10px 16px;
   text-align: center;
   font-style: italic;
@@ -108,14 +125,30 @@ ion-item.sub-selected {
 .qris-sub-options {
   margin-left: 16px;
 }
+
 .note-input {
   margin-top: 10px;
   --background: transparent;
+  
   ion-label {
     font-size: 14px;
     color: var(--ion-color-medium);
   }
+  
   ion-textarea {
     font-size: 14px;
   }
+}
+
+.info-note {
+  font-size: 0.9rem;
+  color: var(--ion-color-medium);
+  margin: 16px 0;
+  text-align: center;
+}
+
+.checkout-btn {
+  --border-radius: 8px;
+  margin-top: 16px;
+  font-weight: bold;
 }
