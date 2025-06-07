@@ -23,10 +23,16 @@ ion-content {
   color: #333;
 }
 
+.profile-email {
+  margin: 0;
+  font-weight: 300;
+  color: #333;
+}
+
 .menu-list {
   background: transparent;
   ion-item {
-    --background: #fff;
+    --background: var(--ion-card-background);
     --border-radius: 8px;
     margin-bottom: 10px;
     --padding-start: 16px;

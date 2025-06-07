@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core'; // Tambahkan OnInit
 import { Platform } from '@ionic/angular';
 import { Router } from '@angular/router';
 import { AuthService } from './auth.service';
+import { ThemeService } from './services/theme.service'; // Impor ThemeService
 
 @Component({
   selector: 'app-root',
@@ -9,13 +10,20 @@ import { AuthService } from './auth.service';
   styleUrls: ['app.component.scss'],
   standalone: false,
 })
-export class AppComponent {
+export class AppComponent implements OnInit { // Implementasikan OnInit
   constructor(
     private platform: Platform,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private themeService: ThemeService // Inject ThemeService
   ) {
     this.initializeApp();
+  }
+
+  // Metode lifecycle hook yang akan dijalankan setelah konstruktor
+  ngOnInit() {
+    // Muat tema yang tersimpan atau tema sistem saat aplikasi dimulai
+    this.themeService.loadTheme();
   }
 
   initializeApp() {
@@ -26,7 +34,7 @@ export class AppComponent {
   }
 
   private checkLoginStatus() {
-    // Wait a bit to ensure auth service is initialized
+    // Tunggu sebentar untuk memastikan auth service terinisialisasi
     setTimeout(() => {
       const isLoggedIn = this.authService.isLoggedIn();
       const currentUrl = this.router.url;

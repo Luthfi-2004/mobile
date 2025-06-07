@@ -7,7 +7,7 @@ ion-content {
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 16px;
-  background-color: #fff;
+  background-color: var(--ion-background-color);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 
   .header {
@@ -25,7 +25,7 @@ ion-content {
       font-size: 14px;
       padding: 4px 10px;
       border-radius: 8px;
-      background-color: #f3f3f3;
+      background-color: var(--ion-background-color);
     }
   }
 

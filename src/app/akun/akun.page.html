@@ -1,6 +1,22 @@
 <ion-header>
   <ion-toolbar color="light">
     <ion-title>Akun</ion-title>
+    <ion-buttons slot="end">
+      <!-- Bungkus ion-toggle dan ion-icon dalam div untuk styling kustom -->
+      <div class="theme-toggle-container">
+        <ion-toggle
+          [checked]="isDarkTheme"
+          (ionChange)="toggleTheme($event)"
+          aria-label="Toggle Dark Mode"
+          id="theme-toggle"
+        ></ion-toggle>
+        <!-- Ikon akan diposisikan di atas toggle ini dengan CSS -->
+        <ion-icon
+          class="toggle-icon"
+          [name]="isDarkTheme ? 'moon' : 'sunny'"
+        ></ion-icon>
+      </div>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

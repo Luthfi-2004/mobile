@@ -248,7 +248,7 @@
   border-top: 1px solid #e0e0e0;
   
   ion-toolbar {
-    --background: white;
+    --background: var(--ion-background-color);
     --padding-start: 16px;
     --padding-end: 16px;
     

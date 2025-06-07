@@ -24,6 +24,7 @@ ion-content {
     font-size: 18px;
     font-weight: bold;
     margin: 0 0 8px;
+    color: var(--ion-background-color);
   }
   
   .note {
@@ -85,7 +86,7 @@ ion-content {
   
   .input-box {
     --color: black;
-  color: black;
+    color: black;
     background-color: white;
     border: 1px solid black;
     border-radius: 16px;

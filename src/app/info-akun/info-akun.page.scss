@@ -77,7 +77,7 @@ ion-card-content {
   --inner-padding-end: 0;
   --inner-padding-end: 8px; // Tambahkan padding di sebelah kanan
   --padding-end: 8px; // Padding untuk item secara keseluruhan
-  --background: #ffffff;
+  --background: var(--ion-card-background);
   margin-bottom: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
