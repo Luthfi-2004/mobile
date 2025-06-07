@@ -1,27 +1,24 @@
-// cart.page.ts
-
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { PaymentService } from 'src/app/services/payment.service'; // Pastikan path ini benar
+import { PaymentService } from 'src/app/services/payment.service';
 
-// Deklarasikan variabel global 'snap' dari Midtrans agar TypeScript tidak error
 declare var snap: any;
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.page.html',
   styleUrls: ['./cart.page.scss'],
-  standalone: false, // Memastikan komponen ini non-standalone
+  standalone: false, // <-- INI SOLUSINYA. Pastikan properti ini ada dan bernilai false.
 })
 export class CartPage implements OnInit {
-  // --- DEKLARASI PROPERTY YANG DIBUTUHKAN OLEH HTML ---
   cart: any[] = [];
   serviceFee: number = 9000;
-  paymentMethod: string = '';
-  paymentMethodGroup: string = 'qris';
-  showQrisOptions: boolean = false;
   reservasi: any = {};
+
+  paymentMethod: string = '';
+  paymentMethodGroup: string = '';
+  openPaymentGroup: string = '';
 
   constructor(
     private router: Router,
@@ -46,20 +43,12 @@ export class CartPage implements OnInit {
     }
   }
 
-  ngOnInit() {
-    // Lifecycle hook, bisa dikosongkan jika tidak ada inisialisasi khusus
-  }
-
-  // --- SEMUA FUNGSI DAN GETTER YANG DIPANGGIL DARI HTML ---
+  ngOnInit() {}
 
   getImageUrl(imageUrl: string | undefined): string {
-    if (!imageUrl) {
-      return 'assets/img/default-food.png';
-    }
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return 'http://localhost:8000' + imageUrl; // Pastikan URL backend benar
+    if (!imageUrl) return 'assets/img/default-food.png';
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return 'http://localhost:8000' + imageUrl;
   }
 
   onImageError(event: Event): void {
@@ -93,7 +82,7 @@ export class CartPage implements OnInit {
   async deleteItem(index: number) {
     const alert = await this.alertController.create({
       header: 'Konfirmasi',
-      message: `Yakin ingin menghapus ${this.cart[index].name || this.cart[index].nama} dari pesanan?`,
+      message: `Yakin ingin menghapus ${this.cart[index].name || this.cart[index].nama}?`,
       buttons: [
         { text: 'Batal', role: 'cancel' },
         {
@@ -110,39 +99,38 @@ export class CartPage implements OnInit {
     await alert.present();
   }
 
-  toggleQrisOptions() {
-    this.showQrisOptions = !this.showQrisOptions;
-    this.paymentMethodGroup = 'qris';
+  togglePaymentGroup(group: string) {
+    if (this.openPaymentGroup === group) {
+      this.openPaymentGroup = '';
+    } else {
+      this.openPaymentGroup = group;
+    }
   }
 
-  selectPayment(method: string) {
+  selectPayment(method: string, group: string) {
     this.paymentMethod = method;
-    this.paymentMethodGroup = 'qris';
-    this.showQrisOptions = false;
+    this.paymentMethodGroup = group;
   }
-
-  // --- FUNGSI UTAMA UNTUK CHECKOUT KE MIDTRANS ---
 
   async checkout() {
-    // Validasi dasar di frontend
     if (this.cart.length === 0) {
       this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu.');
       return;
     }
     if (!this.reservasi || !this.reservasi.id) {
-      this.presentAlert('Error', 'ID Reservasi tidak ditemukan. Silakan ulangi proses reservasi.');
+      this.presentAlert('Error', 'ID Reservasi tidak ditemukan.');
       this.router.navigate(['/reservation']);
       return;
     }
     if (!this.paymentMethod) {
-       this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran terlebih dahulu.');
+       this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran.');
        return;
     }
 
-    // 1. Siapkan payload untuk dikirim ke backend Laravel.
     const payload = {
       reservasi_id: this.reservasi.id,
       service_fee: this.serviceFee,
+      payment_method: this.paymentMethod,
       cart: this.cart.map(item => ({
         id: item.id,
         quantity: item.quantity,
@@ -150,32 +138,22 @@ export class CartPage implements OnInit {
       }))
     };
 
-    console.log('Sending payload to backend:', payload);
-
-    // 2. Panggil service untuk memproses checkout di backend
     this.paymentService.processCheckout(payload).subscribe({
       next: (response) => {
-        // 3. Jika berhasil, backend akan mengembalikan snap_token
-        console.log('Backend response:', response);
         if (response && response.snap_token) {
-          // 4. Buka popup pembayaran Midtrans menggunakan snap_token
           snap.pay(response.snap_token, {
             onSuccess: (result: any) => {
-              console.log('Payment Success:', result);
-              this.presentAlert('Pembayaran Berhasil', 'Pembayaran DP Anda telah diterima. Reservasi Anda telah dikonfirmasi.');
+              this.presentAlert('Pembayaran Berhasil', 'Reservasi Anda telah dikonfirmasi.');
               this.router.navigate(['/riwayat-transaksi']);
             },
             onPending: (result: any) => {
-              console.log('Payment Pending:', result);
-              this.presentAlert('Pembayaran Tertunda', 'Selesaikan pembayaran Anda sebelum batas waktu yang ditentukan.');
+              this.presentAlert('Pembayaran Tertunda', 'Selesaikan pembayaran Anda.');
               this.router.navigate(['/riwayat-transaksi']);
             },
             onError: (error: any) => {
-              console.error('Payment Error:', error);
               this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran.');
             },
             onClose: () => {
-              console.log('Payment popup closed without finishing payment');
               this.presentAlert('Info', 'Anda menutup jendela pembayaran sebelum selesai.');
             }
           });
@@ -184,15 +162,11 @@ export class CartPage implements OnInit {
         }
       },
       error: (error) => {
-        // 5. Tangani jika terjadi error saat memanggil API backend
-        console.error('API Error:', error);
-        const errorMsg = error.error?.message || 'Tidak dapat terhubung ke server. Periksa koneksi Anda.';
+        const errorMsg = error.error?.message || 'Tidak dapat terhubung ke server.';
         this.presentAlert('Checkout Gagal', errorMsg);
       }
     });
   }
-
-  // --- FUNGSI BANTUAN ---
 
   async presentAlert(header: string, message: string) {
     const alert = await this.alertController.create({
@@ -206,4 +180,4 @@ export class CartPage implements OnInit {
   goBack() {
     this.router.navigate(['/menu']);
   }
-}
+} 
