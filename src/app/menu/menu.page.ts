@@ -1,3 +1,5 @@
+// src/app/menu/menu.page.ts
+
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
@@ -14,24 +16,16 @@ export class MenuPage implements OnInit {
   selectedKategori = 'all';
   cart: any[] = [];
 
-  // Dynamic data from API
   menuList: MenuItem[] = [];
   kategoriList: { value: string, label: string }[] = [];
   kategoriListWithAll: { value: string, label: string }[] = [];
 
-  // Loading states
   isLoading = false;
   currentPage = 1;
   totalPages = 1;
   hasMoreData = true;
 
-  reservasi: any = {
-    tanggal: '',
-    waktu: '',
-    tamu: 0,
-    area: '',
-    idMeja: ''
-  };
+  reservasi: any = {};
 
   constructor(
     private router: Router,
@@ -40,42 +34,35 @@ export class MenuPage implements OnInit {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private menuService: MenuService
-  ) {}
+  ) {
+    const nav = this.router.getCurrentNavigation();
+    if (nav?.extras?.state && nav.extras.state['reservasi']) {
+      this.reservasi = nav.extras.state['reservasi'];
+      console.log('Data reservasi valid diterima di MenuPage:', this.reservasi);
+    } else {
+      console.warn('Data reservasi tidak ditemukan, mengarahkan kembali ke jadwal.');
+      // --- PERBAIKAN DI BARIS INI ---
+      this.showToast('Sesi reservasi tidak ditemukan, silakan mulai dari awal.', 'warning');
+      this.router.navigate(['/reservasi-jadwal']);
+    }
+  }
 
   async ngOnInit() {
-    // Get categories from service
     this.kategoriList = this.menuService.getCategories();
     this.kategoriListWithAll = [
       { value: 'all', label: 'Semua' },
       ...this.kategoriList
     ];
-
-    // Get reservation data from queryParams
-    this.route.queryParams.subscribe(params => {
-      this.reservasi.tanggal = params['tanggal'] || '';
-      this.reservasi.waktu = params['waktu'] || '';
-      this.reservasi.tamu = Number(params['jumlahTamu']) || 0;
-      this.reservasi.area = params['tempat'] || '';
-      this.reservasi.idMeja = params['idMeja'] || '';
-    });
-
-    // Load initial menu data
     await this.loadMenus();
   }
 
-  // Fungsi baru untuk mendapatkan URL gambar yang benar
   getImageUrl(imageUrl: string | undefined): string {
     if (!imageUrl) {
       return 'assets/img/default-food.png';
     }
-
-    // Jika URL sudah lengkap (http/https), gunakan langsung
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-
-    // Jika relative path, tambahkan base URL API
-    // Ganti 'https://toko.com' dengan URL API Laravel Anda
     return 'http://localhost:8000' + imageUrl;
   }
 
@@ -103,20 +90,17 @@ export class MenuPage implements OnInit {
         } else {
           this.menuList = [...this.menuList, ...response.menus.data];
         }
-
-        // Add quantity property for cart management
         this.menuList.forEach(menu => {
           if (!menu.hasOwnProperty('quantity')) {
             (menu as any).quantity = 0;
           }
         });
-
         this.totalPages = response.menus.last_page;
         this.hasMoreData = this.currentPage < this.totalPages;
       }
     } catch (error) {
       console.error('Error loading menus:', error);
-      await this.showToast('Gagal memuat menu: ' + error, 'danger');
+      await this.showToast('Gagal memuat menu.', 'danger');
     } finally {
       this.isLoading = false;
       await loading.dismiss();
@@ -129,14 +113,12 @@ export class MenuPage implements OnInit {
   }
 
   async onSearchChange() {
-    // Debounce search
     setTimeout(async () => {
       await this.loadMenus(true);
     }, 500);
   }
 
   getFilteredMenu(): MenuItem[] {
-    // Since we're filtering on the server side, return all loaded menus
     return this.menuList;
   }
 
@@ -148,13 +130,10 @@ export class MenuPage implements OnInit {
       const itemCopy = { 
         ...item, 
         quantity: 1,
-        // Use final_price if available, otherwise use discounted_price or price
         finalPrice: item.final_price || item.discounted_price || item.price
       };
       this.cart.push(itemCopy);
     }
-
-    // Update menu item quantity for display
     const menuItem = this.menuList.find(m => m.id === item.id);
     if (menuItem) {
       (menuItem as any).quantity = ((menuItem as any).quantity || 0) + 1;
@@ -165,13 +144,10 @@ export class MenuPage implements OnInit {
     const found = this.cart.find(i => i.id === item.id);
     if (found && found.quantity > 0) {
       found.quantity--;
-
-      // Update menu item quantity for display
       const menuItem = this.menuList.find(m => m.id === item.id);
       if (menuItem) {
         (menuItem as any).quantity = Math.max(0, ((menuItem as any).quantity || 0) - 1);
       }
-
       if (found.quantity === 0) {
         this.cart = this.cart.filter(i => i.id !== item.id);
       }
@@ -194,14 +170,24 @@ export class MenuPage implements OnInit {
     if (this.cart.length === 0) {
       const alert = await this.alertController.create({
         header: 'Keranjang Kosong',
-        message: 'Silakan pilih minimal satu menu sebelum melanjutkan ke checkout.',
+        message: 'Silakan pilih minimal satu menu sebelum melanjutkan.',
         buttons: ['OK']
       });
       await alert.present();
       return;
     }
+    
+    if (!this.reservasi || !this.reservasi.id) {
+        const alert = await this.alertController.create({
+            header: 'Sesi Tidak Valid',
+            message: 'Informasi reservasi tidak ditemukan. Mohon ulangi proses dari awal.',
+            buttons: ['OK']
+        });
+        await alert.present();
+        this.router.navigate(['/reservasi-jadwal']);
+        return;
+    }
 
-    // Navigate to cart page with cart and reservation data
     this.router.navigate(['/cart'], {
       state: {
         cart: this.cart,
@@ -211,10 +197,7 @@ export class MenuPage implements OnInit {
   }
 
   async loadMoreMenus() {
-    if (!this.hasMoreData || this.isLoading) {
-      return;
-    }
-
+    if (!this.hasMoreData || this.isLoading) return;
     this.currentPage++;
     await this.loadMenus(false);
   }
@@ -246,16 +229,10 @@ export class MenuPage implements OnInit {
     this.router.navigate(['/reservasi-jadwal']);
   }
 
-  /**
-   * Fungsi trackBy untuk *ngFor agar performa lebih baik
-   */
   trackByMenuId(index: number, item: any): any {
     return item.id || index;
   }
 
-  /**
-   * Handler ketika gambar gagal dimuat, mengganti ke gambar default
-   */
   onImageError(event: Event): void {
     const imgElement = event.target as HTMLImageElement;
     if (imgElement) {
