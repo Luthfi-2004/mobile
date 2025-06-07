@@ -1,12 +1,11 @@
 ion-content {
-  --background: #90caf9;
+  --background: #f4f5f8;
 }
 
 .cart-wrapper {
   padding: 16px;
   max-width: 600px;
   margin: 0 auto;
-  box-sizing: border-box;
 }
 
 .cart-item {
@@ -16,37 +15,38 @@ ion-content {
   background: #fff;
   padding: 12px;
   border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
 
 .image-container {
-  width: 100px;
-  height: 100px;
-  min-width: 100px;
-  position: relative;
-  overflow: hidden;
+  width: 90px;
+  height: 90px;
+  min-width: 90px;
   border-radius: 8px;
+  overflow: hidden;
   margin-right: 12px;
   
   ion-img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
-  
-  &::before {
-    content: "";
-    display: block;
-    padding-top: 100%;
   }
 }
 
 .item-detail {
   flex: 1;
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0;
+    margin-bottom: 4px;
+  }
+  p {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: var(--ion-color-primary);
+    margin: 0;
+  }
 }
 
 .qty-control {
@@ -58,97 +58,127 @@ ion-content {
 
 .edit-delete {
   margin-top: 8px;
-  display: flex;
-  gap: 10px;
-}
-
-.payment-summary {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 16px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.payment-summary ion-item {
-  --background: transparent;
-  --inner-padding-start: 0;
-  --inner-padding-end: 0;
-}
-
-.payment-method {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  margin: 0 0 20px 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.payment-method h4 {
-  margin-bottom: 12px;
-}
-
-.qris-sub-options ion-item {
-  padding-left: 20px;
-}
-
-.payment-method ion-item.selected {
-  background-color: #d0eaff;
-  border-radius: 8px;
-}
-
-.payment-method ion-item.sub-selected {
-  background-color: #a0cfff;
-  border-radius: 8px;
-}
-
-.warning-note {
-  font-size: 0.8rem;
-  color: #ff3b30;
-  margin: 10px 16px;
-  text-align: center;
-  font-style: italic;
-}
-
-ion-item.selected {
-  background-color: #e0f7fa;
-}
-
-ion-item.sub-selected {
-  background-color: #c8e6c9;
-}
-
-.qris-sub-options {
-  margin-left: 16px;
 }
 
 .note-input {
   margin-top: 10px;
-  --background: transparent;
-  
+  --background: #f9f9f9;
+  border-radius: 6px;
+  --padding-start: 8px;
+
   ion-label {
-    font-size: 14px;
+    font-size: 0.8rem;
     color: var(--ion-color-medium);
   }
-  
   ion-textarea {
-    font-size: 14px;
+    font-size: 0.9rem;
+  }
+}
+
+.payment-summary, .payment-method {
+  background: #fff;
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  width: 100%;
+}
+
+.payment-summary {
+  padding: 8px 0;
+  ion-item {
+    --background: transparent;
+  }
+  ion-item.down-payment {
+    --color: var(--ion-color-success);
+  }
+}
+
+.payment-method {
+  padding: 16px;
+  h4 {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0;
+    margin-bottom: 12px;
+  }
+  ion-list {
+    padding-top: 0;
+  }
+}
+
+.payment-method ion-item {
+  --background: transparent;
+  --inner-padding-end: 8px;
+  --padding-start: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background-color 0.2s ease-in-out;
+
+  ion-label {
+    font-weight: 500;
+  }
+}
+
+.payment-method ion-item.selected {
+  --background: var(--ion-color-light-tint);
+  border-color: var(--ion-color-primary);
+}
+
+.payment-sub-options {
+  padding-left: 20px;
+  margin-bottom: 8px;
+  margin-top: -4px;
+
+  ion-item {
+    border: none;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    background-color: #f7f7f7;
+  }
+
+  ion-item.sub-selected {
+    --background: var(--ion-color-secondary-tint);
+    
+    ion-label {
+      font-weight: 600;
+      color: var(--ion-color-secondary);
+    }
   }
 }
 
 .info-note {
-  font-size: 0.9rem;
-  color: var(--ion-color-medium);
+  font-size: 0.85rem;
+  color: var(--ion-color-medium-shade);
   margin: 16px 0;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .checkout-btn {
-  --border-radius: 8px;
+  --border-radius: 10px;
   margin-top: 16px;
   font-weight: bold;
+  height: 48px;
+}
+
+// Style untuk keranjang kosong
+.empty-cart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  color: var(--ion-color-medium);
+
+  .empty-cart-icon {
+    font-size: 80px;
+    margin-bottom: 16px;
+    color: var(--ion-color-light-shade);
+  }
 }
