@@ -89,10 +89,11 @@ const routes: Routes = [
     loadChildren: () => import('./bantuan/bantuan.module').then(m => m.BantuanPageModule)
   },
   {
-    path: 'invoice-detail',
-    loadChildren: () => import('./invoice-detail/invoice-detail.module').then(m => m.InvoiceDetailPageModule),
-    canActivate: [AuthGuard]
-  }
+  // UBAH BARIS INI: Tambahkan /:reservasiId untuk menerima parameter
+  path: 'invoice-detail/:reservasiId', 
+  loadChildren: () => import('./invoice-detail/invoice-detail.module').then(m => m.InvoiceDetailPageModule),
+  canActivate: [AuthGuard]
+}
 ];
 
 @NgModule({

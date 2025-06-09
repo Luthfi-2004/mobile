@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { PaymentService } from 'src/app/services/payment.service';
 
 declare var snap: any;
@@ -9,102 +9,51 @@ declare var snap: any;
   selector: 'app-cart',
   templateUrl: './cart.page.html',
   styleUrls: ['./cart.page.scss'],
-  standalone: false, // <-- INI SOLUSINYA. Pastikan properti ini ada dan bernilai false.
+  standalone: false,
 })
 export class CartPage implements OnInit {
   cart: any[] = [];
-  serviceFee: number = 9000;
   reservasi: any = {};
 
-  paymentMethod: string = '';
-  paymentMethodGroup: string = '';
-  openPaymentGroup: string = '';
+  paymentMethod = '';
+  paymentMethodGroup = '';
+  openPaymentGroup = '';
 
   constructor(
     private router: Router,
     private alertController: AlertController,
+    private loadingController: LoadingController,
     private paymentService: PaymentService
   ) {
     const nav = this.router.getCurrentNavigation();
-
     if (nav?.extras?.state) {
-      if (nav.extras.state['cart']) {
-        this.cart = nav.extras.state['cart'].map((item: any) => ({
-          ...item,
-          quantity: item.quantity || 1,
-          note: item.note || ''
-        }));
-      }
-
-      if (nav.extras.state['reservasi']) {
-        this.reservasi = nav.extras.state['reservasi'];
-        console.log('Reservasi ID diterima:', this.reservasi.id);
-      }
+      this.cart = (nav.extras.state['cart'] || []).map((i: any) => ({ ...i, quantity: i.quantity || 1, note: i.note || '' }));
+      this.reservasi = nav.extras.state['reservasi'] || {};
     }
   }
 
   ngOnInit() {}
 
-  getImageUrl(imageUrl: string | undefined): string {
+  getImageUrl(imageUrl?: string): string {
     if (!imageUrl) return 'assets/img/default-food.png';
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return 'http://localhost:8000' + imageUrl;
+    return imageUrl.startsWith('http') ? imageUrl : 'http://localhost:8000' + imageUrl;
   }
 
-  onImageError(event: Event): void {
-    const imgElement = event.target as HTMLImageElement;
-    if (imgElement) {
-      imgElement.src = 'assets/img/default-food.png';
-    }
+  onImageError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.src = 'assets/img/default-food.png';
   }
 
-  get subtotal(): number {
-    return this.cart.reduce((total, item) => {
-      const price = item.final_price || item.discounted_price || item.price || item.harga;
-      return total + (price * item.quantity);
-    }, 0);
-  }
-
-  get total(): number {
-    return this.subtotal + this.serviceFee;
-  }
-
-  increaseQty(index: number) {
-    this.cart[index].quantity += 1;
-  }
-
-  decreaseQty(index: number) {
-    if (this.cart[index].quantity > 1) {
-      this.cart[index].quantity -= 1;
-    }
-  }
-
-  async deleteItem(index: number) {
-    const alert = await this.alertController.create({
-      header: 'Konfirmasi',
-      message: `Yakin ingin menghapus ${this.cart[index].name || this.cart[index].nama}?`,
-      buttons: [
-        { text: 'Batal', role: 'cancel' },
-        {
-          text: 'Hapus',
-          handler: () => {
-            this.cart.splice(index, 1);
-            if (this.cart.length === 0) {
-              this.router.navigate(['/menu']);
-            }
-          }
-        }
-      ]
-    });
-    await alert.present();
+  decreaseQty(i: number) { if (this.cart[i].quantity > 1) this.cart[i].quantity--; }
+  increaseQty(i: number) { this.cart[i].quantity++; }
+  deleteItem(i: number) {
+    this.cart.splice(i, 1);
+    if (!this.cart.length) this.router.navigate(['/menu']);
   }
 
   togglePaymentGroup(group: string) {
-    if (this.openPaymentGroup === group) {
-      this.openPaymentGroup = '';
-    } else {
-      this.openPaymentGroup = group;
-    }
+    this.openPaymentGroup = this.openPaymentGroup === group ? '' : group;
+    this.paymentMethodGroup = this.openPaymentGroup ? group : '';
   }
 
   selectPayment(method: string, group: string) {
@@ -112,72 +61,47 @@ export class CartPage implements OnInit {
     this.paymentMethodGroup = group;
   }
 
-  async checkout() {
-    if (this.cart.length === 0) {
-      this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu.');
-      return;
-    }
-    if (!this.reservasi || !this.reservasi.id) {
-      this.presentAlert('Error', 'ID Reservasi tidak ditemukan.');
-      this.router.navigate(['/reservation']);
-      return;
-    }
-    if (!this.paymentMethod) {
-       this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran.');
-       return;
-    }
+  get subtotal(): number {
+    return this.cart.reduce((sum, i) => sum + ((i.final_price || i.price || i.harga) * i.quantity), 0);
+  }
+  get total(): number { return this.subtotal; }
+  get paymentAmount(): number { return this.total * 0.5; }
 
-    const payload = {
-      reservasi_id: this.reservasi.id,
-      service_fee: this.serviceFee,
-      payment_method: this.paymentMethod,
-      cart: this.cart.map(item => ({
-        id: item.id,
-        quantity: item.quantity,
-        note: item.note || ''
-      }))
-    };
+  async checkout() {
+    if (!this.cart.length) return this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu');
+    if (!this.reservasi.id) { this.presentAlert('Error', 'Reservasi tidak ditemukan'); this.router.navigate(['/reservation']); return; }
+    if (!this.paymentMethod) return this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran');
+
+    const payload = { reservasi_id: this.reservasi.id, payment_method: this.paymentMethod, cart: this.cart.map(i => ({ id: i.id, quantity: i.quantity, note: i.note })) };
+
+    const loading = await this.loadingController.create({ message: 'Memproses checkout...' });
+    await loading.present();
 
     this.paymentService.processCheckout(payload).subscribe({
-      next: (response) => {
-        if (response && response.snap_token) {
-          snap.pay(response.snap_token, {
-            onSuccess: (result: any) => {
-              this.presentAlert('Pembayaran Berhasil', 'Reservasi Anda telah dikonfirmasi.');
-              this.router.navigate(['/riwayat-transaksi']);
-            },
-            onPending: (result: any) => {
-              this.presentAlert('Pembayaran Tertunda', 'Selesaikan pembayaran Anda.');
-              this.router.navigate(['/riwayat-transaksi']);
-            },
-            onError: (error: any) => {
-              this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran.');
-            },
-            onClose: () => {
-              this.presentAlert('Info', 'Anda menutup jendela pembayaran sebelum selesai.');
-            }
+      next: async resp => {
+        await loading.dismiss();
+        if (resp.snap_token) {
+          snap.pay(resp.snap_token, {
+            onSuccess: () => this.router.navigate(['/invoice-detail', this.reservasi.id]),
+            onPending: () => this.router.navigate(['/invoice-detail', this.reservasi.id]),
+            onError: () => this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran'),
+            onClose: () => this.presentAlert('Info', 'Anda menutup jendela pembayaran')
           });
         } else {
-          this.presentAlert('Error', 'Gagal mendapatkan token pembayaran dari server.');
+          this.presentAlert('Error', 'Token pembayaran tidak tersedia');
         }
       },
-      error: (error) => {
-        const errorMsg = error.error?.message || 'Tidak dapat terhubung ke server.';
-        this.presentAlert('Checkout Gagal', errorMsg);
+      error: async err => {
+        await loading.dismiss();
+        this.presentAlert('Checkout Gagal', err.error?.message || 'Tidak dapat terhubung ke server');
       }
     });
   }
 
   async presentAlert(header: string, message: string) {
-    const alert = await this.alertController.create({
-      header,
-      message,
-      buttons: ['OK']
-    });
+    const alert = await this.alertController.create({ header, message, buttons: ['OK'] });
     await alert.present();
   }
 
-  goBack() {
-    this.router.navigate(['/menu']);
-  }
-} 
+  goBack() { this.router.navigate(['/menu']); }
+}

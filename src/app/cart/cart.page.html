@@ -41,16 +41,16 @@
         <ion-text slot="end">Rp{{ subtotal | number }}</ion-text>
       </ion-item>
       <ion-item>
-        <ion-label>Biaya Layanan:</ion-label>
-        <ion-text slot="end">Rp{{ serviceFee | number }}</ion-text>
-      </ion-item>
-      <ion-item>
-        <ion-label><strong>Total Pembayaran:</strong></ion-label>
+        <ion-label><strong>Total Tagihan:</strong></ion-label>
         <ion-text slot="end"><strong>Rp{{ total | number }}</strong></ion-text>
       </ion-item>
-      <ion-item class="down-payment">
+      <ion-item class="down-payment" style="border-top: 1px solid #ddd; margin-top: 8px; padding-top: 8px;">
         <ion-label><strong>Bayar Sekarang (DP 50%):</strong></ion-label>
-        <ion-text slot="end"><strong>Rp{{ (total * 0.5) | number }}</strong></ion-text>
+        <ion-text slot="end" color="primary"><strong>Rp{{ paymentAmount | number }}</strong></ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label>Sisa Tagihan:</ion-label>
+        <ion-text slot="end" color="medium">Rp{{ (total - paymentAmount) | number }}</ion-text>
       </ion-item>
     </ion-list>
 
@@ -114,7 +114,7 @@
 
     <p class="info-note">
       <ion-icon name="information-circle-outline" color="medium"></ion-icon>
-      Pembayaran ini hanya sebesar <strong>50%</strong> dari total. Pelunasan dilakukan saat hari reservasi. Apabila pesanan dibatalkan uang reservasi akan hangus!!!
+      Pembayaran ini hanya sebesar <strong>50%</strong> dari total tagihan. Pelunasan dilakukan saat hari reservasi. Apabila pesanan dibatalkan uang reservasi akan hangus!!!
     </p>
     <ion-button expand="block" class="checkout-btn" (click)="checkout()">Bayar 50% Sekarang</ion-button>
   </div>

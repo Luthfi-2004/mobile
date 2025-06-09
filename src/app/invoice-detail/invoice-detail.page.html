@@ -2,61 +2,203 @@
   <ion-toolbar>
     <ion-title>Detail Invoice</ion-title>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/invoice"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/home" (click)="goBack()"></ion-back-button>
+    </ion-buttons>
+    <ion-buttons slot="end">
+      <ion-button (click)="refreshInvoice()" [disabled]="isLoading">
+        <ion-icon name="refresh-outline" slot="icon-only"></ion-icon>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
-  <div class="receipt-container" *ngIf="transaksi">
-    <div class="receipt-header">
-      <img src="assets/img/logo.jpg" alt="Logo Restoran" class="logo" />
-      <h2>INVOICE RESERVASI</h2>
-      <p class="invoice-id">No. Invoice: #{{ transaksi?.id }}</p>
-      <hr />
-    </div>
-
-    <div class="receipt-section">
-      <h3>Informasi Pelanggan</h3>
-      <p>Nama: {{ pelanggan.nama }}</p>
-      <p>Email: {{ pelanggan.email }}</p>
-      <p>No. Telepon: {{ pelanggan.telp }}</p>
-    </div>
-
-    <div class="receipt-section"> 
-      <h3>Detail Reservasi</h3>
-      <p>Tanggal: {{ reservasi.tanggal }}</p>
-      <p>Waktu Datang: {{ reservasi.waktu }}</p>
-      <p>Area Meja: {{ reservasi.area }}</p>
-      <p>ID Meja: {{ reservasi.idMeja || 'Tidak tersedia' }}</p>
-      <p>Jumlah Tamu: {{ reservasi.tamu }} orang</p>
-    </div>
-
-    <div class="receipt-section">
-      <h3>Pesanan</h3>
-      <div class="item-row" *ngFor="let item of transaksi?.items">
-        <div>
-          {{ item.nama }} x{{ item.quantity }}<br />
-          <span *ngIf="item.note">*catatan: {{ item.note }}</span>
-        </div>
-        <span>Rp{{ (item.harga * item.quantity) | number:'1.0-0' }}</span>
+  <div *ngIf="!isLoading && invoiceData; else loadingTemplate">
+    <div class="receipt-container">
+      <!-- HEADER -->
+      <div class="receipt-header">
+        <img src="assets/img/logo.jpg" alt="Logo Restoran" class="logo" />
+        <h2>INVOICE RESERVASI</h2>
+        <p class="invoice-id">No. Invoice: {{ invoice.invoice_number || 'Belum dibuat' }}</p>
+        <p class="invoice-date">Tanggal: {{ formatShortDate(invoice.generated_at || invoice.created_at) }}</p>
+        <hr />
       </div>
-      <hr />
-    </div>
-    <div class="receipt-section">
-      <h3>Ringkasan Pembayaran</h3>
-      <p>Subtotal Makanan <span class="right">Rp{{ subtotal | number:'1.0-0' }}</span></p>
-      <p>Biaya Pelayanan <span class="right">Rp{{ serviceFee | number:'1.0-0' }}</span></p>
-      <p>Metode Pembayaran <span class="right">{{ transaksi.metode | uppercase }}</span></p>
-      <hr />
-      <p><strong>TOTAL <span class="right">Rp{{ total | number:'1.0-0' }}</span></strong></p>
-      <p><strong>DOWN PAYMENT (50%) <span class="right">Rp{{ downPayment | number:'1.0-0' }}</span></strong></p>
-    </div>
 
-    <div class="receipt-qr">
-      <h3>QR Code</h3>
-      <img [src]="getQrCodeData(transaksi.id)" alt="QR Code" />
-      <p>Scan untuk verifikasi invoice</p>
+      <!-- STATUS PEMBAYARAN -->
+      <div class="receipt-section">
+        <ion-chip [color]="paymentStatusColor">
+          <ion-label>{{ paymentStatus }}</ion-label>
+        </ion-chip>
+      </div>
+
+      <!-- INFORMASI PELANGGAN -->
+      <div class="receipt-section">
+        <h3>Informasi Pelanggan</h3>
+        <ion-list lines="none">
+          <ion-item>
+            <ion-icon name="person-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Nama</p>
+              <h3>{{ customer.nama_pelanggan || reservasi.nama_pelanggan || 'Tidak tersedia' }}</h3>
+            </ion-label>
+          </ion-item>
+          <ion-item *ngIf="customer.email">
+            <ion-icon name="mail-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Email</p>
+              <h3>{{ customer.email }}</h3>
+            </ion-label>
+          </ion-item>
+          <ion-item *ngIf="customer.telp">
+            <ion-icon name="call-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>No. Telepon</p>
+              <h3>{{ customer.telp }}</h3>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- DETAIL RESERVASI -->
+      <div class="receipt-section">
+        <h3>Detail Reservasi</h3>
+        <ion-list lines="none">
+          <ion-item>
+            <ion-icon name="time-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Tanggal & Waktu</p>
+              <h3>{{ formatDate(reservasi.waktu_kedatangan) }}</h3>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon name="restaurant-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Meja</p>
+              <h3>
+                <span *ngFor="let m of reservasi.meja; let last=last">
+                  {{ m.nama_meja || m.name }}<span *ngIf="!last">, </span>
+                </span>
+                <span *ngIf="reservasi.meja?.length === 0">Belum ditentukan</span>
+              </h3>
+            </ion-label>
+          </ion-item>
+          <ion-item>
+            <ion-icon name="people-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Jumlah Tamu</p>
+              <h3>{{ reservasi.jumlah_tamu || 0 }} orang</h3>
+            </ion-label>
+          </ion-item>
+          <ion-item *ngIf="reservasi.kode_reservasi">
+            <ion-icon name="barcode-outline" slot="start"></ion-icon>
+            <ion-label>
+              <p>Kode Reservasi</p>
+              <h3>{{ reservasi.kode_reservasi }}</h3>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- PESANAN -->
+      <div class="receipt-section" *ngIf="items.length > 0">
+        <h3>Detail Pesanan</h3>
+        <ion-list>
+          <ion-item *ngFor="let item of items">
+            <ion-label>
+              <h3>{{ item.nama || item.menu?.nama || 'Item tidak diketahui' }}</h3>
+              <p>Quantity: {{ item.quantity }} x {{ formatCurrency(item.price) }}</p>
+              <p *ngIf="item.note"><em>Catatan: {{ item.note }}</em></p>
+            </ion-label>
+            <ion-text slot="end" color="primary">
+              <strong>{{ formatCurrency(item.total_price) }}</strong>
+            </ion-text>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- RINGKASAN PEMBAYARAN -->
+      <div class="receipt-section">
+        <h3>Ringkasan Pembayaran</h3>
+        <ion-list lines="none">
+          <ion-item>
+            <ion-label>Subtotal</ion-label>
+            <ion-text slot="end">{{ formatCurrency(invoice.subtotal) }}</ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Biaya Layanan (10%)</ion-label>
+            <ion-text slot="end">{{ formatCurrency(invoice.service_fee) }}</ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label><strong>Total Tagihan</strong></ion-label>
+            <ion-text slot="end" color="primary">
+              <strong>{{ formatCurrency(invoice.total_amount) }}</strong>
+            </ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Jumlah Dibayar</ion-label>
+            <ion-text slot="end" [color]="invoice.amount_paid > 0 ? 'success' : 'medium'">
+              {{ formatCurrency(invoice.amount_paid) }}
+            </ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Sisa Pembayaran</ion-label>
+            <ion-text slot="end" [color]="invoice.remaining_amount > 0 ? 'danger' : 'success'">
+              <strong>{{ formatCurrency(invoice.remaining_amount) }}</strong>
+            </ion-text>
+          </ion-item>
+          <ion-item *ngIf="invoice.payment_method">
+            <ion-label>Metode Pembayaran</ion-label>
+            <ion-text slot="end">{{ invoice.payment_method }}</ion-text>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- QR CODE -->
+      <div class="receipt-section qr-section" *ngIf="hasQRCode">
+        <h3>QR Code Verifikasi</h3>
+        <div class="qr-container">
+          <img [src]="qrCodeData" alt="QR Code" class="qr-image" />
+          <p class="qr-description">
+            <ion-icon name="scan-outline"></ion-icon>
+            Scan untuk verifikasi kehadiran
+          </p>
+        </div>
+      </div>
+
+      <!-- CATATAN -->
+      <div class="receipt-section" *ngIf="reservasi.catatan">
+        <h3>Catatan</h3>
+        <p class="note-text">{{ reservasi.catatan }}</p>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="action-buttons">
+        <ion-button 
+          expand="block" 
+          fill="outline" 
+          (click)="resendInvoice()"
+          [disabled]="isLoading">
+          <ion-icon name="mail-outline" slot="start"></ion-icon>
+          Kirim Ulang Invoice
+        </ion-button>
+        
+        <ion-button 
+          expand="block" 
+          (click)="goToPayment()"
+          *ngIf="invoice.payment_status !== 'paid'"
+          [disabled]="isLoading">
+          <ion-icon name="card-outline" slot="start"></ion-icon>
+          Bayar Sekarang
+        </ion-button>
+      </div>
     </div>
   </div>
+
+  <!-- LOADING TEMPLATE -->
+  <ng-template #loadingTemplate>
+    <div class="loading-container">
+      <ion-spinner name="dots" color="primary"></ion-spinner>
+      <p>{{ isLoading ? 'Memuat data invoice...' : 'Mempersiapkan data...' }}</p>
+    </div>
+  </ng-template>
 </ion-content>
