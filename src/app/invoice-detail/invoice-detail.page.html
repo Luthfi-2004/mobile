@@ -70,18 +70,18 @@
               <h3>{{ formatDate(reservasi.waktu_kedatangan) }}</h3>
             </ion-label>
           </ion-item>
-          <ion-item>
-            <ion-icon name="restaurant-outline" slot="start"></ion-icon>
-            <ion-label>
-              <p>Meja</p>
-              <h3>
-                <span *ngFor="let m of reservasi.meja; let last=last">
-                  {{ m.nama_meja || m.name }}<span *ngIf="!last"> </span>
-                </span>
-                <span *ngIf="reservasi.meja?.length === 0">Belum ditentukan</span>
-              </h3>
-            </ion-label>
-          </ion-item>
+         <ion-item>
+          <ion-icon name="restaurant-outline" slot="start"></ion-icon>
+          <ion-label>
+            <p>Meja</p>
+            <h3>
+              <span *ngFor="let m of reservasi.meja; let last = last">
+                {{ m.nomor_meja }}<span *ngIf="!last">, </span>
+              </span>
+              <span *ngIf="reservasi.meja?.length === 0">Belum ditentukan</span>
+            </h3>
+          </ion-label>
+        </ion-item>
           <ion-item>
             <ion-icon name="people-outline" slot="start"></ion-icon>
             <ion-label>
