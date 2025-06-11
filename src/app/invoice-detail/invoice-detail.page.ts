@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingController, AlertController, ToastController } from '@ionic/angular';
 import { InvoiceService } from '../services/invoice.service';
 import { Subscription } from 'rxjs';
+import { lastValueFrom } from 'rxjs'; // Tambahkan impor ini
 
 @Component({
   selector: 'app-invoice-detail',
@@ -40,76 +41,82 @@ export class InvoiceDetailPage implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  private async loadInvoiceData() {
-    const loading = await this.loadingController.create({ 
-      message: 'Memuat invoice...',
-      spinner: 'dots'
-    });
-    await loading.present();
-
-    try {
-      this.isLoading = true;
-      
+   private loadInvoiceData() {
+  this.loadingController.create({ message: 'Memuat invoice...', spinner: 'dots' })
+    .then(loading => {
+      loading.present();
       const subscription = this.invoiceService.getInvoiceData(this.reservasiId!)
         .subscribe({
-          next: (data) => {
+          next: data => {
             this.invoiceData = data;
-            console.log('Invoice data loaded:', data);
-            
-            // Generate QR Code jika belum ada
-            if (!this.hasQRCode) {
-              this.generateQRCode();
-            }
+            // Pastikan invoiceData sudah terisi sebelum memanggil fetch QR
+            this.fetchQrCodePayload(); // atau this.generateQRCode();
           },
-          error: async (error) => {
-            console.error('Load invoice error:', error);
-            await this.showAlert('Gagal', error.message || 'Terjadi kesalahan saat memuat invoice');
+          error: err => {
+            console.error(err);
+            this.showAlert('Error', err.message);
             this.router.navigate(['/tabs/home']);
+            loading.dismiss(); // pastikan dismiss juga di error
           },
-          complete: async () => {
-            this.isLoading = false;
-            await loading.dismiss();
+          complete: () => {
+            loading.dismiss();
           }
         });
 
       this.subscriptions.push(subscription);
-      
-    } catch (err: any) {
-      console.error('Unexpected error:', err);
-      this.isLoading = false;
-      await loading.dismiss();
-      await this.showAlert('Error', 'Terjadi kesalahan yang tidak terduga');
-      this.router.navigate(['/tabs/home']);
-    }
-  }
+    });
+}
+
+
+
+private fetchQrCodePayload() {
+  if (!this.reservasiId) return;
+
+  this.invoiceService.getQRCode(this.reservasiId).subscribe({
+    next: (res) => {
+      if (res.success && res.data?.kode_reservasi) {
+        // Update secara immutable
+        this.invoiceData = {
+          ...this.invoiceData,
+          invoice: {
+            ...this.invoiceData.invoice,
+            kode_reservasi: res.data.kode_reservasi
+          }
+        };
+      }
+    },
+    error: (err) => console.error('QR fetch error:', err)
+  });
+}
 
   private async generateQRCode() {
-    if (!this.reservasiId) return;
-    
-    try {
-      const subscription = this.invoiceService.getQRCode(this.reservasiId)
-        .subscribe({
-          next: (response) => {
-            if (response.success && response.data?.qr_code_base64) {
-              // Update QR code di invoice data
-              if (this.invoiceData && this.invoiceData.invoice) {
-                this.invoiceData.invoice.qr_code = response.data.qr_code_base64;
-              }
-              console.log('QR Code generated successfully');
-            }
-          },
-          error: (error) => {
-            console.error('Generate QR error:', error);
-            // QR code error tidak perlu menampilkan alert, cukup log saja
-          }
-        });
+  if (!this.reservasiId) return;
 
-      this.subscriptions.push(subscription);
-      
-    } catch (err) {
-      console.error('QR Code generation failed:', err);
-    }
+  try {
+    const subscription = this.invoiceService.getQRCode(this.reservasiId)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data?.kode_reservasi) {
+            // Simpan hanya kode_reservasi ke invoiceData
+            if (this.invoiceData?.invoice) {
+              this.invoiceData.invoice.kode_reservasi = response.data.kode_reservasi;
+            }
+            console.log('Kode reservasi untuk QR Code:', response.data.kode_reservasi);
+          }
+        },
+        error: (error) => {
+          console.error('Generate QR error:', error);
+          // Tidak perlu alert, cukup log
+        }
+      });
+
+    this.subscriptions.push(subscription);
+
+  } catch (err) {
+    console.error('QR Code generation failed:', err);
   }
+}
+
 
   // Refresh data invoice
   async refreshInvoice() {

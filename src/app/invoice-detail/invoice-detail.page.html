@@ -76,7 +76,7 @@
               <p>Meja</p>
               <h3>
                 <span *ngFor="let m of reservasi.meja; let last=last">
-                  {{ m.nama_meja || m.name }}<span *ngIf="!last">, </span>
+                  {{ m.nama_meja || m.name }}<span *ngIf="!last"> </span>
                 </span>
                 <span *ngIf="reservasi.meja?.length === 0">Belum ditentukan</span>
               </h3>
@@ -116,6 +116,7 @@
         </ion-list>
       </div>
 
+     <div *ngIf="invoice.subtotal != null" class="receipt-section"></div>
       <!-- RINGKASAN PEMBAYARAN -->
       <div class="receipt-section">
         <h3>Ringkasan Pembayaran</h3>
@@ -148,22 +149,29 @@
           </ion-item>
           <ion-item *ngIf="invoice.payment_method">
             <ion-label>Metode Pembayaran</ion-label>
-            <ion-text slot="end">{{ invoice.payment_method }}</ion-text>
+            <ion-text slot="end">{{ invoice.payment_method || 'Belum dipilih' }}</ion-text>
           </ion-item>
         </ion-list>
       </div>
+    
 
       <!-- QR CODE -->
-      <div class="receipt-section qr-section" *ngIf="hasQRCode">
-        <h3>QR Code Verifikasi</h3>
-        <div class="qr-container">
-          <img [src]="qrCodeData" alt="QR Code" class="qr-image" />
-          <p class="qr-description">
-            <ion-icon name="scan-outline"></ion-icon>
-            Scan untuk verifikasi kehadiran
-          </p>
-        </div>
-      </div>
+     <ion-card *ngIf="invoice.kode_reservasi">
+  <ion-card-header>
+    <ion-card-title>QR Code Kehadiran</ion-card-title>
+  </ion-card-header>
+  <ion-card-content class="ion-text-center">
+    <qrcode
+    [qrdata]="invoice.kode_reservasi"
+    [width]="300"
+    errorCorrectionLevel="H">
+  </qrcode>
+
+
+    <p class="ion-text-caption">{{ invoice.kode_reservasi }}</p>
+  </ion-card-content>
+</ion-card>
+
 
       <!-- CATATAN -->
       <div class="receipt-section" *ngIf="reservasi.catatan">
