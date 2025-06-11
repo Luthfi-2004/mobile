@@ -1,7 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { LocalNotifications } from '@capacitor/local-notifications';
-
+import { Subscription } from 'rxjs';
+import { NotificationService, NotificationData } from '../services/notification.service';
+import { LoadingController, ToastController, AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-notifikasi',
@@ -10,253 +11,344 @@ import { LocalNotifications } from '@capacitor/local-notifications';
   standalone: false
 })
 export class NotifikasiPage implements OnInit, OnDestroy {
-  notifikasi: any[] = [];
-  private intervalId: any;
+  notifikasi: NotificationData[] = [];
+  unreadCount: number = 0;
+  loading: boolean = false;
+  refreshing: boolean = false;
+  currentPage: number = 1;
+  lastPage: number = 1;
+  canLoadMore: boolean = true;
+  showDebug: boolean = false; // Debug mode
+  
+  private notificationsSubscription?: Subscription;
+  private unreadCountSubscription?: Subscription;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private notificationService: NotificationService,
+    private loadingController: LoadingController,
+    private toastController: ToastController,
+    private alertController: AlertController
+  ) {}
 
   ngOnInit() {
+    console.log('NotifikasiPage: ngOnInit called');
     this.initNotifications();
   }
 
   ngOnDestroy() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
+    console.log('NotifikasiPage: ngOnDestroy called');
+    this.notificationsSubscription?.unsubscribe();
+    this.unreadCountSubscription?.unsubscribe();
   }
 
   async initNotifications() {
-    // Minta izin notifikasi di device
-    const permission = await LocalNotifications.requestPermissions();
-    if (permission.display !== 'granted') {
-      console.warn('Izin notifikasi tidak diberikan');
+    console.log('NotifikasiPage: Initializing notifications');
+    
+    // Subscribe to service observables first
+    this.notificationsSubscription = this.notificationService.notifications$.subscribe(
+      notifications => {
+        console.log('NotifikasiPage: Received notifications from service:', notifications);
+        this.notifikasi = notifications;
+      }
+    );
+
+    this.unreadCountSubscription = this.notificationService.unreadCount$.subscribe(
+      count => {
+        console.log('NotifikasiPage: Received unread count from service:', count);
+        this.unreadCount = count;
+      }
+    );
+
+    // Then load notifications
+    await this.loadNotifikasi();
+  }
+
+  async loadNotifikasi(page: number = 1, showLoading: boolean = true) {
+    console.log('NotifikasiPage: Loading notifications, page:', page);
+    
+    if (showLoading && page === 1) {
+      this.loading = true;
+    }
+
+    try {
+      const response = await this.notificationService.fetchNotifications(page).toPromise();
+      
+      console.log('NotifikasiPage: API Response:', response);
+      
+      if (response?.success) {
+        this.currentPage = response.data.current_page;
+        this.lastPage = response.data.last_page;
+        this.canLoadMore = this.currentPage < this.lastPage;
+        
+        console.log('NotifikasiPage: Pagination info:', {
+          currentPage: this.currentPage,
+          lastPage: this.lastPage,
+          canLoadMore: this.canLoadMore,
+          dataLength: response.data.data?.length || 0
+        });
+        
+        // Check if we actually got data
+        if (response.data.data && Array.isArray(response.data.data) && response.data.data.length > 0) {
+          console.log('NotifikasiPage: Successfully loaded', response.data.data.length, 'notifications');
+        } else {
+          console.log('NotifikasiPage: No notifications data returned from API');
+          await this.showToast('Tidak ada notifikasi ditemukan', 'warning');
+        }
+        
+      } else {
+        console.error('NotifikasiPage: API response not successful:', response);
+        await this.showToast(response?.message || 'Gagal memuat notifikasi', 'danger');
+      }
+    } catch (error: unknown) {
+      console.error('NotifikasiPage: Error loading notifications:', error);
+
+      if (this.isHttpError(error)) {
+        if (error.status === 0) {
+          await this.showToast('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.', 'danger');
+        } else if (error.status === 401) {
+          await this.showToast('Sesi telah berakhir. Silakan login kembali.', 'danger');
+          // Redirect to login if needed
+          // this.router.navigate(['/login']);
+        } else if (error.status === 403) {
+          await this.showToast('Akses ditolak. Anda tidak memiliki izin.', 'danger');
+        } else if (error.status === 404) {
+          await this.showToast('Endpoint tidak ditemukan. Periksa konfigurasi API.', 'danger');
+        } else if (error.status >= 500) {
+          await this.showToast('Terjadi kesalahan pada server. Coba lagi nanti.', 'danger');
+        } else {
+          await this.showToast('Gagal memuat notifikasi. Coba lagi nanti.', 'danger');
+        }
+      } else {
+        await this.showToast('Terjadi kesalahan tak terduga.', 'danger');
+      }
+    } finally {
+      this.loading = false;
+      this.refreshing = false;
+    }
+  }
+
+  async forceRefresh() {
+    console.log('NotifikasiPage: Force refresh triggered');
+    this.notifikasi = []; // Clear current data
+    this.currentPage = 1;
+    this.canLoadMore = true;
+    await this.notificationService.refreshNotifications().toPromise();
+    await this.loadNotifikasi(1, true);
+  }
+
+  async markAsRead(notification: NotificationData, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+
+    if (!notification.read_at) {
+      try {
+        await this.notificationService.markAsRead(notification.id).toPromise();
+      } catch (error) {
+        console.error('Error marking as read:', error);
+        await this.showToast('Gagal menandai notifikasi', 'danger');
+      }
+    }
+  }
+
+  async markAllAsRead() {
+    if (this.unreadCount === 0) {
+      await this.showToast('Tidak ada notifikasi yang belum dibaca', 'warning');
       return;
     }
 
-    this.loadNotifikasi();
-
-    // Jalankan pengecekan pengingat berkala setiap 30 detik
-    this.intervalId = setInterval(() => {
-      this.jadwalkanPengingat1Jam();
-      this.jadwalkanPengingat5Menit();
-    }, 30000);
-
-    // Supaya langsung cek saat halaman dibuka (tidak menunggu interval)
-    this.jadwalkanPengingat1Jam();
-    this.jadwalkanPengingat5Menit();
-  }
-
-  loadNotifikasi() {
-    const transaksi = JSON.parse(localStorage.getItem('lastTransaction') || 'null');
-    const existingNotif = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
-    this.notifikasi = existingNotif;
-
-    if (transaksi) {
-      const status = transaksi.status || 'Pembayaran Sukses';
-      const tanggal = transaksi.tanggal || new Date().toLocaleDateString();
-      const dibayar = transaksi.dibayar || 0;
-      const transaksiId = transaksi.id || 0;
-
-      const sudahAda = existingNotif.some(
-        (n: any) => n.id === transaksiId && n.tipe === 'pembayaran'
-      );
-
-      if (!sudahAda) {
-        const newNotif = {
-          judul: 'Pembayaran Diterima',
-          deskripsi: `Pembayaran Anda sebesar Rp${dibayar} untuk reservasi pada tanggal ${tanggal} telah diterima.`,
-          tanggal: tanggal,
-          status: status,
-          id: transaksiId,
-          totalPembayaran: dibayar,
-          tipe: 'pembayaran'
-        };
-        this.notifikasi.unshift(newNotif);
-
-        // Pengingat awal (umum)
-        if (transaksi.waktu) {
-          const jadwalDatang = this.parseReservasiWaktu(transaksi.waktu);
-          if (jadwalDatang) {
-            const jamDatang = jadwalDatang.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const tanggalDatang = jadwalDatang.toLocaleDateString();
-
-            const newReminderNotif = {
-              judul: 'Pengingat Kehadiran',
-              deskripsi: `Jangan lupa hadir sebelum pukul ${jamDatang} pada ${tanggalDatang}. Disarankan datang 30 menit lebih awal.`,
-              tanggal: new Date().toLocaleDateString(),
-              status: 'Pengingat',
-              id: transaksiId,
-              totalPembayaran: 0,
-              tipe: 'pengingat'
-            };
-
-            this.notifikasi.unshift(newReminderNotif);
+    const alert = await this.alertController.create({
+      header: 'Konfirmasi',
+      message: `Tandai ${this.unreadCount} notifikasi sebagai telah dibaca?`,
+      buttons: [
+        {
+          text: 'Batal',
+          role: 'cancel'
+        },
+        {
+          text: 'Ya',
+          handler: async () => {
+            try {
+              await this.notificationService.markAllAsRead().toPromise();
+              await this.showToast('Semua notifikasi telah dibaca', 'success');
+            } catch (error) {
+              console.error('Error marking all as read:', error);
+              await this.showToast('Gagal menandai semua notifikasi', 'danger');
+            }
           }
         }
+      ]
+    });
 
-        localStorage.setItem('notifikasiList', JSON.stringify(this.notifikasi));
+    await alert.present();
+  }
+
+  async deleteNotification(notification: NotificationData, event: Event) {
+    event.stopPropagation();
+
+    const alert = await this.alertController.create({
+      header: 'Hapus Notifikasi',
+      message: 'Apakah Anda yakin ingin menghapus notifikasi ini?',
+      buttons: [
+        {
+          text: 'Batal',
+          role: 'cancel'
+        },
+        {
+          text: 'Hapus',
+          role: 'destructive',
+          handler: async () => {
+            try {
+              await this.notificationService.deleteNotification(notification.id).toPromise();
+              await this.showToast('Notifikasi berhasil dihapus', 'success');
+            } catch (error) {
+              console.error('Error deleting notification:', error);
+              await this.showToast('Gagal menghapus notifikasi', 'danger');
+            }
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async refreshNotifications(event: any) {
+    console.log('NotifikasiPage: Pull to refresh triggered');
+    this.refreshing = true;
+    try {
+      await this.forceRefresh();
+    } catch (error) {
+      console.error('Error refreshing notifications:', error);
+      await this.showToast('Gagal memuat ulang notifikasi', 'danger');
+    } finally {
+      this.refreshing = false;
+      event.target.complete();
+    }
+  }
+
+  async loadMore(event: any) {
+    console.log('NotifikasiPage: Load more triggered');
+    if (this.canLoadMore && !this.loading) {
+      try {
+        await this.loadNotifikasi(this.currentPage + 1, false);
+      } catch (error) {
+        console.error('Error loading more notifications:', error);
+      } finally {
+        event.target.complete();
       }
+    } else {
+      console.log('NotifikasiPage: Cannot load more or already loading');
+      event.target.complete();
     }
   }
 
-  async jadwalkanPengingat1Jam() {
-    const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
-    const existingNotif = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
-
-    let updated = false;
-    const now = new Date().getTime();
-
-    for (const trx of history) {
-      if (trx.reservasi && trx.reservasi.waktu) {
-        const waktuReservasi = this.parseReservasiWaktu(trx.reservasi.waktu);
-        if (!waktuReservasi) {
-          console.error('Invalid date trx.reservasi.waktu:', trx.reservasi.waktu);
-          continue;
-        }
-
-        const waktuReservasiMs = waktuReservasi.getTime();
-        const satuJamSebelum = waktuReservasiMs - 60 * 60 * 1000;
-
-        const sudahAda = existingNotif.some(
-          (n: any) => n.id === trx.id && n.tipe === 'pengingat1jam'
-        );
-
-        if (now >= satuJamSebelum && now < waktuReservasiMs && !sudahAda) {
-          const jamDatang = waktuReservasi.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const tanggalDatang = waktuReservasi.toLocaleDateString();
-
-          const reminderNotif = {
-            judul: 'Pengingat Kehadiran (1 Jam Sebelum)',
-            deskripsi: `Acara Anda dimulai pukul ${jamDatang} pada ${tanggalDatang}. Segera bersiap-siap!`,
-            tanggal: new Date().toLocaleDateString(),
-            status: 'Pengingat',
-            id: trx.id,
-            totalPembayaran: 0,
-            tipe: 'pengingat1jam'
-          };
-
-          existingNotif.unshift(reminderNotif);
-          updated = true;
-
-          // Kirim local notification ke device
-          await LocalNotifications.schedule({
-            notifications: [
-              {
-                id: trx.id,
-                title: reminderNotif.judul,
-                body: reminderNotif.deskripsi,
-                schedule: { at: new Date(satuJamSebelum) },
-                sound: undefined,
-                attachments: undefined,
-                actionTypeId: '',
-                extra: null
-              }
-            ]
-          });
-        }
-      }
+  onNotificationClick(notification: NotificationData) {
+    console.log('NotifikasiPage: Notification clicked:', notification);
+    
+    if (!notification.read_at) {
+      this.markAsRead(notification);
     }
 
-    if (updated) {
-      this.notifikasi = existingNotif;
-      localStorage.setItem('notifikasiList', JSON.stringify(existingNotif));
+    if (notification.reservasi_id) {
+      this.router.navigate(['/reservasi', notification.reservasi_id]);
     }
   }
 
-  async jadwalkanPengingat5Menit() {
-    const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
-    const existingNotif = JSON.parse(localStorage.getItem('notifikasiList') || '[]');
+  trackByNotificationId(index: number, notification: NotificationData): number {
+    return notification.id;
+  }
 
-    let updated = false;
-    const now = new Date().getTime();
+  isUnread(notification: NotificationData): boolean {
+    return !notification.read_at;
+  }
 
-    for (const trx of history) {
-      if (trx.reservasi && trx.reservasi.waktu) {
-        const waktuReservasi = this.parseReservasiWaktu(trx.reservasi.waktu);
-        if (!waktuReservasi) {
-          console.error('Invalid date trx.reservasi.waktu:', trx.reservasi.waktu);
-          continue;
-        }
+  getNotificationIcon(type: string): string {
+    return this.notificationService.getNotificationIcon(type);
+  }
 
-        const waktuReservasiMs = waktuReservasi.getTime();
-        const limaMenitSebelum = waktuReservasiMs - 5 * 60 * 1000;
+  getBadgeColor(type: string): string {
+    return this.notificationService.getBadgeColor(type);
+  }
 
-        const sudahAda = existingNotif.some(
-          (n: any) => n.id === trx.id && n.tipe === 'pengingat5menit'
-        );
+  getTypeLabel(type: string): string {
+    return this.notificationService.getTypeLabel(type);
+  }
 
-        if (now >= limaMenitSebelum && now < waktuReservasiMs && !sudahAda) {
-          const jamDatang = waktuReservasi.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          const tanggalDatang = waktuReservasi.toLocaleDateString();
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
 
-          const reminderNotif = {
-            judul: 'Pengingat Kehadiran (5 Menit Sebelum)',
-            deskripsi: `5 menit lagi, reservasi Anda di jam ${jamDatang} pada ${tanggalDatang}. Harap sudah berada di tempat!`,
-            tanggal: new Date().toLocaleDateString(),
-            status: 'Pengingat',
-            id: trx.id,
-            totalPembayaran: 0,
-            tipe: 'pengingat5menit'
-          };
-
-          existingNotif.unshift(reminderNotif);
-          updated = true;
-
-          // Kirim local notification ke device
-          await LocalNotifications.schedule({
-            notifications: [
-              {
-                id: trx.id + 1000, // supaya id unik beda dari pengingat1jam
-                title: reminderNotif.judul,
-                body: reminderNotif.deskripsi,
-                schedule: { at: new Date(limaMenitSebelum) },
-                sound: undefined,
-                attachments: undefined,
-                actionTypeId: '',
-                extra: null
-              }
-            ]
-          });
-        }
-      }
-    }
-
-    if (updated) {
-      this.notifikasi = existingNotif;
-      localStorage.setItem('notifikasiList', JSON.stringify(existingNotif));
+    if (diffMinutes < 1) {
+      return 'Baru saja';
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} menit yang lalu`;
+    } else if (diffHours < 24) {
+      return `${diffHours} jam yang lalu`;
+    } else if (diffDays === 1) {
+      return 'Kemarin ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays < 7) {
+      return `${diffDays} hari yang lalu`;
+    } else {
+      return date.toLocaleDateString('id-ID') + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
   }
 
-  getBadgeColor(status: string): string {
-    switch (status) {
-      case 'Pending': return 'danger';
-      case 'Berhasil': return 'success';
-      case 'Pembayaran Sukses': return 'primary';
-      case 'Pengingat': return 'warning';
-      default: return 'medium';
+  formatCurrency(amount: number | undefined): string {
+    if (amount === undefined || amount === null) {
+      return 'Rp 0';
+    }
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(amount);
+  }
+
+  getNotificationPriority(type: string): string {
+    switch (type) {
+      case 'reminder_5_minutes':
+        return 'urgent';
+      case 'reminder_1_hour':
+      case 'payment_success':
+      case 'reservation_confirmed':
+        return 'high';
+      case 'reminder_12_hours':
+      case 'reservation_created':
+        return 'medium';
+      default:
+        return 'normal';
     }
   }
 
-  // Fungsi bantu untuk parsing waktu reservasi yang hanya berisi jam (misal "14:00" atau "11.00")
-  parseReservasiWaktu(waktu: string): Date | null {
-    if (!waktu) return null;
+  toggleDebug() {
+    this.showDebug = !this.showDebug;
+    console.log('Debug mode:', this.showDebug ? 'enabled' : 'disabled');
+  }
 
-    // Ganti titik (.) jadi titik dua (:) jika ada
-    const waktuFix = waktu.replace('.', ':');
+  private async showToast(message: string, color: string = 'primary') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'top',
+      buttons: [
+        {
+          side: 'end',
+          icon: 'close',
+          role: 'cancel'
+        }
+      ]
+    });
+    await toast.present();
+  }
 
-    // Gabungkan dengan tanggal hari ini supaya jadi string tanggal lengkap valid
-    const hariIni = new Date();
-    const tanggalString = hariIni.toISOString().split('T')[0]; // "YYYY-MM-DD"
-
-    // Bentuk format ISO lengkap, contoh: "2025-06-02T14:00:00"
-    const fullDateStr = `${tanggalString}T${waktuFix}:00`;
-
-    const parsedDate = new Date(fullDateStr);
-
-    if (isNaN(parsedDate.getTime())) {
-      console.error('Gagal parsing waktu reservasi:', waktu);
-      return null;
-    }
-    return parsedDate;
+  private isHttpError(error: any): error is { status: number } {
+    return typeof error === 'object' && error !== null && 'status' in error;
   }
 }

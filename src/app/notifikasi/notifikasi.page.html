@@ -1,26 +1,162 @@
 <ion-header>
-  <ion-toolbar color="light">
+  <ion-toolbar color="primary">
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/tabs/home"></ion-back-button>
     </ion-buttons>
-    <ion-title>Notifikasi</ion-title>
+    <ion-title>
+      Notifikasi
+      <ion-badge *ngIf="unreadCount > 0" color="danger">
+        {{ unreadCount }}
+      </ion-badge>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button 
+        fill="clear" 
+        (click)="markAllAsRead()" 
+        *ngIf="unreadCount > 0"
+        title="Tandai semua sebagai dibaca">
+        <ion-icon name="checkmark-done-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding notif-content">
-  <!-- Daftar notifikasi -->
-  <div *ngFor="let notif of notifikasi" class="notif-card">
-    <ion-icon class="notif-icon" name="notifications-outline"></ion-icon>
-    <div class="notif-text">
-      <h4>{{ notif.judul }}</h4>
-      <p>{{ notif.deskripsi }}</p>
-      <p><strong>{{ notif.tanggal }}</strong></p>
-      <ion-badge [color]="getBadgeColor(notif.status)">{{ notif.status }}</ion-badge>
+<ion-content>
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="refreshNotifications($event)">
+    <ion-refresher-content
+      pullingIcon="chevron-down-circle-outline"
+      pullingText="Tarik untuk memuat ulang"
+      refreshingSpinner="circles"
+      refreshingText="Memuat ulang...">
+    </ion-refresher-content>
+  </ion-refresher>
 
-      <!-- Info total pembayaran jika ada -->
-      <div *ngIf="notif.totalPembayaran">
-        <p>Total Pembayaran: Rp{{ notif.totalPembayaran | number }}</p>
-      </div>
-    </div>
+  <!-- Loading state untuk initial load -->
+  <div *ngIf="loading && notifikasi.length === 0" class="ion-text-center ion-padding">
+    <ion-spinner name="circles"></ion-spinner>
+    <p>Memuat notifikasi...</p>
   </div>
+
+  <!-- Empty state -->
+  <div *ngIf="notifikasi.length === 0 && !loading" class="ion-text-center ion-padding">
+    <ion-icon name="notifications-off-outline" size="large" color="medium"></ion-icon>
+    <h3>Belum Ada Notifikasi</h3>
+    <p>Notifikasi akan muncul di sini ketika ada update terkait reservasi Anda.</p>
+    <ion-button fill="outline" (click)="loadNotifikasi()">
+      <ion-icon name="refresh-outline" slot="start"></ion-icon>
+      Muat Ulang
+    </ion-button>
+  </div>
+
+  <!-- Debug info (hapus ini di production) -->
+  <div *ngIf="showDebug" class="ion-padding">
+    <h4>Debug Info:</h4>
+    <p>Loading: {{ loading }}</p>
+    <p>Total notifikasi: {{ notifikasi.length }}</p>
+    <p>Unread count: {{ unreadCount }}</p>
+    <p>Current page: {{ currentPage }}</p>
+    <p>Last page: {{ lastPage }}</p>
+    <p>Can load more: {{ canLoadMore }}</p>
+  </div>
+
+  <!-- Daftar notifikasi -->
+  <ion-list *ngIf="notifikasi.length > 0">
+    <ion-item 
+      *ngFor="let notification of notifikasi; trackBy: trackByNotificationId"
+      button
+      [class.notification-unread]="isUnread(notification)"
+      [class.notification-urgent]="getNotificationPriority(notification.type) === 'urgent'"
+      [class.notification-high]="getNotificationPriority(notification.type) === 'high'"
+      (click)="onNotificationClick(notification)">
+      
+      <!-- Icon dengan status -->
+      <ion-avatar slot="start">
+        <div class="notification-icon-wrapper" [attr.data-priority]="getNotificationPriority(notification.type)">
+          <ion-icon 
+            [name]="getNotificationIcon(notification.type)" 
+            [color]="getBadgeColor(notification.type)">
+          </ion-icon>
+          <div *ngIf="isUnread(notification)" class="unread-dot"></div>
+        </div>
+      </ion-avatar>
+
+      <!-- Content -->
+      <ion-label>
+        <div class="notification-header">
+          <h2>{{ notification.title }}</h2>
+          <div class="notification-meta">
+            <ion-badge 
+              [color]="getBadgeColor(notification.type)" 
+              size="small">
+              {{ getTypeLabel(notification.type) }}
+            </ion-badge>
+            <span class="notification-time">{{ formatDate(notification.created_at) }}</span>
+          </div>
+        </div>
+        
+        <p>{{ notification.message }}</p>
+        
+        <!-- Informasi reservasi -->
+        <div *ngIf="notification.data || notification.reservasi" class="notification-details">
+          <ion-chip color="primary" outline="true" *ngIf="notification.data?.kode_reservasi || notification.reservasi?.kode_reservasi">
+            <ion-icon name="receipt-outline"></ion-icon>
+            <ion-label>{{ notification.data?.kode_reservasi || notification.reservasi?.kode_reservasi }}</ion-label>
+          </ion-chip>
+          
+          <ion-chip color="medium" outline="true" *ngIf="notification.data?.tanggal || notification.reservasi?.tanggal">
+            <ion-icon name="calendar-outline"></ion-icon>
+            <ion-label>{{ notification.data?.tanggal || notification.reservasi?.tanggal }} {{ notification.data?.waktu || notification.reservasi?.waktu }}</ion-label>
+          </ion-chip>
+          
+          <ion-chip color="success" outline="true" *ngIf="notification.data?.total_harga">
+            <ion-icon name="card-outline"></ion-icon>
+            <ion-label>{{ formatCurrency(notification.data?.total_harga) }}</ion-label>
+          </ion-chip>
+        </div>
+
+        <!-- Status untuk notifikasi terjadwal -->
+        <div *ngIf="notification.scheduled_at && !notification.is_sent" class="notification-scheduled">
+          <ion-chip color="warning" fill="outline" size="small">
+            <ion-icon name="time-outline"></ion-icon>
+            <ion-label>Terjadwal</ion-label>
+          </ion-chip>
+        </div>
+      </ion-label>
+
+      <!-- Actions -->
+      <ion-buttons slot="end">
+        <ion-button 
+          fill="clear" 
+          color="danger"
+          size="small"
+          (click)="deleteNotification(notification, $event)">
+          <ion-icon name="trash-outline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-item>
+  </ion-list>
+
+  <!-- Infinite scroll -->
+  <ion-infinite-scroll 
+    *ngIf="canLoadMore && notifikasi.length > 0"
+    threshold="100px" 
+    (ionInfinite)="loadMore($event)">
+    <ion-infinite-scroll-content
+      loadingSpinner="bubbles"
+      loadingText="Memuat notifikasi lainnya...">
+    </ion-infinite-scroll-content>
+  </ion-infinite-scroll>
+
+  <!-- Loading indicator untuk load more -->
+  <div *ngIf="loading && notifikasi.length > 0" class="ion-text-center ion-padding">
+    <ion-spinner name="dots"></ion-spinner>
+  </div>
+
+  <!-- Floating action button untuk debug -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" *ngIf="showDebug">
+    <ion-fab-button color="secondary" (click)="toggleDebug()">
+      <ion-icon name="bug-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>
