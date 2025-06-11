@@ -1,40 +1,204 @@
-.notif-content {
-    --background: #a3d9ff;
+.unread-badge {
+  margin-left: 8px;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
 }
 
-.notif-list {
-    padding: 16px;
-}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--ion-color-medium);
 
-.notif-card {
-    display: flex;
-    background: #fff;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-    align-items: flex-start;
-}
+  .empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
 
-.notif-icon {
-    font-size: 24px;
-    margin-right: 12px;
-    color: #ff3b3f;
-    margin-top: 4px;
-}
+  h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+  }
 
-.notif-text h4 {
+  p {
     margin: 0;
-    font-size: 16px;
-    font-weight: bold;
+    font-size: 0.9em;
+    line-height: 1.4;
+  }
 }
 
-.notif-text p {
-    margin: 4px 0 12px;
-    font-size: 14px;
-}
+.notification-card {
+  background: var(--ion-color-light);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
 
-.notif-actions {
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  &.unread {
+    background: var(--ion-color-primary-tint);
+    border-left: 4px solid var(--ion-color-primary);
+    
+    .notification-title {
+      font-weight: 700;
+    }
+  }
+
+  .notification-header {
     display: flex;
-    gap: 8px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+
+    .icon-wrapper {
+      margin-right: 12px;
+      
+      ion-icon {
+        font-size: 24px;
+      }
+    }
+
+    .time-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .time-text {
+        color: var(--ion-color-medium);
+        font-size: 0.8em;
+      }
+
+      .type-badge {
+        align-self: flex-start;
+        font-size: 0.7em;
+        padding: 2px 8px;
+      }
+    }
+
+    .actions-wrapper {
+      ion-button {
+        --padding-start: 8px;
+        --padding-end: 8px;
+      }
+    }
+  }
+
+  .notification-content {
+    .notification-title {
+      margin: 0 0 8px 0;
+      font-size: 1.1em;
+      font-weight: 600;
+      color: var(--ion-color-dark);
+    }
+
+    .notification-message {
+      margin: 0 0 12px 0;
+      color: var(--ion-color-medium-shade);
+      line-height: 1.4;
+      font-size: 0.9em;
+    }
+
+    .reservation-info {
+      background: rgba(var(--ion-color-primary-rgb), 0.05);
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 12px;
+
+      .reservation-item {
+        --padding-start: 0;
+        --inner-padding-end: 0;
+        
+        ion-label h4 {
+          font-weight: 600;
+          margin: 0 0 4px 0;
+        }
+
+        ion-label p {
+          margin: 0;
+          font-size: 0.9em;
+          color: var(--ion-color-medium);
+        }
+      }
+
+      .payment-info {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--ion-color-light-shade);
+
+        ion-item {
+          --padding-start: 0;
+          --inner-padding-end: 0;
+        }
+
+        .price {
+          font-weight: 700;
+          color: var(--ion-color-success);
+          font-size: 1.1em !important;
+        }
+      }
+    }
+  }
+
+  .unread-indicator {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 8px;
+    height: 8px;
+    background: var(--ion-color-primary);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+// Responsive design
+@media (max-width: 576px) {
+  .notification-card {
+    margin-bottom: 12px;
+    padding: 12px;
+
+    .notification-header {
+      .icon-wrapper ion-icon {
+        font-size: 20px;
+      }
+    }
+
+    .notification-content {
+      .notification-title {
+        font-size: 1em;
+      }
+
+      .notification-message {
+        font-size: 0.85em;
+      }
+    }
+  }
 }
