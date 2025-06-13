@@ -1,46 +1,155 @@
 <ion-header>
   <ion-toolbar color="light">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/riwayat"></ion-back-button>
+      <ion-back-button defaultHref="/tabs/riwayat"></ion-back-button>
     </ion-buttons>
     <ion-title>Detail Pesanan</ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content class="ion-padding">
+  <!-- Loading Spinner -->
+  <div *ngIf="isLoading" class="ion-text-center ion-padding">
+    <ion-spinner name="dots"></ion-spinner>
+    <p>Memuat detail pesanan...</p>
+  </div>
 
-  <ion-card *ngIf="pesanan">
+  <!-- Main Content -->
+  <ion-card *ngIf="pesanan && !isLoading">
     <ion-card-header>
       <ion-card-title>Pesanan #{{ pesanan.id }}</ion-card-title>
       <ion-card-subtitle>{{ pesanan.tanggal }}</ion-card-subtitle>
     </ion-card-header>
 
     <ion-card-content>
-      <p><strong>Status:</strong> {{ pesanan.status }}</p>
-      <p><strong>Metode Pembayaran:</strong> {{ pesanan.metode | titlecase }}</p>
-      <p><strong>Total:</strong> Rp{{ pesanan.total | number }}</p>
+      <!-- Status dan Info Umum -->
+      <div class="info-section">
+        <p><strong>Status:</strong> 
+          <ion-badge [color]="getStatusColor(pesanan.status)">
+            {{ pesanan.status }}
+          </ion-badge>
+        </p>
+        <p><strong>Kode Reservasi:</strong> {{ pesanan.kode_reservasi || '-' }}</p>
+        <p><strong>Waktu Kedatangan:</strong> {{ pesanan.waktu_kedatangan || '-' }}</p>
+        <p><strong>Jumlah Tamu:</strong> {{ pesanan.jumlah_tamu || 0 }} orang</p>
+        <p><strong>Metode Pembayaran:</strong> {{ pesanan.metode | titlecase }}</p>
+        <p *ngIf="pesanan.catatan"><strong>Catatan:</strong> {{ pesanan.catatan }}</p>
+      </div>
 
+      <!-- Info Meja -->
+      <div *ngIf="pesanan.meja && pesanan.meja.length > 0" class="meja-section">
+        <p><strong>Meja:</strong></p>
+        <ion-chip *ngFor="let meja of pesanan.meja" color="primary" outline="true">
+          <ion-label>{{ meja.nomor_meja }} ({{ meja.area }})</ion-label>
+        </ion-chip>
+      </div>
+
+      <!-- Daftar Menu yang Dipesan (Updated Logic) -->
       <ion-list>
         <ion-item-divider color="light">
-          <ion-label><strong>Daftar Pesanan</strong></ion-label>
+          <ion-label><strong>Daftar Menu Pesanan</strong></ion-label>
         </ion-item-divider>
 
-        <ion-item *ngFor="let item of pesanan.items">
-          <ion-label>
-            <h3>{{ item.nama }}</h3>
-            <p>Harga: Rp{{ item.harga | number }} x {{ item.quantity }}</p>
+        <!-- Jika ada items (menggunakan logic sama seperti invoice-detail) -->
+        <div *ngIf="items && items.length > 0">
+          <ion-item *ngFor="let item of items; let i = index">
+            <ion-label>
+              <h3>{{ item.nama || item.menu?.nama || 'Item tidak diketahui' }}</h3>
+              <p>{{ formatCurrency(item.price || item.harga || 0) }} x {{ item.quantity || 1 }}</p>
+              <p *ngIf="item.note" class="note-text">
+                <ion-icon name="chatbox-outline" size="small"></ion-icon>
+                {{ item.note }}
+              </p>
+            </ion-label>
+            <ion-note slot="end" color="dark">
+              {{ formatCurrency(item.total_price || (item.price * item.quantity) || (item.harga * item.quantity) || 0) }}
+            </ion-note>
+          </ion-item>
+        </div>
+
+        <!-- Jika tidak ada items -->
+        <ion-item *ngIf="!items || items.length === 0">
+          <ion-label class="ion-text-center">
+            <p>Tidak ada menu yang dipesan</p>
+            <ion-icon name="restaurant-outline" size="large" color="medium"></ion-icon>
           </ion-label>
-          <ion-note slot="end" color="dark">
-            Rp{{ (item.harga * item.quantity) | number }}
-          </ion-note>
         </ion-item>
+
+        <!-- Total (menggunakan data dari invoice jika ada) -->
+        <ion-item-divider color="light">
+          <ion-label slot="end">
+            <strong>Total: {{ formatCurrency(invoice.total_amount || pesanan.total || 0) }}</strong>
+          </ion-label>
+        </ion-item-divider>
       </ion-list>
 
-      <ion-button *ngIf="isBisaDibatalkan()" expand="full" color="danger" (click)="cancelOrder()" style="margin-top: 16px;">
-  Batalkan Pesanan
-</ion-button>
+      <!-- Ringkasan Pembayaran (seperti di invoice-detail) -->
+      <div *ngIf="invoice.subtotal != null" class="payment-summary">
+        <ion-list lines="none">
+          <ion-item-divider color="light">
+            <ion-label><strong>Ringkasan Pembayaran</strong></ion-label>
+          </ion-item-divider>
+          <ion-item>
+            <ion-label>Subtotal</ion-label>
+            <ion-text slot="end">{{ formatCurrency(invoice.subtotal) }}</ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Biaya Layanan (10%)</ion-label>
+            <ion-text slot="end">{{ formatCurrency(invoice.service_fee) }}</ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label><strong>Total Tagihan</strong></ion-label>
+            <ion-text slot="end" color="primary">
+              <strong>{{ formatCurrency(invoice.total_amount) }}</strong>
+            </ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Jumlah Dibayar</ion-label>
+            <ion-text slot="end" [color]="invoice.amount_paid > 0 ? 'success' : 'medium'">
+              {{ formatCurrency(invoice.amount_paid) }}
+            </ion-text>
+          </ion-item>
+          <ion-item>
+            <ion-label>Sisa Pembayaran</ion-label>
+            <ion-text slot="end" [color]="invoice.remaining_amount > 0 ? 'danger' : 'success'">
+              <strong>{{ formatCurrency(invoice.remaining_amount) }}</strong>
+            </ion-text>
+          </ion-item>
+        </ion-list>
+      </div>
 
+      <!-- Action Buttons -->
+      <div class="action-buttons" style="margin-top: 16px;">
+        <ion-button 
+          *ngIf="isBisaDibatalkan()" 
+          expand="full" 
+          color="danger" 
+          (click)="cancelOrder()">
+          <ion-icon name="close-circle-outline" slot="start"></ion-icon>
+          Batalkan Pesanan
+        </ion-button>
+
+        <ion-button 
+          *ngIf="pesanan.status === 'Belum Lunas' || pesanan.status === 'Belum Dibayar'" 
+          expand="full" 
+          color="primary" 
+          (click)="lanjutkanPembayaran()">
+          <ion-icon name="card-outline" slot="start"></ion-icon>
+          Lanjutkan Pembayaran
+        </ion-button>
+      </div>
     </ion-card-content>
   </ion-card>
 
+  <!-- Error State -->
+  <ion-card *ngIf="!pesanan && !isLoading">
+    <ion-card-content class="ion-text-center">
+      <ion-icon name="alert-circle-outline" size="large" color="warning"></ion-icon>
+      <h3>Data Tidak Ditemukan</h3>
+      <p>Detail pesanan tidak dapat dimuat</p>
+      <ion-button fill="outline" (click)="goBack()">
+        Kembali ke Riwayat
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
 </ion-content>
