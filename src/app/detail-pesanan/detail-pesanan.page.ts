@@ -145,7 +145,7 @@ export class DetailPesananPage implements OnInit {
   async cancelOrder() {
     const alert = await this.alertController.create({
       header: 'Konfirmasi Pembatalan',
-      message: 'Apakah Anda yakin ingin membatalkan pesanan ini?',
+      message: 'Apakah Anda yakin ingin membatalkan pesanan ini? Jika anda batalkan uang anda tidak akan kembali',
       buttons: [
         {
           text: 'Batal',
@@ -156,7 +156,7 @@ export class DetailPesananPage implements OnInit {
           text: 'Ya, Batalkan',
           handler: async () => {
             const loading = await this.loadingController.create({
-              message: 'Membatalkan pesanan...'
+              message: 'Membatalkan Pesanan...'
             });
             await loading.present();
 
