@@ -10,17 +10,51 @@
 </ion-header>
 
 <ion-content class="ion-padding" [fullscreen]="true">
+  <!-- Pull to refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Empty state -->
+  <div *ngIf="riwayat.length === 0" class="empty-state">
+    <ion-icon name="receipt-outline" size="large"></ion-icon>
+    <h3>Belum ada riwayat</h3>
+    <p>Riwayat reservasi dan pesanan Anda akan muncul di sini</p>
+  </div>
+
+  <!-- Riwayat list -->
   <div *ngFor="let data of riwayat" class="card-riwayat">
-<div class="header">
-  <h2>Reservasi#{{ data.id }}</h2>
-  <ion-badge *ngIf="data.status === 'Selesai'" color="success">Selesai</ion-badge>
-  <ion-badge *ngIf="data.status === 'Pesanan Dibatalkan'" color="danger">Dibatalkan</ion-badge>
-  <ion-badge *ngIf="data.status === 'Belum Lunas'" color="warning">Belum Lunas</ion-badge>
-</div>
+    <div class="header">
+      <h2>{{ data.kode_reservasi }}</h2>
+      <ion-badge *ngIf="data.status === 'Selesai'" color="success">Selesai</ion-badge>
+      <ion-badge *ngIf="data.status === 'Pesanan Dibatalkan'" color="danger">Dibatalkan</ion-badge>
+      <ion-badge *ngIf="data.status === 'Belum Lunas'" color="warning">Belum Lunas</ion-badge>
+      <ion-badge *ngIf="data.status === 'Belum Dibayar'" color="warning">Belum Dibayar</ion-badge>
+      <ion-badge *ngIf="data.status === 'Dikonfirmasi'" color="primary">Dikonfirmasi</ion-badge>
+      <ion-badge *ngIf="data.status === 'Sedang Berlangsung'" color="secondary">Berlangsung</ion-badge>
+    </div>
 
-    <p>{{ data.tanggal }}</p>
+    <div class="reservation-info">
+      <p><strong>Tanggal:</strong> {{ data.tanggal }}</p>
+      <p><strong>Waktu Kedatangan:</strong> {{ data.waktu_kedatangan | date:'dd/MM/yyyy HH:mm' }}</p>
+      <p><strong>Jumlah Tamu:</strong> {{ data.jumlah_tamu }} orang</p>
+      
+      <!-- Informasi meja -->
+      <div *ngIf="data.meja && data.meja.length > 0">
+        <p><strong>Meja:</strong> 
+          <span *ngFor="let meja of data.meja; let last = last">
+            {{ meja.nomor_meja }}<span *ngIf="!last">, </span>
+          </span>
+        </p>
+      </div>
 
-    <div class="items">
+      <!-- Catatan jika ada -->
+      <p *ngIf="data.catatan"><strong>Catatan:</strong> {{ data.catatan }}</p>
+    </div>
+
+    <!-- Items akan ditampilkan jika tersedia -->
+    <div class="items" *ngIf="data.items && data.items.length > 0">
+      <h4>Item Pesanan:</h4>
       <div *ngFor="let item of data.items">
         <span>{{ item.nama }}</span>
         <span>x{{ item.quantity }}</span>
@@ -33,13 +67,17 @@
     </div>
 
     <div class="actions">
-      <ion-button color="primary" size="small" (click)="lihatDetail(data)">Detail Pesanan</ion-button>
-      <ion-button size="small" color="dark" (click)="beriUlasan(data)">Beri Penilaian</ion-button>
+      <ion-button color="primary" size="small" (click)="lihatDetail(data)">
+        Detail Reservasi
+      </ion-button>
+      
+      <ion-button *ngIf="data.status === 'Selesai'" size="small" color="dark" (click)="beriUlasan(data)">
+        Beri Penilaian
+      </ion-button>
 
       <ion-button *ngIf="data.status === 'Belum Dibayar'" color="warning" size="small" (click)="lanjutkanPembayaran(data)">
         Lanjutkan Pembayaran
       </ion-button>
     </div>
-
   </div>
 </ion-content>
