@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';  // import AlertController
+import { AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { InvoiceService } from '../services/invoice.service';
 
 @Component({
   selector: 'app-invoice',
@@ -9,97 +10,114 @@ import { AlertController } from '@ionic/angular';  // import AlertController
   standalone: false
 })
 export class InvoicePage implements OnInit {
-  transaksi: any = null;
-  transaksiHistory: any[] = [];
-  subtotal = 0;
-  serviceFee = 9000;
-  total = 0;
-  downPayment = 0;
+  invoiceHistory: any[] = [];
+  isLoading = false;
 
-  pelanggan = {
-    nama: 'Budiono',
-    email: 'Budiono@gmail.com',
-    telp: '08123456789'
-  };
-
-  reservasi: any = {};
-  tampilkanDetail = false;
-
-  constructor(private router: Router, private alertCtrl: AlertController) { // inject AlertController
-    const nav = this.router.getCurrentNavigation();
-    this.transaksi = nav?.extras?.state?.['transaksi'];
-    this.reservasi = nav?.extras?.state?.['reservasi'] || {};
-    this.tampilkanDetail = !!this.transaksi;
-  }
+  constructor(
+    private router: Router,
+    private alertController: AlertController,
+    private loadingController: LoadingController,
+    private toastController: ToastController,
+    private invoiceService: InvoiceService
+  ) {}
 
   ngOnInit() {
-    if (this.transaksi) {
-      this.hitungTotal();
+    this.loadInvoiceHistory();
+  }
 
-      const transaksiLengkap = {
-        ...this.transaksi,
-        reservasi: this.reservasi
-      };
+  ionViewWillEnter() {
+    // Refresh data setiap kali masuk ke halaman
+    this.loadInvoiceHistory();
+  }
 
-      this.simpanTransaksi(transaksiLengkap);
+  // TrackBy function for ngFor optimization
+  trackByInvoiceId(index: number, invoice: any): any {
+    return invoice.id || invoice.invoice_number || index;
+  }
+
+  async loadInvoiceHistory() {
+    this.isLoading = true;
+    const loading = await this.loadingController.create({
+      message: 'Memuat riwayat invoice...',
+      spinner: 'dots'
+    });
+    await loading.present();
+
+    try {
+      // Ambil data dari localStorage (dari cart.page.ts)
+      const localHistory = JSON.parse(localStorage.getItem('riwayat') || '[]');
+      
+      // Jika ada data di localStorage, gunakan itu
+      if (localHistory.length > 0) {
+        this.invoiceHistory = localHistory.map((item: any) => ({
+          ...item,
+          // Pastikan format yang konsisten
+          invoice_number: item.id,
+          tanggal: item.tanggal,
+          total_amount: item.total,
+          payment_status: this.mapStatus(item.status),
+          items: item.items || [],
+          reservasi_data: item.reservasi_data || {}
+        }));
+      }
+
+      // Opsional: Juga ambil dari API jika diperlukan
+      // this.loadFromAPI();
+      
+    } catch (error) {
+      console.error('Error loading invoice history:', error);
+      await this.showToast('Gagal memuat riwayat invoice', 'danger');
+    } finally {
+      this.isLoading = false;
+      await loading.dismiss();
     }
-
-    this.ambilHistoriTransaksi();
   }
 
-  hitungTotal() {
-    this.subtotal = this.transaksi.items.reduce(
-      (sum: number, itm: any) => sum + itm.harga * itm.quantity,
-      0
-    );
-    this.total = this.transaksi.total;
-    this.downPayment = this.transaksi.dibayar;
-  }
-
-  simpanTransaksi(trx: any) {
-    const history = JSON.parse(localStorage.getItem('transactionHistory') || '[]');
-    const isAlreadyStored = history.some((h: any) => h.id === trx.id);
-    localStorage.setItem('lastTransaction', JSON.stringify({
-    id: trx.id,
-    status: trx.status,
-    tanggal: trx.tanggal,
-    dibayar: trx.dibayar,
-    waktu: trx.reservasi?.waktu || null // pastikan waktu disimpan juga
-  }));
-    if (!isAlreadyStored) {
-      history.unshift(trx);
-      localStorage.setItem('transactionHistory', JSON.stringify(history));
-    }
-  }
-
-  ambilHistoriTransaksi() {
-    const history = localStorage.getItem('transactionHistory');
-    if (history) {
-      this.transaksiHistory = JSON.parse(history);
-    }
-  }
-
-  getQrCodeData(id: string): string {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=INV-${id}`;
-  }
-
-  goBack() {
-    this.router.navigate(['/tabs/home']);
-  }
-
-  lihatDetailInvoice(trx: any) {
-    this.router.navigate(['/invoice-detail'], {
-      state: {
-        transaksi: trx,
-        reservasi: trx.reservasi || {}
+  // Opsional: Load dari API jika diperlukan
+  private loadFromAPI() {
+    this.invoiceService.getUserInvoices().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Merge dengan data localStorage jika diperlukan
+          const apiInvoices = response.data.map((item: any) => ({
+            ...item,
+            source: 'api'
+          }));
+          // Bisa digabung dengan localStorage data
+        }
+      },
+      error: (error) => {
+        console.error('Error loading from API:', error);
       }
     });
   }
 
-  async hapusInvoice(id: string) {
-    const alert = await this.alertCtrl.create({
-      header: 'Konfirmasi',
-      message: 'Apakah Anda yakin ingin menghapus invoice ini?',
+  private mapStatus(status: string): string {
+    switch (status) {
+      case 'Selesai': return 'paid';
+      case 'Belum Lunas': return 'pending';
+      case 'Pesanan Dibatalkan': return 'cancelled';
+      default: return 'pending';
+    }
+  }
+
+  get hasInvoices(): boolean {
+    return this.invoiceHistory.length > 0;
+  }
+
+  async lihatDetailInvoice(invoice: any) {
+    // Navigate ke invoice-detail dengan ID
+    if (invoice.id || invoice.invoice_number) {
+      this.router.navigate(['/invoice-detail', invoice.id || invoice.invoice_number]);
+    } else {
+      await this.showToast('ID Invoice tidak ditemukan', 'warning');
+    }
+  }
+
+  async hapusInvoice(invoiceId: string) {
+    const alert = await this.alertController.create({
+      header: 'Konfirmasi Hapus',
+      message: 'Apakah Anda yakin ingin menghapus invoice ini dari riwayat?',
       buttons: [
         {
           text: 'Batal',
@@ -107,14 +125,123 @@ export class InvoicePage implements OnInit {
         },
         {
           text: 'Hapus',
+          role: 'destructive',
           handler: () => {
-            this.transaksiHistory = this.transaksiHistory.filter(trx => trx.id !== id);
-            localStorage.setItem('transactionHistory', JSON.stringify(this.transaksiHistory));
+            this.performDeleteInvoice(invoiceId);
           }
         }
       ]
     });
-
     await alert.present();
+  }
+
+  private performDeleteInvoice(invoiceId: string) {
+    try {
+      // Hapus dari localStorage
+      const currentHistory = JSON.parse(localStorage.getItem('riwayat') || '[]');
+      const updatedHistory = currentHistory.filter((item: any) => 
+        item.id !== invoiceId && item.invoice_number !== invoiceId
+      );
+      
+      localStorage.setItem('riwayat', JSON.stringify(updatedHistory));
+      
+      // Update tampilan
+      this.invoiceHistory = this.invoiceHistory.filter(invoice => 
+        invoice.id !== invoiceId && invoice.invoice_number !== invoiceId
+      );
+      
+      this.showToast('Invoice berhasil dihapus', 'success');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      this.showToast('Gagal menghapus invoice', 'danger');
+    }
+  }
+
+  async refreshData() {
+    await this.loadInvoiceHistory();
+    await this.showToast('Data berhasil diperbarui', 'success');
+  }
+
+  formatCurrency(amount: number): string {
+    if (amount == null || isNaN(amount)) return 'Rp 0';
+    
+    return new Intl.NumberFormat('id-ID', { 
+      style: 'currency', 
+      currency: 'IDR', 
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  }
+
+  formatDate(dateString: string): string {
+    if (!dateString) return '-';
+    
+    try {
+      // Jika sudah dalam format yang readable, return as is
+      if (dateString.includes('/') || dateString.includes('-')) {
+        return dateString;
+      }
+      
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return dateString;
+    }
+  }
+
+  getStatusText(status: string): string {
+    switch (status) {
+      case 'paid': return 'Lunas';
+      case 'pending': return 'Belum Dibayar';
+      case 'partial': return 'Dibayar Sebagian';
+      case 'cancelled': return 'Dibatalkan';
+      case 'Selesai': return 'Lunas';
+      case 'Belum Lunas': return 'Belum Dibayar';
+      case 'Pesanan Dibatalkan': return 'Dibatalkan';
+      default: return status || 'Tidak Diketahui';
+    }
+  }
+
+  getStatusColor(status: string): string {
+    switch (status) {
+      case 'paid':
+      case 'Selesai':
+        return 'success';
+      case 'pending':
+      case 'Belum Lunas':
+        return 'warning';
+      case 'partial':
+        return 'tertiary';
+      case 'cancelled':
+      case 'Pesanan Dibatalkan':
+        return 'danger';
+      default:
+        return 'medium';
+    }
+  }
+
+  private async showToast(message: string, color: string = 'primary') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 2000,
+      position: 'top',
+      color
+    });
+    await toast.present();
+  }
+
+  goBack() {
+    this.router.navigate(['/tabs/home']);
+  }
+
+  // Utility untuk debugging
+  debugInvoice(invoice: any) {
+    console.log('Invoice data:', invoice);
   }
 }

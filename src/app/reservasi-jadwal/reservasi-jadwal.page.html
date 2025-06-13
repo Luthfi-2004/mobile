@@ -45,14 +45,19 @@
           *ngFor="let jam of waktuList"
           class="custom-btn"
           [class.selected]="waktu === jam.label"
+          [class.booked]="jam.booked"
           [disabled]="jam.disabled"
-          (click)="waktu = jam.label"
+          (click)="!jam.disabled && (waktu = jam.label)"
         >
           {{ jam.label }}
+          <ion-icon *ngIf="jam.booked" name="close-circle" class="booked-icon"></ion-icon>
         </button>
       </div>
     </div>
 
+  
+
+    
     <!-- Jumlah Tamu -->
     <div class="section">
       <h3>Jumlah Tamu</h3>

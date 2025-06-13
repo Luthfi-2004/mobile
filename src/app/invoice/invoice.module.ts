@@ -1,11 +1,9 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
 import { IonicModule } from '@ionic/angular';
 
 import { InvoicePageRoutingModule } from './invoice-routing.module';
-
 import { InvoicePage } from './invoice.page';
 
 @NgModule({
@@ -15,6 +13,8 @@ import { InvoicePage } from './invoice.page';
     IonicModule,
     InvoicePageRoutingModule
   ],
-  declarations: [InvoicePage]
+  declarations: [
+    InvoicePage    // InvoicePage bukan standalone → harus dideklarasi
+  ]
 })
 export class InvoicePageModule {}

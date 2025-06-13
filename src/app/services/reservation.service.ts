@@ -15,14 +15,12 @@ export interface ReservationResponse {
   reservasi: {
     id: number;
     user_id: number;
-    // sekarang relasi meja banyak → server bisa kembalikan array `meja`
     meja: Array<{
       id: number;
       nomor_meja: string;
       area: string;
       kapasitas: number;
       status: string;
-      // pivot: { reservasi_id: number; meja_id: number; created_at: string; updated_at: string }
     }>;
     nama_pelanggan: string;
     waktu_kedatangan: string;
@@ -48,7 +46,8 @@ export interface ApiErrorResponse {
   providedIn: 'root'
 })
 export class ReservationService {
-  private apiUrl = `${environment.apiUrl}/customer`;
+  // Pastikan environment.apiUrl hanya sampai '/api', tanpa '/customer'
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
@@ -56,13 +55,13 @@ export class ReservationService {
     const token = localStorage.getItem('auth_token');
     return new HttpHeaders({
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      Authorization: `Bearer ${token}`
     });
   }
 
   createReservation(data: ReservationData): Observable<ReservationResponse> {
     return this.http.post<ReservationResponse>(
-      `${this.apiUrl}/reservations`,
+      `${this.apiUrl}/customer/reservations`,
       data,
       { headers: this.getHeaders() }
     );
@@ -70,22 +69,30 @@ export class ReservationService {
 
   getReservations(): Observable<any> {
     return this.http.get<any>(
-      `${this.apiUrl}/reservations`,
+      `${this.apiUrl}/customer/reservations`,
       { headers: this.getHeaders() }
     );
   }
 
   getReservationDetail(id: number): Observable<any> {
     return this.http.get<any>(
-      `${this.apiUrl}/reservations/${id}`,
+      `${this.apiUrl}/customer/reservations/${id}`,
       { headers: this.getHeaders() }
     );
   }
 
   cancelReservation(id: number): Observable<any> {
     return this.http.post<any>(
-      `${this.apiUrl}/reservations/${id}/cancel`,
+      `${this.apiUrl}/customer/reservations/${id}/cancel`,
       {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  getBookedTimes(date: string): Observable<{ booked_times: string[] }> {
+    return this.http.get<{ booked_times: string[] }>(
+      // Panggil endpoint /api/customer/reservations/booked‑times
+      `${this.apiUrl}/customer/reservations/booked-times?date=${date}`,
       { headers: this.getHeaders() }
     );
   }
