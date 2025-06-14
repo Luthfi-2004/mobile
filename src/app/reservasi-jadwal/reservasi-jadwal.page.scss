@@ -130,3 +130,48 @@ ion-content {
   filter: blur(1px);
   pointer-events: none;
 }
+
+
+.custom-btn {
+  position: relative;
+  transition: all 0.3s ease;
+  
+  &.booked {
+    opacity: 0.6;
+    background-color: var(--ion-color-light);
+    color: var(--ion-color-medium);
+    cursor: not-allowed;
+  }
+
+  .booked-icon {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    color: var(--ion-color-danger);
+    font-size: 20px;
+    background: white;
+    border-radius: 50%;
+    z-index: 10;
+  }
+
+  &[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.warning-message {
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #fff8e1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  color: #ff6f00;
+  font-size: 0.9rem;
+
+  ion-icon {
+    margin-right: 8px;
+    font-size: 1.2rem;
+  }
+}
