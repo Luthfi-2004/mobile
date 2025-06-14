@@ -85,6 +85,16 @@ export class CartPage implements OnInit {
     return this.total * 0.5; 
   }
 
+  // >>>>>>>>>>>>>> START OF NEW CODE <<<<<<<<<<<<<<
+  get serviceFee(): number {
+    return this.paymentAmount * 0.10; // 10% dari DP 50%
+  }
+
+  get remainingBill(): number { 
+    return this.total - this.paymentAmount + this.serviceFee; 
+  }
+  // >>>>>>>>>>>>>> END OF NEW CODE <<<<<<<<<<<<<<
+
   async checkout() {
     if (!this.cart.length) return this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu');
     if (!this.reservasi.id) { 

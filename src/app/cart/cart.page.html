@@ -49,8 +49,12 @@
         <ion-text slot="end" color="primary"><strong>Rp{{ paymentAmount | number }}</strong></ion-text>
       </ion-item>
       <ion-item>
+        <ion-label>Biaya Layanan (10%):</ion-label>
+        <ion-text slot="end" color="medium">Rp{{ serviceFee | number }}</ion-text>
+      </ion-item>
+      <ion-item>
         <ion-label>Sisa Tagihan:</ion-label>
-        <ion-text slot="end" color="medium">Rp{{ (total - paymentAmount) | number }}</ion-text>
+        <ion-text slot="end" color="medium">Rp{{ remainingBill | number }}</ion-text>
       </ion-item>
     </ion-list>
 
