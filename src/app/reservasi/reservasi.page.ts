@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NavController, LoadingController, AlertController } from '@ionic/angular';
+import { NavController, LoadingController, AlertController, ModalController } from '@ionic/angular';
 import { MejaService, Table } from '../services/meja.service';
 
 type Section = 'indoor' | 'outdoor' | 'vvip';
@@ -14,12 +14,14 @@ export class ReservasiPage implements OnInit {
   sections: Section[] = [];
   tables: Record<string, Table[]> = {};
   isLoading = false;
+  showMapModal = false;
 
   constructor(
     private navCtrl: NavController,
     private mejaService: MejaService,
     private loadingCtrl: LoadingController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private modalCtrl: ModalController
   ) {}
 
   ngOnInit() {
@@ -57,6 +59,14 @@ export class ReservasiPage implements OnInit {
       buttons: ['OK']
     });
     await alert.present();
+  }
+
+  showMap() {
+    this.showMapModal = true;
+  }
+
+  closeMap() {
+    this.showMapModal = false;
   }
 
   getNotes(section: string): string {
