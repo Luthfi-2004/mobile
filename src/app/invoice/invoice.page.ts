@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { InvoiceService } from '../services/invoice.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-invoice',
@@ -9,28 +10,32 @@ import { InvoiceService } from '../services/invoice.service';
   styleUrls: ['./invoice.page.scss'],
   standalone: false
 })
-export class InvoicePage implements OnInit {
+export class InvoicePage implements OnInit, OnDestroy {
   invoiceHistory: any[] = [];
   isLoading = false;
+  private subs: Subscription[] = [];
 
   constructor(
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private invoiceService: InvoiceService
+    private invoiceService: InvoiceService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
     this.loadInvoiceHistory();
   }
 
+  ngOnDestroy() {
+    this.subs.forEach(sub => sub.unsubscribe());
+  }
+
   ionViewWillEnter() {
-    // Refresh data setiap kali masuk ke halaman
     this.loadInvoiceHistory();
   }
 
-  // TrackBy function for ngFor optimization
   trackByInvoiceId(index: number, invoice: any): any {
     return invoice.id || invoice.invoice_number || index;
   }
@@ -44,28 +49,55 @@ export class InvoicePage implements OnInit {
     await loading.present();
 
     try {
-      // Ambil data dari localStorage (dari cart.page.ts)
-      const localHistory = JSON.parse(localStorage.getItem('riwayat') || '[]');
-      
-      // Jika ada data di localStorage, gunakan itu
-      if (localHistory.length > 0) {
-        this.invoiceHistory = localHistory.map((item: any) => ({
-          ...item,
-          // Pastikan format yang konsisten
-          invoice_number: item.id,
-          tanggal: item.tanggal,
-          total_amount: item.total,
-          payment_status: this.mapStatus(item.status),
+      const raw: any[] = JSON.parse(localStorage.getItem('riwayat') || '[]');
+
+      // Map data dari localStorage ke struktur yang diinginkan
+      this.invoiceHistory = raw.map(item => {
+        return {
+          id: item.id,
+          invoice_number: item.invoice?.invoice_number || item.invoice_number || item.id,
+          tanggal: item.invoice?.generated_at || item.created_at || item.tanggal,
+          total_amount: item.invoice?.total_amount || item.total || 0,
           items: item.items || [],
-          reservasi_data: item.reservasi_data || {}
-        }));
+          payment_method: item.invoice?.payment_method || item.payment_method || null,
+          customer: item.customer || {},
+          reservasi: item.reservasi || item.reservasi_data || {},
+          invoice: item.invoice || {}
+        };
+      });
+
+      // Ambil status terbaru dari server untuk setiap invoice
+      for (const inv of this.invoiceHistory) {
+        const id = inv.id || inv.invoice_number;
+        if (id) {
+          const sub = this.invoiceService.getInvoiceData(id).subscribe({
+            next: (data: any) => {
+              if (data) {
+                // Update data sesuai dengan struktur yang sama
+                if (data.invoice) {
+                  inv.invoice = { ...inv.invoice, ...data.invoice };
+                }
+                if (data.reservasi) {
+                  inv.reservasi = { ...inv.reservasi, ...data.reservasi };
+                }
+                if (data.customer) {
+                  inv.customer = { ...inv.customer, ...data.customer };
+                }
+                
+                // Paksa update tampilan
+                this.cdr.detectChanges();
+              }
+            },
+            error: (err) => {
+              console.error('Gagal mengambil data invoice:', err);
+            }
+          });
+          this.subs.push(sub);
+        }
       }
 
-      // Opsional: Juga ambil dari API jika diperlukan
-      // this.loadFromAPI();
-      
-    } catch (error) {
-      console.error('Error loading invoice history:', error);
+    } catch (err) {
+      console.error('Gagal memuat invoice:', err);
       await this.showToast('Gagal memuat riwayat invoice', 'danger');
     } finally {
       this.isLoading = false;
@@ -73,44 +105,63 @@ export class InvoicePage implements OnInit {
     }
   }
 
-  // Opsional: Load dari API jika diperlukan
-  private loadFromAPI() {
-    this.invoiceService.getUserInvoices().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          // Merge dengan data localStorage jika diperlukan
-          const apiInvoices = response.data.map((item: any) => ({
-            ...item,
-            source: 'api'
-          }));
-          // Bisa digabung dengan localStorage data
-        }
-      },
-      error: (error) => {
-        console.error('Error loading from API:', error);
-      }
-    });
+  // SAMA PERSIS DENGAN INVOICE-DETAIL
+  getPaymentStatusText(inv: any): string {
+    let rawField = inv.invoice?.payment_status;
+    let raw: string;
+    if (typeof rawField === 'string') {
+      raw = rawField.trim();
+    } else {
+      raw = (inv.reservasi?.payment_status ?? '').toString().trim();
+    }
+
+    const st = raw.toLowerCase();
+    switch (st) {
+      case 'paid':    return 'Lunas';
+      case 'partial': return 'Dibayar Sebagian';
+      case 'pending': return 'Belum Dibayar';
+      case 'dibatalkan': return 'Dibatalkan';
+      default:        return 'Tidak Diketahui';
+    }
   }
 
-  private mapStatus(status: string): string {
-    switch (status) {
-      case 'Selesai': return 'paid';
-      case 'Belum Lunas': return 'pending';
-      case 'Pesanan Dibatalkan': return 'cancelled';
-      default: return 'pending';
+  // SAMA PERSIS DENGAN INVOICE-DETAIL
+  getPaymentStatusColor(inv: any): string {
+    let rawField = inv.invoice?.payment_status;
+    let raw: string;
+    if (typeof rawField === 'string') {
+      raw = rawField.trim();
+    } else {
+      raw = (inv.reservasi?.payment_status ?? '').toString().trim();
     }
+
+    const st = raw.toLowerCase();
+    switch (st) {
+      case 'paid':    return 'success';
+      case 'partial': return 'warning';
+      case 'pending': return 'primary';
+      case 'dibatalkan': return 'danger';
+      default:        return 'medium';
+    }
+  }
+
+  // Sama seperti di invoice-detail
+  getCustomerName(inv: any): string {
+    return inv.customer?.nama_pelanggan || 
+           inv.reservasi?.nama_pelanggan || 
+           'Tidak tersedia';
   }
 
   get hasInvoices(): boolean {
     return this.invoiceHistory.length > 0;
   }
 
-  async lihatDetailInvoice(invoice: any) {
-    // Navigate ke invoice-detail dengan ID
-    if (invoice.id || invoice.invoice_number) {
-      this.router.navigate(['/invoice-detail', invoice.id || invoice.invoice_number]);
+  lihatDetailInvoice(inv: any) {
+    const id = inv.id || inv.invoice_number;
+    if (id) {
+      this.router.navigate(['/invoice-detail', id]);
     } else {
-      await this.showToast('ID Invoice tidak ditemukan', 'warning');
+      this.showToast('ID Invoice tidak ditemukan', 'warning');
     }
   }
 
@@ -119,17 +170,8 @@ export class InvoicePage implements OnInit {
       header: 'Konfirmasi Hapus',
       message: 'Apakah Anda yakin ingin menghapus invoice ini dari riwayat?',
       buttons: [
-        {
-          text: 'Batal',
-          role: 'cancel'
-        },
-        {
-          text: 'Hapus',
-          role: 'destructive',
-          handler: () => {
-            this.performDeleteInvoice(invoiceId);
-          }
-        }
+        { text: 'Batal', role: 'cancel' },
+        { text: 'Hapus', role: 'destructive', handler: () => this.performDeleteInvoice(invoiceId) }
       ]
     });
     await alert.present();
@@ -137,22 +179,13 @@ export class InvoicePage implements OnInit {
 
   private performDeleteInvoice(invoiceId: string) {
     try {
-      // Hapus dari localStorage
-      const currentHistory = JSON.parse(localStorage.getItem('riwayat') || '[]');
-      const updatedHistory = currentHistory.filter((item: any) => 
-        item.id !== invoiceId && item.invoice_number !== invoiceId
-      );
-      
-      localStorage.setItem('riwayat', JSON.stringify(updatedHistory));
-      
-      // Update tampilan
-      this.invoiceHistory = this.invoiceHistory.filter(invoice => 
-        invoice.id !== invoiceId && invoice.invoice_number !== invoiceId
-      );
-      
+      const current: any[] = JSON.parse(localStorage.getItem('riwayat') || '[]');
+      const updated = current.filter(i => i.id !== invoiceId && i.invoice_number !== invoiceId);
+      localStorage.setItem('riwayat', JSON.stringify(updated));
+      this.invoiceHistory = this.invoiceHistory.filter(inv => inv.id !== invoiceId && inv.invoice_number !== invoiceId);
       this.showToast('Invoice berhasil dihapus', 'success');
-    } catch (error) {
-      console.error('Error deleting invoice:', error);
+    } catch (err) {
+      console.error('Error deleting invoice:', err);
       this.showToast('Gagal menghapus invoice', 'danger');
     }
   }
@@ -163,85 +196,46 @@ export class InvoicePage implements OnInit {
   }
 
   formatCurrency(amount: number): string {
-    if (amount == null || isNaN(amount)) return 'Rp 0';
-    
-    return new Intl.NumberFormat('id-ID', { 
-      style: 'currency', 
-      currency: 'IDR', 
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+    if (amount == null || isNaN(amount)) return 'Rp 0';
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency', currency: 'IDR',
+      minimumFractionDigits: 0, maximumFractionDigits: 0
     }).format(amount);
   }
 
   formatDate(dateString: string): string {
     if (!dateString) return '-';
-    
     try {
-      // Jika sudah dalam format yang readable, return as is
-      if (dateString.includes('/') || dateString.includes('-')) {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        const match = dateString.match(/(\d{1,2})\s+(\w+)\s+(\d{4})[^\d]*(\d{1,2})[.:](\d{2})/);
+        if (match) {
+          const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                         'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+          const monthIndex = months.findIndex(m => m.toLowerCase().startsWith(match[2].toLowerCase()));
+          if (monthIndex !== -1) {
+            dateString = `${match[3]}-${monthIndex + 1}-${match[1]}T${match[4]}:${match[5]}:00`;
+            return this.formatDate(dateString);
+          }
+        }
         return dateString;
       }
       
-      const date = new Date(dateString);
       return date.toLocaleDateString('id-ID', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: 'numeric', month: 'long', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
       });
-    } catch (error) {
+    } catch {
       return dateString;
     }
   }
 
-  getStatusText(status: string): string {
-    switch (status) {
-      case 'paid': return 'Lunas';
-      case 'pending': return 'Belum Dibayar';
-      case 'partial': return 'Dibayar Sebagian';
-      case 'cancelled': return 'Dibatalkan';
-      case 'Selesai': return 'Lunas';
-      case 'Belum Lunas': return 'Belum Dibayar';
-      case 'Pesanan Dibatalkan': return 'Dibatalkan';
-      default: return status || 'Tidak Diketahui';
-    }
-  }
-
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'paid':
-      case 'Selesai':
-        return 'success';
-      case 'pending':
-      case 'Belum Lunas':
-        return 'warning';
-      case 'partial':
-        return 'tertiary';
-      case 'cancelled':
-      case 'Pesanan Dibatalkan':
-        return 'danger';
-      default:
-        return 'medium';
-    }
-  }
-
   private async showToast(message: string, color: string = 'primary') {
-    const toast = await this.toastController.create({
-      message,
-      duration: 2000,
-      position: 'top',
-      color
-    });
-    await toast.present();
+    const t = await this.toastController.create({ message, duration: 2000, position: 'top', color });
+    await t.present();
   }
 
   goBack() {
     this.router.navigate(['/tabs/home']);
-  }
-
-  // Utility untuk debugging
-  debugInvoice(invoice: any) {
-    console.log('Invoice data:', invoice);
   }
 }

@@ -49,7 +49,7 @@
   <!-- Menu Items -->
   <div class="menu-list" *ngIf="menuList.length > 0">
     <ion-card 
-      *ngFor="let item of getFilteredMenu(); trackBy: trackByMenuId" 
+      *ngFor="let item of menuList; trackBy: trackByMenuId" 
       class="menu-card"
     >
       <div class="card-image-container">
@@ -90,7 +90,6 @@
         </p>
 
         <div class="price-container">
-          <!-- Original price (jika ada diskon) -->
           <span 
             *ngIf="item.discount_percentage && item.discount_percentage > 0" 
             class="original-price"
@@ -98,13 +97,11 @@
             {{ formatCurrency(item.price) }}
           </span>
 
-          <!-- Final price -->
           <span class="final-price">
             {{ formatCurrency(item.final_price || item.discounted_price || item.price) }}
           </span>
         </div>
 
-        <!-- Quantity Controls -->
         <div class="quantity-controls" *ngIf="item.is_available">
           <ion-button 
             size="small" 
@@ -128,7 +125,6 @@
           </ion-button>
         </div>
 
-        <!-- Unavailable message -->
         <div *ngIf="!item.is_available" class="unavailable-message">
           <ion-text color="medium">Menu tidak tersedia</ion-text>
         </div>
