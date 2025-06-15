@@ -13,6 +13,28 @@
 </ion-header>
 
 <ion-content class="ion-padding custom-bg">
+  <!-- Map Button - Top Left -->
+  <ion-fab vertical="top" horizontal="start" slot="fixed">
+    <ion-fab-button size="small" color="primary" (click)="showMap()">
+      <ion-icon name="map"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Map Modal -->
+  <div *ngIf="showMapModal" class="map-modal-overlay" (click)="closeMap()">
+    <div class="map-modal-content" (click)="$event.stopPropagation()">
+      <div class="map-modal-header">
+        <h3>Denah Restoran</h3>
+        <ion-button fill="clear" (click)="closeMap()">
+          <ion-icon name="close" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+      <div class="map-modal-body">
+        <img src="assets/img/denah-restoran.png" alt="Denah Restoran" class="map-image" />
+      </div>
+    </div>
+  </div>
+
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-container">
     <ion-spinner name="crescent"></ion-spinner>
