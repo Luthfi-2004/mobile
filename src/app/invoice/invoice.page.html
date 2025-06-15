@@ -10,107 +10,99 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  
   <!-- LOADING STATE -->
   <div *ngIf="isLoading" class="loading-container">
     <ion-spinner name="dots" color="primary"></ion-spinner>
     <p>Memuat riwayat invoice...</p>
   </div>
 
-  <!-- INVOICE HISTORY LIST -->
+  <!-- INVOICE HISTORY -->
   <div *ngIf="!isLoading && hasInvoices">
-    <ion-card *ngFor="let invoice of invoiceHistory; trackBy: trackByInvoiceId" class="invoice-card">
+    <ion-card *ngFor="let inv of invoiceHistory; trackBy: trackByInvoiceId" class="invoice-card">
       <ion-card-header>
         <ion-card-title>
-          <ion-text color="primary">Invoice #{{ invoice.invoice_number || invoice.id }}</ion-text>
+          <ion-text color="primary">Invoice #{{ inv.invoice_number || inv.id }}</ion-text>
         </ion-card-title>
-        <ion-card-subtitle>
-          <ion-text>{{ formatDate(invoice.tanggal) }}</ion-text>
-        </ion-card-subtitle>
+        <ion-card-subtitle>{{ formatDate(inv.tanggal) }}</ion-card-subtitle>
       </ion-card-header>
 
       <ion-card-content>
-        <!-- STATUS -->
+        <!-- STATUS PEMBAYARAN -->
         <div class="status-container">
-          <ion-chip [color]="getStatusColor(invoice.status || invoice.payment_status)">
-            <ion-label>{{ getStatusText(invoice.status || invoice.payment_status) }}</ion-label>
+          <ion-chip [color]="getPaymentStatusColor(inv)">
+            <ion-label>
+              {{ getPaymentStatusText(inv) }}
+            </ion-label>
           </ion-chip>
         </div>
 
-        <!-- INVOICE DETAILS -->
+        <!-- INFORMASI PELANGGAN -->
+        <div class="customer-info" *ngIf="getCustomerName(inv) !== 'Tidak tersedia' || inv.customer?.email">
+          <h4>Pelanggan:</h4>
+          <p>{{ getCustomerName(inv) }}</p>
+          <p *ngIf="inv.customer?.email">{{ inv.customer.email }}</p>
+        </div>
+
+        <!-- DETAIL SINGKAT -->
         <ion-list lines="none" class="invoice-details">
           <ion-item>
             <ion-icon name="restaurant-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Total Items</h3>
-              <p>{{ invoice.items?.length || 0 }} menu</p>
+              <p>{{ inv.items?.length || 0 }} menu</p>
             </ion-label>
           </ion-item>
-
           <ion-item>
             <ion-icon name="cash-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Total Tagihan</h3>
-              <p>{{ formatCurrency(invoice.total_amount || invoice.total) }}</p>
+              <p>{{ formatCurrency(inv.total_amount || inv.total) }}</p>
             </ion-label>
           </ion-item>
-
-          <ion-item *ngIf="invoice.payment_method">
+          <ion-item *ngIf="inv.payment_method">
             <ion-icon name="card-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Metode Pembayaran</h3>
-              <p>{{ invoice.payment_method }}</p>
+              <p>{{ inv.payment_method }}</p>
             </ion-label>
           </ion-item>
-
-          <ion-item *ngIf="invoice.reservasi_data?.waktu_kedatangan">
+          <ion-item *ngIf="inv.reservasi?.waktu_kedatangan">
             <ion-icon name="time-outline" slot="start"></ion-icon>
             <ion-label>
               <h3>Waktu Reservasi</h3>
-              <p>{{ formatDate(invoice.reservasi_data.waktu_kedatangan) }}</p>
+              <p>{{ formatDate(inv.reservasi.waktu_kedatangan) }}</p>
             </ion-label>
           </ion-item>
         </ion-list>
 
-        <!-- ITEMS PREVIEW       -->
-        <div *ngIf="invoice.items && invoice.items.length > 0" class="items-preview">
+        <!-- PREVIEW PESANAN -->
+        <div *ngIf="inv.items?.length" class="items-preview">
           <h4>Pesanan:</h4>
           <ion-list lines="none">
-            <ion-item *ngFor="let item of invoice.items; let i = index" [class.hidden]="i >= 3">
+            <ion-item *ngFor="let item of inv.items; let i = index" [class.hidden]="i >= 3">
               <ion-label>
                 <h3>{{ item.nama || item.name }}</h3>
-                <p>{{ item.quantity }}x {{ formatCurrency(item.harga || item.price) }}</p>
+                <p>{{ item.quantity }} x {{ formatCurrency(item.harga || item.price) }}</p>
                 <p *ngIf="item.note" class="item-note">{{ item.note }}</p>
               </ion-label>
               <ion-text slot="end" color="primary">
                 <strong>{{ formatCurrency((item.harga || item.price) * item.quantity) }}</strong>
               </ion-text>
             </ion-item>
-            <ion-item *ngIf="invoice.items.length > 3">
-              <ion-label>
-                <p><em>... dan {{ invoice.items.length - 3 }} item lainnya</em></p>
-              </ion-label>
+            <ion-item *ngIf="inv.items.length > 3">
+              <ion-label><em>... dan {{ inv.items.length - 3 }} item lainnya</em></ion-label>
             </ion-item>
           </ion-list>
         </div>
 
         <!-- ACTION BUTTONS -->
         <div class="action-buttons">
-          <ion-button 
-            expand="block" 
-            fill="outline" 
-            (click)="lihatDetailInvoice(invoice)">
-            <ion-icon name="eye-outline" slot="start"></ion-icon>
-            Lihat Detail
+          <ion-button expand="block" fill="outline" (click)="lihatDetailInvoice(inv)">
+            <ion-icon name="eye-outline" slot="start"></ion-icon> Lihat Detail
           </ion-button>
-          
-          <ion-button 
-            expand="block" 
-            fill="clear" 
-            color="danger" 
-            (click)="hapusInvoice(invoice.id || invoice.invoice_number)">
-            <ion-icon name="trash-outline" slot="start"></ion-icon>
-            Hapus dari Riwayat
+          <ion-button expand="block" fill="clear" color="danger"
+            (click)="hapusInvoice(inv.id || inv.invoice_number)">
+            <ion-icon name="trash-outline" slot="start"></ion-icon> Hapus
           </ion-button>
         </div>
       </ion-card-content>
@@ -123,11 +115,9 @@
     <h2>Tidak Ada Riwayat Invoice</h2>
     <p>Riwayat invoice Anda akan muncul di sini setelah melakukan pemesanan.</p>
     <ion-button expand="block" routerLink="/tabs/home">
-      <ion-icon name="home-outline" slot="start"></ion-icon>
-      Kembali ke Beranda
+      <ion-icon name="home-outline" slot="start"></ion-icon> Kembali ke Beranda
     </ion-button>
   </div>
-
 </ion-content>
 
 <style>
@@ -147,6 +137,19 @@
 
 .status-container {
   margin-bottom: 1rem;
+}
+
+.customer-info {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: var(--ion-color-light);
+  border-radius: 8px;
+}
+
+.customer-info h4 {
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+  color: var(--ion-color-dark);
 }
 
 .invoice-details {

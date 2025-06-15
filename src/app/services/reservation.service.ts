@@ -96,4 +96,13 @@ export class ReservationService {
       { headers: this.getHeaders() }
     );
   }
+
+  autoCancelReservasi(id: number): Observable<{ message: string }> {
+  return this.http.post<{ message: string }>(
+    `${this.apiUrl}/customer/reservations/${id}/auto-cancel`,
+    {},
+    { headers: this.getHeaders() }
+  );
+}
+
 }
