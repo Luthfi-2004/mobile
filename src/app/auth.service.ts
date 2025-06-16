@@ -1,3 +1,5 @@
+// src/app/auth.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -35,6 +37,13 @@ export interface RegisterData {
   password_confirmation: string;
 }
 
+// Interface untuk data ganti password
+export interface ChangePasswordData {
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private apiUrl = 'http://127.0.0.1:8000/api';
@@ -56,14 +65,13 @@ export class AuthService {
       const user = JSON.parse(userJson);
       this.tokenSubject.next(token);
       this.currentUserSubject.next(user);
-      // background verify
       this.verifyTokenSilently();
     } else {
       this.clearAuthData();
     }
   }
 
-  // CSRF for Sanctum
+  // Ambil CSRF token untuk Sanctum
   private getCsrfToken(): Observable<any> {
     return this.http.get(
       `${this.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`,
@@ -71,7 +79,7 @@ export class AuthService {
     );
   }
 
-  // Register new user
+  // Registrasi
   register(data: RegisterData): Observable<AuthResponse> {
     return this.getCsrfToken().pipe(
       switchMap(() =>
@@ -86,7 +94,7 @@ export class AuthService {
     );
   }
 
-  // Login user
+  // Login
   login(data: LoginData): Observable<AuthResponse> {
     return this.getCsrfToken().pipe(
       switchMap(() =>
@@ -101,7 +109,7 @@ export class AuthService {
     );
   }
 
-  // Logout user
+  // Logout
   logout(): Observable<any> {
     return this.http
       .post(`${this.apiUrl}/customer/logout`, {}, { withCredentials: true })
@@ -114,7 +122,7 @@ export class AuthService {
       );
   }
 
-  // Store authentication data
+  // Simpan token & data user
   private storeAuthData(token: string, user: User): void {
     localStorage.setItem('auth_token', token);
     localStorage.setItem('user_data', JSON.stringify(user));
@@ -123,7 +131,7 @@ export class AuthService {
     console.log('Auth data stored');
   }
 
-  // Clear authentication data
+  // Hapus token & data user
   private clearAuthData(): void {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
@@ -132,22 +140,18 @@ export class AuthService {
     console.log('Auth data cleared');
   }
 
-  // Get current user
+  // Getter user & token saat ini
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
-
-  // Get current token
   getCurrentToken(): string | null {
     return this.tokenSubject.value;
   }
-
-  // Check if user is authenticated (persistent)
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('auth_token');
+    return !!this.getCurrentToken();
   }
 
-  // Get headers with authorization token
+  // Header otentikasi
   private getAuthHeaders(): HttpHeaders {
     let headers = new HttpHeaders({ 'X-Requested-With': 'XMLHttpRequest' });
     const token = this.getCurrentToken();
@@ -157,7 +161,7 @@ export class AuthService {
     return headers;
   }
 
-  // Make authenticated HTTP request
+  // Request dengan header otentikasi
   authenticatedRequest(
     method: string,
     endpoint: string,
@@ -169,22 +173,16 @@ export class AuthService {
       withCredentials: true
     };
     switch (method.toLowerCase()) {
-      case 'get':
-        return this.http.get(url, options);
-      case 'post':
-        return this.http.post(url, data, options);
-      case 'put':
-        return this.http.put(url, data, options);
-      case 'patch':
-        return this.http.patch(url, data, options);
-      case 'delete':
-        return this.http.delete(url, options);
-      default:
-        throw new Error('Unsupported HTTP method');
+      case 'get': return this.http.get(url, options);
+      case 'post': return this.http.post(url, data, options);
+      case 'put': return this.http.put(url, data, options);
+      case 'patch': return this.http.patch(url, data, options);
+      case 'delete': return this.http.delete(url, options);
+      default: throw new Error('Unsupported HTTP method');
     }
   }
 
-  // Silent token verify
+  // Verifikasi token di background
   private verifyTokenSilently(): void {
     const token = this.getCurrentToken();
     if (!token) return;
@@ -208,7 +206,7 @@ export class AuthService {
       });
   }
 
-  // Verify token validity with backend
+  // Verifikasi token dan redirect jika invalid
   verifyToken(): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/customer/profile`, {
@@ -232,7 +230,7 @@ export class AuthService {
       );
   }
 
-  // Force logout and redirect
+  // Redirect paksa ke login
   forceLogout(message?: string): void {
     this.clearAuthData();
     this.router.navigate(['/login'], {
@@ -240,7 +238,53 @@ export class AuthService {
     });
   }
 
-  // Handle authentication errors
+  // ——— Fitur: Ganti Password ———
+  changePassword(data: ChangePasswordData): Observable<{ message: string }> {
+    return this.authenticatedRequest('post', '/customer/profile/change-password', data)
+      .pipe(
+        catchError(err => this.handleAuthError(err, 'Change Password'))
+      );
+  }
+
+  // ——— Fitur: Request Reset Password ———
+  requestPasswordReset(
+    emailOrPhone: string
+  ): Observable<{ message: string; identifier?: string }> {
+    return this.getCsrfToken().pipe(
+      switchMap(() =>
+        this.http.post<{ message: string; identifier?: string }>(
+          `${this.apiUrl}/customer/password/request-reset`,
+          { email_or_phone: emailOrPhone },
+          { withCredentials: true }
+        )
+      ),
+      catchError(err => this.handleAuthError(err, 'Request Reset Password'))
+    );
+  }
+
+  // ——— Fitur: Reset Password Baru ———
+  resetPassword(
+    identifier: string,
+    newPassword: string,
+    newPasswordConfirmation: string
+  ): Observable<{ message: string }> {
+    return this.getCsrfToken().pipe(
+      switchMap(() =>
+        this.http.post<{ message: string }>(
+          `${this.apiUrl}/customer/password/reset`,
+          {
+            identifier,
+            password: newPassword,
+            password_confirmation: newPasswordConfirmation
+          },
+          { withCredentials: true }
+        )
+      ),
+      catchError(err => this.handleAuthError(err, 'Reset Password'))
+    );
+  }
+
+  // Penanganan error otentikasi
   private handleAuthError(
     error: HttpErrorResponse,
     operation: string
@@ -248,11 +292,13 @@ export class AuthService {
     console.error(`${operation} error:`, error);
     let msg = `Error during ${operation.toLowerCase()}.`;
     if (error.status === 0) {
-      msg = 'Cannot connect to server.';
+      msg = 'Tidak dapat terhubung ke server.';
     } else if (error.status === 422 && error.error.errors) {
       msg = Object.values(error.error.errors).flat().join(', ');
     } else if (error.status === 401) {
-      msg = 'Invalid credentials.';
+      msg = 'Kredensial tidak valid.';
+    } else if (error.error?.message) {
+      msg = error.error.message;
     }
     return throwError(() => ({ ...error, userMessage: msg }));
   }

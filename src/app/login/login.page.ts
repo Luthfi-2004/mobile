@@ -44,6 +44,12 @@ export class LoginPage implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
+  // --- TAMBAHAN BARU ---
+  goToForgotPassword() {
+    this.router.navigate(['/forgot-password']);
+  }
+  // --- END ---
+
   async showAlert(header: string, message: string) {
     const alert = await this.alertController.create({
       header,
@@ -86,12 +92,12 @@ export class LoginPage implements OnInit {
           // Simpan data pengguna ke localStorage setelah login berhasil
           localStorage.setItem('userData', JSON.stringify({
             email: response.user.email,
-            username: response.user.nama, // Asumsikan 'nama' adalah username dari respons API
-            phone: response.user.nomor_hp, // Asumsikan 'nomor_hp' adalah nomor telepon dari respons API
+            username: response.user.nama,
+            phone: response.user.nomor_hp,
             loggedIn: true,
-            profileImage: localStorage.getItem('profileImage') || 'assets/img/default-profile.jpg' // Pertahankan gambar profil jika sudah ada
+            profileImage: localStorage.getItem('profileImage') || 'assets/img/default-profile.jpg'
           }));
-          localStorage.setItem('userId', String(response.user.id)); // Simpan userId jika ada
+          localStorage.setItem('userId', String(response.user.id));
 
           await this.showToast(`Selamat datang, ${response.user.nama}!`);
           this.router.navigate(['/tabs/home']);
@@ -101,18 +107,16 @@ export class LoginPage implements OnInit {
           this.isSubmitting = false;
           
           let errorMessage = 'Terjadi kesalahan saat login.';
-          
           console.error('Login error:', error);
-          
+
           if (error.status === 401) {
             errorMessage = 'Email/nomor HP atau password tidak valid.';
           } else if (error.status === 403) {
             errorMessage = 'Akses ditolak. Anda tidak memiliki izin sebagai pelanggan.';
           } else if (error.status === 422 && error.error?.errors) {
-            // Handle Laravel validation errors
             const errors = error.error.errors;
             const errorMessages: string[] = [];
-            
+
             Object.keys(errors).forEach(field => {
               if (Array.isArray(errors[field])) {
                 errorMessages.push(...errors[field]);
@@ -120,7 +124,7 @@ export class LoginPage implements OnInit {
                 errorMessages.push(errors[field]);
               }
             });
-            
+
             errorMessage = errorMessages.join('\n');
           } else if (error.error?.message) {
             errorMessage = error.error.message;
@@ -134,11 +138,9 @@ export class LoginPage implements OnInit {
         }
       });
     } else {
-      // Form validation errors
       this.markFormGroupTouched(this.loginForm);
-      
+
       let errorMessage = 'Mohon periksa kembali data yang Anda masukkan.';
-      
       if (this.loginForm.get('email')?.invalid && this.loginForm.get('password')?.invalid) {
         errorMessage = 'Email/nomor HP dan Password wajib diisi.';
       } else if (this.loginForm.get('email')?.invalid) {
@@ -146,12 +148,11 @@ export class LoginPage implements OnInit {
       } else if (this.loginForm.get('password')?.invalid) {
         errorMessage = 'Password wajib diisi dan minimal 8 karakter.';
       }
-      
+
       await this.showAlert('Login Gagal', errorMessage);
     }
   }
 
-  // Tandai setiap kontrol di form sebagai touched untuk men-trigger validasi
   private markFormGroupTouched(formGroup: FormGroup) {
     Object.keys(formGroup.controls).forEach(field => {
       const control = formGroup.get(field);
@@ -169,7 +170,6 @@ export class LoginPage implements OnInit {
     }
   }
 
-  // Navigasi ke halaman registrasi
   goToRegister() {
     this.router.navigate(['/registrasi']);
   }
