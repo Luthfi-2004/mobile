@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core'; // Tambahkan OnInit di sini
-import { AlertController, NavController, Platform } from '@ionic/angular'; // Tambahkan Platform
-import { ThemeService } from '../services/theme.service'; // Impor ThemeService
+import { Component, OnInit } from '@angular/core';
+import { AlertController, NavController, Platform } from '@ionic/angular';
+import { ThemeService } from '../services/theme.service';
+import { AuthService } from '../auth.service'; // Tambahkan import ini
 
 @Component({
   selector: 'app-akun',
@@ -8,63 +9,67 @@ import { ThemeService } from '../services/theme.service'; // Impor ThemeService
   styleUrls: ['./akun.page.scss'],
   standalone: false,
 })
-export class AkunPage implements OnInit { // Implementasikan OnInit
+export class AkunPage implements OnInit {
   currentUser: any = null;
-  profileImage: string = 'assets/img/default-profile.jpg'; // default image
-  isDarkTheme: boolean = false; // Properti untuk status tema
+  profileImage: string = 'assets/img/default-profile.jpg';
+  isDarkTheme: boolean = false;
 
   constructor(
     private alertController: AlertController,
     private navCtrl: NavController,
-    private themeService: ThemeService, // Inject ThemeService
-    private platform: Platform // Inject Platform
+    private themeService: ThemeService,
+    private platform: Platform,
+    private authService: AuthService // Tambahkan injection ini
   ) {}
 
-  // Lifecycle hook yang dijalankan saat komponen diinisialisasi
   ngOnInit() {
-    // Muat status tema saat ini dari ThemeService
     this.isDarkTheme = this.themeService.getCurrentTheme() === 'dark';
 
-    // Dengarkan perubahan preferensi tema sistem operasi secara real-time
-    // Ini memastikan aplikasi merespons jika pengguna mengubah tema sistem saat aplikasi berjalan
     this.platform.ready().then(() => {
       window.matchMedia('(prefers-color-scheme: dark)')
             .addEventListener('change', e => {
-              // Set tema di service dan update status isDarkTheme
               this.themeService.setTheme(e.matches ? 'dark' : 'light');
               this.isDarkTheme = e.matches;
             });
     });
   }
 
-  // Lifecycle hook, dijalankan tiap halaman muncul
   ionViewWillEnter() {
     this.loadUserData();
   }
 
   loadUserData() {
-    const userDataStr = localStorage.getItem('userData');
-    if (userDataStr) {
-      const userData = JSON.parse(userDataStr);
-      this.currentUser = userData;
-      this.profileImage = userData.profileImage || 'assets/img/default-profile.jpg';
+    // Gunakan AuthService untuk mendapatkan data user
+    const user = this.authService.getCurrentUser();
+    if (user) {
+      // Sesuaikan struktur data dengan template HTML
+      this.currentUser = {
+        ...user,
+        username: user.nama // Template menggunakan username, tapi AuthService menyimpan nama
+      };
+      
+      // Load profile image dari localStorage atau gunakan default
+      const storedProfileImage = localStorage.getItem('profileImage');
+      if (storedProfileImage) {
+        this.profileImage = storedProfileImage;
+      } else {
+        this.profileImage = 'assets/img/default-profile.jpg';
+      }
     } else {
       this.currentUser = null;
       this.profileImage = 'assets/img/default-profile.jpg';
     }
   }
 
-  // Metode untuk mengubah tema (terhubung ke ion-toggle di HTML)
   toggleTheme(event: any) {
-    this.isDarkTheme = event.detail.checked; // Ambil nilai checked dari toggle
+    this.isDarkTheme = event.detail.checked;
     if (this.isDarkTheme) {
-      this.themeService.setTheme('dark'); // Aktifkan tema gelap
+      this.themeService.setTheme('dark');
     } else {
-      this.themeService.setTheme('light'); // Aktifkan tema terang
+      this.themeService.setTheme('light');
     }
   }
 
-  // Navigasi halaman
   goToInfoAkun() {
     this.navCtrl.navigateForward('/info-akun');
   }
@@ -77,7 +82,6 @@ export class AkunPage implements OnInit { // Implementasikan OnInit
     this.navCtrl.navigateForward('/tentang-kami');
   }
 
-  // Konfirmasi logout
   async confirmLogout() {
     const alert = await this.alertController.create({
       header: 'Konfirmasi Logout',
@@ -105,10 +109,24 @@ export class AkunPage implements OnInit { // Implementasikan OnInit
     await alert.present();
   }
 
-  // Logout: hapus data login dan kembali ke halaman login
+  // Perbaiki performLogout untuk menggunakan AuthService
   private performLogout() {
-    localStorage.removeItem('userData');
-    localStorage.removeItem('isLoggedIn');
-    this.navCtrl.navigateRoot('/login');
+    if (this.authService.isLoggedIn()) {
+      // Logout melalui API dan hapus semua data auth
+      this.authService.logout().subscribe({
+        next: () => {
+          console.log('Logout berhasil');
+          this.navCtrl.navigateRoot('/login');
+        },
+        error: (error) => {
+          console.log('Logout error:', error);
+          // Tetap hapus data lokal meskipun API error
+          this.authService.forceLogout();
+        }
+      });
+    } else {
+      // Jika tidak ada token, langsung redirect ke login
+      this.navCtrl.navigateRoot('/login');
+    }
   }
 }

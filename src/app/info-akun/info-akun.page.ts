@@ -1,317 +1,354 @@
-import { Component, ElementRef, ViewChild, Output, EventEmitter } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AlertController, LoadingController } from '@ionic/angular';
-import { NavController } from '@ionic/angular';
-import { HttpClient } from '@angular/common/http';
+// src/app/info-akun/info-akun.page.ts
+
+import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from '@angular/forms';
+import { ActionSheetController, AlertController, LoadingController, ToastController } from '@ionic/angular';
+import { AuthService, User } from '../auth.service';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'; // Import Capacitor Camera
+import { Observable } from 'rxjs'; // <<< TAMBAHKAN IMPORT INI
 
 @Component({
   selector: 'app-info-akun',
   templateUrl: './info-akun.page.html',
   styleUrls: ['./info-akun.page.scss'],
-  standalone: false,
+  standalone: false
+  // Hapus baris 'standalone: false' atau 'standalone: true' jika ada di sini
 })
-export class InfoAkunPage {
+export class InfoAkunPage implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef;
-  @Output() profileUpdated = new EventEmitter<{username: string, profileImage: string}>();
 
-  profileImage = 'assets/img/default-profile.jpg'; // Default image
-  form: FormGroup;
-  currentEditingField: string | null = null;
-  originalValues: any = {};
+  form!: FormGroup;
+  currentUser: User | null = null;
+  profileImage: SafeUrl = 'assets/img/default-profile.jpg';
+  initialFormValue: any;
+  isSubmitting = false;
 
-  private currentUserEmail: string | null = null;
-  private apiUrl = 'http://localhost:8000/api'; // Ganti dengan alamat API Anda
+  private editingField: string | null = null;
 
   constructor(
     private fb: FormBuilder,
+    private authService: AuthService,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private navCtrl: NavController,
-    private http: HttpClient
+    private toastController: ToastController,
+    private actionSheetController: ActionSheetController,
+    private sanitizer: DomSanitizer
   ) {
-    // Inisialisasi form dengan nilai default (akan di-patch nanti)
     this.form = this.fb.group({
-      username: ['user123', [Validators.required, Validators.minLength(3)]],
-      email: [{ value: '', disabled: true }, [Validators.required, Validators.email]],
-      phone: ['', [Validators.required, Validators.pattern(/^[0-9]+$/), Validators.minLength(10)]],
+      username: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phone: [''],
       currentPassword: [''],
-      newPassword: ['', [Validators.minLength(6)]],
-      confirmPassword: [''],
+      newPassword: ['', [Validators.minLength(8)]],
+      confirmPassword: ['']
     }, { validators: this.passwordMatchValidator });
+  }
 
-    // Panggil fungsi untuk load data user saat komponen dibuat
+  ngOnInit() {
     this.loadUserData();
   }
 
-  async loadUserData() {
-    try {
-      // 1. Ambil data user dari localStorage
-      const loggedUserDataString = localStorage.getItem('userData');
-      if (loggedUserDataString) {
-        const loggedUserData = JSON.parse(loggedUserDataString);
-        this.currentUserEmail = loggedUserData.email;
-        this.updateFormWithUserData(loggedUserData);
-        this.saveOriginalValues(); // Simpan nilai awal dari localStorage
-        return; // Hentikan eksekusi jika data ditemukan di localStorage
+  passwordMatchValidator: ValidatorFn = (control: AbstractControl): { [key: string]: boolean } | null => {
+    const newPassword = control.get('newPassword');
+    const confirmPassword = control.get('confirmPassword');
+
+    if (newPassword?.value || confirmPassword?.value) {
+      if (newPassword && confirmPassword && newPassword.value !== confirmPassword.value) {
+        return { 'mismatch': true };
       }
-
-      // 2. Jika tidak ada data di localStorage, coba ambil dari database
-      const userId = this.getUserId();
-      if (!userId) {
-        console.warn('User ID not found in localStorage. Cannot fetch user data from API.');
-        return;
-      }
-
-      const loading = await this.loadingController.create({
-        message: 'Memuat data...',
-        spinner: 'crescent'
-      });
-      await loading.present();
-
-      this.http.get(`${this.apiUrl}/pengguna/${userId}`).subscribe(
-        (response: any) => {
-          loading.dismiss();
-          const dbUserData = {
-            username: response.nama,
-            email: response.email,
-            phone: response.nomor_hp,
-            profileImage: response.profileImage || this.profileImage // Gunakan gambar profil dari API jika ada
-          };
-          this.updateFormWithUserData(dbUserData);
-          this.saveOriginalValues();
-        },
-        async (error) => {
-          loading.dismiss();
-          console.error('Failed to load user data from server:', error);
-          const alert = await this.alertController.create({
-            header: 'Error',
-            message: 'Gagal memuat data dari server. Silakan coba lagi nanti.',
-            buttons: ['OK']
-          });
-          await alert.present();
-        }
-      );
-    } catch (error) {
-      console.error('Error loading user data:', error);
     }
-  }
+    return null;
+  };
 
-  private updateFormWithUserData(userData: any) {
-    this.form.patchValue({
-      username: userData.username || userData.nama || 'user123',
-      email: userData.email || '',
-      phone: userData.phone || userData.nomor_hp || ''
-    });
 
-    if (userData.profileImage) {
-      this.profileImage = userData.profileImage;
-    } else {
-      // Jika tidak ada gambar profil di userData, coba ambil dari localStorage jika ada
+  loadUserData() {
+    this.currentUser = this.authService.getCurrentUser();
+    if (this.currentUser) {
+      this.form.patchValue({
+        username: this.currentUser.nama,
+        email: this.currentUser.email,
+        phone: this.currentUser.nomor_hp || ''
+      });
+      this.initialFormValue = this.form.value;
+
       const storedProfileImage = localStorage.getItem('profileImage');
       if (storedProfileImage) {
-        this.profileImage = storedProfileImage;
+        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(storedProfileImage);
       }
     }
-  }
-
-  private getUserId(): number | null {
-    // Ambil userId dari localStorage, ini harus diset saat login atau registrasi
-    const userId = localStorage.getItem('userId');
-    return userId ? +userId : null;
   }
 
   isChanged(): boolean {
-    return (
-      this.form.get('username')?.value !== this.originalValues.username ||
-      this.form.get('phone')?.value !== this.originalValues.phone ||
-      this.profileImage !== this.originalValues.profileImage ||
-      (this.form.get('newPassword')?.value && this.form.get('newPassword')?.value !== '')
-    );
-  }
-
-  saveOriginalValues() {
-    this.originalValues = {
+    const currentValues = {
       username: this.form.get('username')?.value,
-      phone: this.form.get('phone')?.value,
-      profileImage: this.profileImage
+      email: this.form.get('email')?.value,
+      phone: this.form.get('phone')?.value
     };
-  }
+    const initialValues = {
+      username: this.initialFormValue.username,
+      email: this.initialFormValue.email,
+      phone: this.initialFormValue.phone
+    };
+    const accountInfoChanged = JSON.stringify(currentValues) !== JSON.stringify(initialValues);
 
-  passwordMatchValidator(form: FormGroup) {
-    const newPassword = form.get('newPassword')?.value;
-    const confirmPassword = form.get('confirmPassword')?.value;
-    
-    if (newPassword || confirmPassword) {
-      return newPassword === confirmPassword ? null : { mismatch: true };
-    }
-    return null;
+    const passwordFieldsFilled =
+      this.form.get('currentPassword')?.value ||
+      this.form.get('newPassword')?.value ||
+      this.form.get('confirmPassword')?.value;
+
+    return accountInfoChanged || (passwordFieldsFilled && this.form.valid);
   }
 
   isEditing(field: string): boolean {
-    return this.currentEditingField === field;
+    return this.editingField === field;
   }
 
   toggleEdit(field: string) {
-    if (this.isEditing(field)) {
-      this.form.get(field)?.setValue(this.originalValues[field]);
-      this.currentEditingField = null;
+    if (this.editingField === field) {
+      this.editingField = null;
+      // Gunakan disable() atau set to read-only jika Anda punya logika untuk itu
+      // this.form.get(field)?.disable();
     } else {
-      this.currentEditingField = field;
-      this.form.get(field)?.markAsTouched();
-    }
-  }
-
-  changeProfilePicture() {
-    this.fileInput.nativeElement.click();
-  }
-
-  handleImageChange(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.profileImage = e.target.result;
-        // Simpan gambar profil ke localStorage
-        localStorage.setItem('profileImage', this.profileImage);
-        this.profileUpdated.emit({
-          username: this.form.get('username')?.value,
-          profileImage: this.profileImage
-        });
-      };
-      reader.readAsDataURL(file);
+      this.editingField = field;
+      // Gunakan enable() jika Anda punya logika untuk itu
+      // this.form.get(field)?.enable();
     }
   }
 
   async saveChanges() {
-    const usernameChanged = this.form.get('username')?.value !== this.originalValues.username;
-    const phoneChanged = this.form.get('phone')?.value !== this.originalValues.phone;
-    const imageChanged = this.profileImage !== this.originalValues.profileImage;
-
-    const newPassword = this.form.get('newPassword')?.value;
-    const confirmPassword = this.form.get('confirmPassword')?.value;
-    const currentPassword = this.form.get('currentPassword')?.value;
-
-    if ((usernameChanged || phoneChanged) && (this.form.get('username')?.invalid || this.form.get('phone')?.invalid)) {
-      const alert = await this.alertController.create({
-        header: 'Form Tidak Valid',
-        message: 'Harap isi Username dan Nomor Telepon dengan benar.',
-        buttons: ['OK'],
-      });
-      await alert.present();
+    if (this.form.invalid) {
+      this.markFormGroupTouched(this.form);
+      await this.showAlert('Validasi Gagal', 'Mohon lengkapi data dengan benar.');
       return;
     }
 
-    if (newPassword || confirmPassword) {
-      if (!currentPassword) {
-        const alert = await this.alertController.create({
-          header: 'Password Saat Ini Diperlukan',
-          message: 'Masukkan password saat ini untuk mengubah password',
-          buttons: ['OK'],
-        });
-        await alert.present();
-        return;
-      }
-
-      if (newPassword.length < 6) {
-        const alert = await this.alertController.create({
-          header: 'Password Terlalu Pendek',
-          message: 'Password baru minimal 6 karakter',
-          buttons: ['OK'],
-        });
-        await alert.present();
-        return;
-      }
-
-      if (newPassword !== confirmPassword) {
-        const alert = await this.alertController.create({
-          header: 'Konfirmasi Password Salah',
-          message: 'Password baru dan konfirmasi tidak cocok',
-          buttons: ['OK'],
-        });
-        await alert.present();
-        return;
-      }
-    }
-
-    if (!usernameChanged && !phoneChanged && !imageChanged && !newPassword) {
-      const alert = await this.alertController.create({
-        header: 'Tidak Ada Perubahan',
-        message: 'Tidak ada data yang diubah.',
-        buttons: ['OK'],
-      });
-      await alert.present();
-      return;
-    }
-
-    // Ambil data user dari localStorage
-    const loggedUserDataString = localStorage.getItem('userData');
-    let loggedUserData = loggedUserDataString ? JSON.parse(loggedUserDataString) : null;
-
-    if (!loggedUserData) {
-      const alert = await this.alertController.create({
-        header: 'Error',
-        message: 'Data pengguna tidak ditemukan. Silakan login kembali.',
-        buttons: ['OK'],
-      });
-      await alert.present();
-      return;
-    }
-
-    // Simulasi verifikasi password saat ini (jika ada)
-    // Di aplikasi nyata, Anda akan mengirim ini ke backend untuk verifikasi
-    if (newPassword && loggedUserData.password && loggedUserData.password !== currentPassword) {
-        const alert = await this.alertController.create({
-            header: 'Password Salah',
-            message: 'Password saat ini yang Anda masukkan tidak sesuai',
-            buttons: ['OK'],
-        });
-        await alert.present();
-        return;
-    }
-
-
+    this.isSubmitting = true;
     const loading = await this.loadingController.create({
       message: 'Menyimpan perubahan...',
-      spinner: 'crescent',
+      spinner: 'circles'
     });
     await loading.present();
 
-    // Simulasi penyimpanan ke backend
-    setTimeout(async () => {
+    const currentPassword = this.form.get('currentPassword')?.value;
+    const newPassword = this.form.get('newPassword')?.value;
+    const confirmPassword = this.form.get('confirmPassword')?.value;
+
+    let profileUpdateObservable: Observable<any> | undefined;
+    let passwordChangeObservable: Observable<any> | undefined;
+
+    const accountInfoChanges = {
+      nama: this.form.get('username')?.value,
+      email: this.form.get('email')?.value,
+      nomor_hp: this.form.get('phone')?.value,
+    };
+    const initialAccountInfo = {
+      nama: this.initialFormValue.username,
+      email: this.initialFormValue.email,
+      nomor_hp: this.initialFormValue.phone,
+    };
+
+    if (JSON.stringify(accountInfoChanges) !== JSON.stringify(initialAccountInfo)) {
+      profileUpdateObservable = this.authService.authenticatedRequest('put', '/customer/profile', accountInfoChanges);
+    }
+
+    if (currentPassword || newPassword || confirmPassword) {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        await loading.dismiss();
+        this.isSubmitting = false;
+        await this.showAlert('Gagal Ganti Kata Sandi', 'Untuk mengganti password, Anda harus mengisi Kata Sandi Saat Ini, Kata Sandi Baru, dan Konfirmasi Kata Sandi.');
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        await loading.dismiss();
+        this.isSubmitting = false;
+        await this.showAlert('Gagal Ganti Kata Sandi', 'Kata Sandi Baru dan Konfirmasi Kata Sandi tidak cocok.');
+        return;
+      }
+
+      passwordChangeObservable = this.authService.changePassword({
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword
+      });
+    }
+
+    if (profileUpdateObservable && passwordChangeObservable) {
+      profileUpdateObservable.subscribe({
+        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+          this.updateLocalStorageUserData(accountInfoChanges);
+          passwordChangeObservable?.subscribe({
+            next: async (res: any) => { // <<< Tipe eksplisit 'any'
+              await loading.dismiss();
+              this.isSubmitting = false;
+              await this.showToast(res.message || 'Profil dan Kata Sandi berhasil diperbarui.');
+              this.resetPasswordFormFields();
+              this.loadUserData();
+            },
+            error: async (err: any) => { // <<< Tipe eksplisit 'any'
+              await loading.dismiss();
+              this.isSubmitting = false;
+              await this.showAlert('Gagal Ganti Kata Sandi', err.userMessage || 'Terjadi kesalahan saat mengganti kata sandi.');
+            }
+          });
+        },
+        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+          await loading.dismiss();
+          this.isSubmitting = false;
+          await this.showAlert('Gagal Update Profil', err.userMessage || 'Terjadi kesalahan saat memperbarui informasi profil.');
+        }
+      });
+    } else if (profileUpdateObservable) {
+      profileUpdateObservable.subscribe({
+        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+          await loading.dismiss();
+          this.isSubmitting = false;
+          await this.showToast(res.message || 'Informasi profil berhasil diperbarui.');
+          this.updateLocalStorageUserData(accountInfoChanges);
+          this.loadUserData();
+        },
+        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+          await loading.dismiss();
+          this.isSubmitting = false;
+          await this.showAlert('Gagal Update Profil', err.userMessage || 'Terjadi kesalahan saat memperbarui informasi profil.');
+        }
+      });
+    } else if (passwordChangeObservable) {
+      passwordChangeObservable.subscribe({
+        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+          await loading.dismiss();
+          this.isSubmitting = false;
+          await this.showToast(res.message || 'Kata Sandi berhasil diperbarui.');
+          this.resetPasswordFormFields();
+          this.loadUserData();
+        },
+        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+          await loading.dismiss();
+          this.isSubmitting = false;
+          await this.showAlert('Gagal Ganti Kata Sandi', err.userMessage || 'Terjadi kesalahan saat mengganti kata sandi.');
+        }
+      });
+    } else {
       await loading.dismiss();
+      this.isSubmitting = false;
+      await this.showToast('Tidak ada perubahan untuk disimpan.', 'warning');
+    }
+  }
 
-      // Perbarui data di loggedUserData
-      if (usernameChanged) loggedUserData.username = this.form.get('username')?.value;
-      if (phoneChanged) loggedUserData.phone = this.form.get('phone')?.value;
-      if (imageChanged) loggedUserData.profileImage = this.profileImage;
-      if (newPassword) loggedUserData.password = newPassword; // Dalam kasus nyata, Anda tidak akan menyimpan password di localStorage
+  private updateLocalStorageUserData(changes: any) {
+    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+    const updatedUser = { ...userData, nama: changes.nama, email: changes.email, nomor_hp: changes.nomor_hp };
+    localStorage.setItem('user_data', JSON.stringify(updatedUser));
+    // Memperbarui BehaviorSubject di AuthService
+    // (Akses property pribadi secara langsung, atau tambahkan metode publik di AuthService untuk ini jika desain mengizinkan)
+    // Jika Anda ingin metode lebih bersih, tambahkan public method di AuthService seperti `updateCurrentUser(user: User)`
+    // Untuk saat ini, asumsikan `currentUserSubject` dapat diakses atau Anda mengimplementasikan cara yang sesuai.
+    // Contoh ini akan memerlukan penyesuaian di AuthService jika currentUserSubject adalah private sepenuhnya
+    // dan tidak ada metode setter publik.
+    (this.authService as any)['currentUserSubject'].next(updatedUser);
+  }
 
-      // Simpan kembali data yang diperbarui ke localStorage
-      localStorage.setItem('userData', JSON.stringify(loggedUserData));
-      localStorage.setItem('profileImage', this.profileImage); // Pastikan gambar profil juga disimpan terpisah jika perlu
+  private resetPasswordFormFields() {
+    this.form.patchValue({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    this.form.get('currentPassword')?.markAsUntouched();
+    this.form.get('newPassword')?.markAsUntouched();
+    this.form.get('confirmPassword')?.markAsUntouched();
+    this.form.updateValueAndValidity();
+  }
 
-      this.profileUpdated.emit({
-        username: loggedUserData.username,
-        profileImage: loggedUserData.profileImage,
+  async showAlert(header: string, message: string) {
+    const alert = await this.alertController.create({
+      header,
+      message,
+      buttons: ['OK']
+    });
+    await alert.present();
+  }
+
+  async showToast(message: string, color: string = 'success') {
+    const toast = await this.toastController.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'top'
+    });
+    await toast.present();
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup) {
+    Object.keys(formGroup.controls).forEach(field => {
+      const control = formGroup.get(field);
+      control?.markAsTouched({ onlySelf: true });
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      }
+    });
+  }
+
+  async changeProfilePicture() {
+    // Pastikan Anda sudah menginstal @capacitor/camera jika ingin fitur ini berfungsi
+    // npm install @capacitor/camera && npx cap sync
+    const actionSheet = await this.actionSheetController.create({
+      header: 'Pilih Sumber Gambar',
+      buttons: [
+        {
+          text: 'Ambil Foto',
+          icon: 'camera',
+          handler: () => {
+            this.takePicture(CameraSource.Camera);
+          }
+        },
+        {
+          text: 'Pilih dari Galeri',
+          icon: 'image',
+          handler: () => {
+            this.takePicture(CameraSource.Photos);
+          }
+        },
+        {
+          text: 'Batal',
+          icon: 'close',
+          role: 'cancel'
+        }
+      ]
+    });
+    await actionSheet.present();
+  }
+
+  async takePicture(source: CameraSource) {
+    try {
+      const image = await Camera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: source
       });
 
-      this.saveOriginalValues();
-      this.currentEditingField = null;
+      if (image && image.dataUrl) {
+        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(image.dataUrl);
+        localStorage.setItem('profileImage', image.dataUrl);
+        this.showToast('Foto profil berhasil diubah!', 'success');
+      }
+    } catch (error) {
+      console.error('Error taking picture:', error);
+      this.showToast('Gagal mengambil foto.', 'danger');
+    }
+  }
 
-      this.form.patchValue({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
-
-      const alert = await this.alertController.create({
-        header: 'Berhasil',
-        message: 'Perubahan berhasil disimpan',
-        buttons: ['OK'],
-      });
-      await alert.present();
-      await alert.onDidDismiss();
-      this.navCtrl.navigateRoot('/tabs/akun');
-    }, 1500);
+  handleImageChange(event: Event) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+        localStorage.setItem('profileImage', reader.result as string);
+        this.showToast('Foto profil berhasil diubah!', 'success');
+      };
+      reader.readAsDataURL(file);
+    }
   }
 }
