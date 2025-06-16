@@ -1,5 +1,3 @@
-// File: src/app/services/menu.service.ts
-
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
@@ -36,11 +34,6 @@ export interface MenuResponse {
   };
 }
 
-export interface MenuDetailResponse {
-  message: string;
-  menu: MenuItem;
-}
-
 @Injectable({
   providedIn: 'root'
 })
@@ -49,20 +42,17 @@ export class MenuService {
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Get all available menus with optional filters
-   */
   getMenus(category?: string, search?: string, page: number = 1): Observable<MenuResponse> {
     let params = new HttpParams();
-    
+
     if (category) {
       params = params.set('category', category);
     }
-    
+
     if (search) {
       params = params.set('search', search);
     }
-    
+
     params = params.set('page', page.toString());
 
     const headers = new HttpHeaders({
@@ -70,12 +60,8 @@ export class MenuService {
       'Accept': 'application/json'
     });
 
-    return this.http.get<MenuResponse>(this.apiUrl, { 
-      params, 
-      headers 
-    }).pipe(
+    return this.http.get<MenuResponse>(this.apiUrl, { params, headers }).pipe(
       map((response: MenuResponse) => {
-        // Process image URLs for each menu item
         if (response.menus && response.menus.data) {
           response.menus.data = response.menus.data.map(menu => ({
             ...menu,
@@ -89,45 +75,10 @@ export class MenuService {
     );
   }
 
-  /**
-   * Get menu by ID
-   */
-  getMenuById(id: number): Observable<MenuDetailResponse> {
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    });
-
-    return this.http.get<MenuDetailResponse>(`${this.apiUrl}/${id}`, { headers }).pipe(
-      map((response: MenuDetailResponse) => {
-        // Process image URL for the menu item
-        if (response.menu) {
-          response.menu.image_url = this.getImageUrl(response.menu.image);
-          response.menu.final_price = response.menu.discounted_price || response.menu.price;
-        }
-        return response;
-      }),
-      catchError(this.handleError)
-    );
+  getMenuById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
 
-  /**
-   * Get menus by category
-   */
-  getMenusByCategory(category: string, page: number = 1): Observable<MenuResponse> {
-    return this.getMenus(category, undefined, page);
-  }
-
-  /**
-   * Search menus by name or description
-   */
-  searchMenus(searchTerm: string, page: number = 1): Observable<MenuResponse> {
-    return this.getMenus(undefined, searchTerm, page);
-  }
-
-  /**
-   * Get available categories
-   */
   getCategories(): { value: string, label: string }[] {
     return [
       { value: 'food', label: 'Makanan' },
@@ -138,13 +89,10 @@ export class MenuService {
     ];
   }
 
-  /**
-   * Get category display name
-   */
   getCategoryDisplayName(category: string): string {
     const categoryMap: { [key: string]: string } = {
       'food': 'Makanan',
-      'beverage': 'Minuman', 
+      'beverage': 'Minuman',
       'dessert': 'Dessert',
       'appetizer': 'Appetizer',
       'other': 'Lainnya'
@@ -152,62 +100,40 @@ export class MenuService {
     return categoryMap[category] || category;
   }
 
-  /**
-   * Get full image URL
-   */
   private getImageUrl(imagePath: string): string {
-    if (!imagePath) {
-      return 'assets/img/default-food.png';
-    }
-    
-    // If image path already contains full URL, return as is
-    if (imagePath.startsWith('http')) {
-      return imagePath;
-    }
-    
-    // Construct full URL from Laravel storage path
+    if (!imagePath) return 'assets/img/default-food.png';
+    if (imagePath.startsWith('http')) return imagePath;
     return `${environment.baseUrl}/storage/${imagePath}`;
   }
 
-  /**
-   * Handle HTTP errors
-   */
   private handleError(error: any): Observable<never> {
     let errorMessage = 'Terjadi kesalahan saat mengambil data menu';
-    
     if (error.error instanceof ErrorEvent) {
-      // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Server-side error
       switch (error.status) {
         case 0:
-          errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+          errorMessage = 'Tidak dapat terhubung ke server.';
           break;
         case 404:
-          errorMessage = 'Menu tidak ditemukan.';
+          errorMessage = 'Data tidak ditemukan.';
           break;
         case 500:
-          errorMessage = 'Terjadi kesalahan pada server.';
+          errorMessage = 'Terjadi kesalahan server.';
           break;
         default:
           errorMessage = error.error?.message || `Error Code: ${error.status}`;
       }
     }
-    
     console.error('MenuService Error:', error);
-    return throwError(errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 
-  /**
-   * Format currency to Indonesian Rupiah
-   */
   formatCurrency(amount: number): string {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 0
     }).format(amount);
   }
 }

@@ -1,9 +1,8 @@
-// src/app/menu/menu.page.ts
-
-import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Component, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
-import { MenuService, MenuItem, MenuResponse } from '../services/menu.service';
+import { MenuService, MenuItem } from '../services/menu.service';
+import { ReservationService } from '../services/reservation.service';
 
 @Component({
   selector: 'app-menu',
@@ -11,7 +10,7 @@ import { MenuService, MenuItem, MenuResponse } from '../services/menu.service';
   styleUrls: ['./menu.page.scss'],
   standalone: false
 })
-export class MenuPage implements OnInit {
+export class MenuPage implements OnDestroy {
   searchText = '';
   selectedKategori = 'all';
   cart: any[] = [];
@@ -26,22 +25,21 @@ export class MenuPage implements OnInit {
   hasMoreData = true;
 
   reservasi: any = {};
+  navigatedToCart = false;
 
   constructor(
     private router: Router,
-    private route: ActivatedRoute,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private toastController: ToastController,
-    private menuService: MenuService
+    private menuService: MenuService,
+    private reservationService: ReservationService
   ) {
     const nav = this.router.getCurrentNavigation();
     if (nav?.extras?.state && nav.extras.state['reservasi']) {
       this.reservasi = nav.extras.state['reservasi'];
       console.log('Data reservasi valid diterima di MenuPage:', this.reservasi);
     } else {
-      console.warn('Data reservasi tidak ditemukan, mengarahkan kembali ke jadwal.');
-      // --- PERBAIKAN DI BARIS INI ---
       this.showToast('Sesi reservasi tidak ditemukan, silakan mulai dari awal.', 'warning');
       this.router.navigate(['/reservasi-jadwal']);
     }
@@ -56,14 +54,34 @@ export class MenuPage implements OnInit {
     await this.loadMenus();
   }
 
-  getImageUrl(imageUrl: string | undefined): string {
-    if (!imageUrl) {
-      return 'assets/img/default-food.png';
+  ionViewWillLeave() {
+    if (!this.navigatedToCart && this.reservasi?.id && this.reservasi.status === 'pending_payment') {
+      console.log('Membatalkan reservasi status pending_payment:', this.reservasi.id);
+      this.cancelReservation(this.reservasi.id);
     }
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
+  }
+
+  ngOnDestroy() {}
+
+  private async cancelReservation(reservasiId: number) {
+    const loading = await this.loadingController.create({
+      message: 'Membatalkan reservasi...',
+      spinner: 'crescent'
+    });
+    await loading.present();
+
+    try {
+      const response = await this.reservationService.autoCancelReservasi(reservasiId).toPromise();
+      const message = response?.message || 'Reservasi dibatalkan.';
+      await this.showToast(message, 'warning');
+      console.log('Reservasi dibatalkan otomatis:', response);
+    } catch (error: any) {
+      console.error('Gagal membatalkan reservasi otomatis:', error);
+      const message = error?.error?.message || 'Terjadi kesalahan saat membatalkan reservasi.';
+      await this.showToast(message, 'danger');
+    } finally {
+      await loading.dismiss();
     }
-    return 'http://localhost:8000' + imageUrl;
   }
 
   async loadMenus(refresh: boolean = false) {
@@ -73,9 +91,7 @@ export class MenuPage implements OnInit {
     }
 
     this.isLoading = true;
-    const loading = await this.loadingController.create({
-      message: 'Memuat menu...'
-    });
+    const loading = await this.loadingController.create({ message: 'Memuat menu...' });
     await loading.present();
 
     try {
@@ -118,22 +134,19 @@ export class MenuPage implements OnInit {
     }, 500);
   }
 
-  getFilteredMenu(): MenuItem[] {
-    return this.menuList;
-  }
-
   addToCart(item: MenuItem) {
     const found = this.cart.find(i => i.id === item.id);
     if (found) {
       found.quantity++;
     } else {
-      const itemCopy = { 
-        ...item, 
+      const itemCopy = {
+        ...item,
         quantity: 1,
         finalPrice: item.final_price || item.discounted_price || item.price
       };
       this.cart.push(itemCopy);
     }
+
     const menuItem = this.menuList.find(m => m.id === item.id);
     if (menuItem) {
       (menuItem as any).quantity = ((menuItem as any).quantity || 0) + 1;
@@ -167,33 +180,49 @@ export class MenuPage implements OnInit {
   }
 
   async goToCart() {
-    if (this.cart.length === 0) {
-      const alert = await this.alertController.create({
-        header: 'Keranjang Kosong',
-        message: 'Silakan pilih minimal satu menu sebelum melanjutkan.',
-        buttons: ['OK']
-      });
-      await alert.present();
-      return;
-    }
-    
-    if (!this.reservasi || !this.reservasi.id) {
-        const alert = await this.alertController.create({
-            header: 'Sesi Tidak Valid',
-            message: 'Informasi reservasi tidak ditemukan. Mohon ulangi proses dari awal.',
-            buttons: ['OK']
-        });
-        await alert.present();
-        this.router.navigate(['/reservasi-jadwal']);
-        return;
-    }
+    const alert = await this.alertController.create({
+      header: 'Konfirmasi Checkout',
+      message: 'Apakah Anda yakin ingin melanjutkan ke pembayaran? 5 menit tidak di bayarkan akan otomatis cancel.',
+      buttons: [
+        {
+          text: 'Batal',
+          role: 'cancel'
+        },
+        {
+          text: 'Lanjutkan',
+          handler: async () => {
+            if (this.cart.length === 0) {
+              await this.showToast('Keranjang masih kosong.', 'warning');
+              return;
+            }
 
-    this.router.navigate(['/cart'], {
-      state: {
-        cart: this.cart,
-        reservasi: this.reservasi
-      }
+            if (!this.reservasi || !this.reservasi.id) {
+              await this.showToast('Informasi reservasi tidak ditemukan.', 'danger');
+              this.router.navigate(['/reservasi-jadwal']);
+              return;
+            }
+
+            const token = localStorage.getItem('auth_token');
+            if (!token) {
+              await this.showToast('Sesi login Anda telah habis.', 'danger');
+              this.router.navigate(['/login']);
+              return;
+            }
+
+            this.navigatedToCart = true;
+
+            this.router.navigate(['/cart'], {
+              state: {
+                cart: this.cart,
+                reservasi: this.reservasi
+              }
+            });
+          }
+        }
+      ]
     });
+
+    await alert.present();
   }
 
   async loadMoreMenus() {
@@ -220,7 +249,9 @@ export class MenuPage implements OnInit {
       message,
       duration: 3000,
       color,
-      position: 'bottom'
+      position: 'bottom',
+      mode: 'ios',
+      cssClass: color === 'danger' ? 'toast-error' : ''
     });
     await toast.present();
   }
