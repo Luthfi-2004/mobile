@@ -68,8 +68,8 @@ export class RiwayatPage {
       case 'dibatalkan':
         return 'Pesanan Dibatalkan';
       case 'pending_payment':
-        return 'Belum Dibayar';
-      case 'confirmed':
+        return 'Dibayar Sebagian';
+      case 'paid':
         return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
       case 'active_order':
         return 'Sedang Berlangsung';

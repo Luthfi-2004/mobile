@@ -132,8 +132,8 @@ export class DetailPesananPage implements OnInit {
       case 'dibatalkan':
         return 'Pesanan Dibatalkan';
       case 'pending_payment':
-        return 'Belum Dibayar';
-      case 'confirmed':
+        return 'Dibayar Sebagian';
+      case 'paid':
         return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
       case 'active_order':
         return 'Sedang Berlangsung';
@@ -224,8 +224,7 @@ export class DetailPesananPage implements OnInit {
       case 'pesanan dibatalkan':
       case 'dibatalkan':
         return 'danger';
-      case 'belum lunas':
-      case 'belum dibayar':
+      case 'Dibayar Sebagian':
       case 'pending_payment':
         return 'warning';
       case 'sedang berlangsung':
