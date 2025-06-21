@@ -1,3 +1,4 @@
+/* reservasi-jadwal.page.html */
 <ion-header>
   <ion-toolbar color="light">
     <ion-buttons slot="start">
@@ -14,25 +15,12 @@
     <div class="section">
       <h3>Jadwal</h3>
       <div class="input-box" id="calendarTrigger">
-        <ion-input
-          readonly
-          [value]="tanggal ? (tanggal | date: 'dd/MM/yyyy') : ''"
-          placeholder="DD/MM/YY"
-          class="custom-date-input"
-        ></ion-input>
+        <ion-input readonly [value]="tanggal ? (tanggal | date: 'dd/MM/yyyy') : ''" placeholder="DD/MM/YY" class="custom-date-input"></ion-input>
         <ion-icon name="calendar-outline" class="calendar-icon"></ion-icon>
       </div>
-
-      <ion-popover trigger="calendarTrigger" showBackdrop="true">
+      <ion-popover #calendarPopover trigger="calendarTrigger" showBackdrop="true">
         <ng-template>
-          <ion-datetime
-            presentation="date"
-            [value]="tanggal"
-            [min]="minDate"
-            [max]="maxDate"
-            (ionChange)="setTanggal($event)"
-            showDefaultButtons="false"
-          ></ion-datetime>
+          <ion-datetime presentation="date" [value]="tanggal" [min]="minDate" [max]="maxDate" (ionChange)="setTanggal($event)" showDefaultButtons="false"></ion-datetime>
         </ng-template>
       </ion-popover>
     </div>
@@ -42,33 +30,43 @@
       <h3>Waktu Datang</h3>
       <div class="button-grid">
         <button
-          *ngFor="let jam of waktuList"
+          *ngFor="let jam of mainTimes"
           class="custom-btn"
-          [class.selected]="waktu === jam.label"
+          [class.selected]="waktu.startsWith(jam.label.split(':')[0] + ':')"
           [class.booked]="jam.booked"
           [disabled]="jam.disabled"
-          (click)="!jam.disabled && (waktu = jam.label)"
-        >
+          (click)="openTimeDetails($event, jam.label)">
           {{ jam.label }}
           <ion-icon *ngIf="jam.booked" name="close-circle" class="booked-icon"></ion-icon>
         </button>
       </div>
     </div>
 
-  
+    <!-- Popover untuk pilihan waktu lebih detail -->
+    <ion-popover #timePopover>
+      <ng-template>
+        <ion-content>
+          <ion-list>
+            <ion-item *ngFor="let subTime of subTimes"
+                      (click)="!isSubTimeDisabled(subTime) && selectSubTime(subTime)"
+                      [class.selected]="waktu === subTime"
+                      [class.disabled]="isSubTimeDisabled(subTime)"
+                      [class.booked]="isSubTimeDisabled(subTime)"
+                      [button]="!isSubTimeDisabled(subTime)">
+              {{ subTime }}
+              <ion-icon *ngIf="isSubTimeDisabled(subTime)" name="close-circle" class="booked-icon" slot="end"></ion-icon>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ng-template>
+    </ion-popover>
 
-    
     <!-- Jumlah Tamu -->
     <div class="section">
       <h3>Jumlah Tamu</h3>
       <p class="note">*Sesuai kursi yang anda pilih</p>
       <div class="input-box center">
-        <ion-input
-          type="number"
-          [value]="jumlahTamu"
-          class="number-input"
-          readonly
-        ></ion-input>
+        <ion-input type="number" [value]="jumlahTamu" class="number-input" readonly></ion-input>
       </div>
     </div>
 
@@ -77,11 +75,7 @@
       <h3>Tempat</h3>
       <p class="note">*Sesuai tempat yang anda pilih</p>
       <div class="button-grid">
-        <div
-          *ngFor="let t of filteredTempatList"
-          class="custom-btn readonly-btn"
-          [class.selected]="tempat.includes(t)"
-        >
+        <div *ngFor="let t of filteredTempatList" class="custom-btn readonly-btn" [class.selected]="tempat.includes(t)">
           {{ t }}
         </div>
       </div>
@@ -90,23 +84,11 @@
     <!-- Catatan -->
     <div class="section">
       <h3>Catatan <span class="optional">(Opsional)</span></h3>
-      <ion-textarea
-        class="catatan"
-        [(ngModel)]="catatan"
-        placeholder="Tambahkan catatan untuk reservasi Anda..."
-        rows="3"
-        maxlength="1000"
-        counter="true"
-      ></ion-textarea>
+      <ion-textarea class="catatan" [(ngModel)]="catatan" placeholder="Tambahkan catatan untuk reservasi Anda..." rows="3" maxlength="1000" counter="true"></ion-textarea>
     </div>
 
     <!-- Tombol Konfirmasi -->
-    <ion-button 
-      color="primary"
-      expand="block" 
-      (click)="konfirmasi()">
-      KONFIRMASI RESERVASI
-    </ion-button>
+    <ion-button color="primary" expand="block" (click)="konfirmasi()">KONFIRMASI RESERVASI</ion-button>
 
   </div>
 </ion-content>
