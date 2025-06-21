@@ -175,3 +175,19 @@ ion-content {
     font-size: 1.2rem;
   }
 }
+
+/* Tambahkan di file reservasi-jadwal.page.scss */
+ion-list ion-item.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+ion-list ion-item.booked {
+  --background: #fff8f8;
+  color: #ff0000;
+}
+
+ion-list ion-item .booked-icon {
+  color: #ff0000;
+  font-size: 18px;
+}
