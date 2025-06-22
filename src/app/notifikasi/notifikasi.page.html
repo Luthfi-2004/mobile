@@ -90,7 +90,6 @@
         
         <p>{{ notification.message }}</p>
         
-        <!-- DETAIL NOTIFIKASI - HANYA KODE RESERVASI DAN TANGGAL/WAKTU -->
         <div *ngIf="notification.data || notification.reservasi" class="notification-details">
           <ion-chip color="primary" outline="true" *ngIf="notification.data?.kode_reservasi || notification.reservasi?.kode_reservasi">
             <ion-icon name="receipt-outline"></ion-icon>
