@@ -299,15 +299,9 @@ export class NotifikasiPage implements OnInit, OnDestroy {
     }
   }
 
-  formatCurrency(amount: number | undefined): string {
-    if (amount === undefined || amount === null) {
-      return 'Rp 0';
-    }
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0
-    }).format(amount);
+  // Method untuk mendapatkan tanggal dan waktu yang diformat
+  getFormattedDateTime(notification: NotificationData): { date: string, time: string } {
+    return this.notificationService.getFormattedDateTime(notification);
   }
 
   getNotificationPriority(type: string): string {
