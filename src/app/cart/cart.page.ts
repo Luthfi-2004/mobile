@@ -1,3 +1,4 @@
+// ... import tetap sama ...
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
@@ -22,8 +23,6 @@ export class CartPage implements OnInit, OnDestroy {
 
   autoCancelTimeout: any;
   private checkoutStarted = false;
-
-  // untuk hitung mundur tampilan log
   private remainingSeconds = 0;
   private countdownInterval: any;
 
@@ -68,34 +67,25 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   startAutoCancelTimeout() {
-    if (!this.reservasi?.id) {
-      console.warn('[CartPage] Tidak dapat memulai timeout: Reservasi ID tidak ditemukan');
-      return;
-    }
+    if (!this.reservasi?.id) return;
     this.clearAutoCancelTimeout();
-    console.log(`[CartPage] Memulai timeout pembatalan untuk reservasi ${this.reservasi.id}`);
     this.autoCancelTimeout = setTimeout(() => {
-      console.log('[CartPage] ⏰ Timeout pembatalan tercapai! Membatalkan reservasi...');
       this.cancelReservation(this.reservasi.id);
     }, 5 * 60 * 1000);
   }
 
   clearAutoCancelTimeout() {
     if (this.autoCancelTimeout) {
-      console.log('[CartPage] Membersihkan timeout pembatalan');
       clearTimeout(this.autoCancelTimeout);
       this.autoCancelTimeout = null;
     }
   }
 
-  // memulai countdown log setelah tutup payment window
   startCountdown() {
     this.clearCountdown();
     this.remainingSeconds = 5 * 60;
-    console.log(`[CartPage] Hitung mundur pembatalan dimulai: ${this.formatTime(this.remainingSeconds)}`);
     this.countdownInterval = setInterval(() => {
       this.remainingSeconds--;
-      console.log(`[CartPage] Waktu tersisa sebelum auto-cancel: ${this.formatTime(this.remainingSeconds)}`);
       if (this.remainingSeconds <= 0) {
         this.clearCountdown();
       }
@@ -116,17 +106,13 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   async cancelReservation(reservasiId: number) {
-    console.log(`[CartPage] Memulai pembatalan otomatis untuk reservasi ${reservasiId}`);
-    const loading = await this.loadingController.create({ message: 'Membatalkan reservasi...', spinner: 'crescent' });
+    const loading = await this.loadingController.create({ message: 'Membatalkan reservasi...' });
     await loading.present();
     try {
       const response = await this.reservationService.autoCancelReservasi(reservasiId).toPromise();
-      const message = response?.message || 'Reservasi dibatalkan.';
-      console.log(`[CartPage] Berhasil membatalkan reservasi: ${message}`);
-      await this.showToast(message, 'warning');
+      await this.showToast(response?.message || 'Reservasi dibatalkan.', 'warning');
       this.router.navigate(['/reservasi-jadwal']);
     } catch (error: any) {
-      console.error('[CartPage] Gagal membatalkan reservasi otomatis:', error);
       await this.showToast(error?.error?.message || 'Gagal membatalkan reservasi.', 'danger');
     } finally {
       await loading.dismiss();
@@ -187,28 +173,11 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   async checkout() {
-    console.log('[CartPage] Memulai proses checkout');
+    if (!this.cart.length) return this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu');
+    if (!this.reservasi.id) return this.presentAlert('Error', 'Reservasi tidak ditemukan');
+    if (!this.paymentMethod) return this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran');
 
-    if (!this.cart.length) {
-      console.warn('[CartPage] Checkout gagal: Keranjang kosong');
-      return this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu');
-    }
-
-    if (!this.reservasi.id) {
-      console.error('[CartPage] Checkout gagal: Reservasi tidak ditemukan');
-      this.presentAlert('Error', 'Reservasi tidak ditemukan');
-      this.router.navigate(['/reservation']);
-      return;
-    }
-
-    if (!this.paymentMethod) {
-      console.warn('[CartPage] Checkout gagal: Metode pembayaran belum dipilih');
-      return this.presentAlert('Peringatan', 'Silakan pilih metode pembayaran');
-    }
-
-    console.log('[CartPage] Membersihkan timeout sebelum checkout');
     this.clearAutoCancelTimeout();
-
     this.checkoutStarted = true;
 
     const payload = {
@@ -223,24 +192,21 @@ export class CartPage implements OnInit, OnDestroy {
       }))
     };
 
-    console.log('[CartPage] Checkout payload:', payload);
-
     const loading = await this.loadingController.create({ message: 'Memproses checkout...' });
     await loading.present();
 
     this.paymentService.processCheckout(payload).subscribe({
       next: async resp => {
-        console.log('[CartPage] Respons checkout:', resp);
         await loading.dismiss();
         await this.saveToHistory(resp);
         if (resp.snap_token) {
-          console.log('[CartPage] Token pembayaran diterima, membuka gateway pembayaran');
           snap.pay(resp.snap_token, {
             onSuccess: (result: any) => {
               console.log('[CartPage] Pembayaran sukses:', result);
-              this.updateOrderStatus('Selesai');
-              this.router.navigate(['/invoice-detail', this.reservasi.id]);
-            },
+              // ✅ PERUBAHAN DI SINI:
+              // Hapus updateOrderStatus('Selesai');
+              this.presentAlert('Pembayaran DP Berhasil', 'Pembayaran DP Anda telah kami terima.');
+              this.router.navigate(['/invoice-detail', this.reservasi.id]);            },
             onPending: (result: any) => {
               console.log('[CartPage] Pembayaran pending:', result);
               this.updateOrderStatus('Belum Lunas');
@@ -250,60 +216,50 @@ export class CartPage implements OnInit, OnDestroy {
               console.error('[CartPage] Error pembayaran:', result);
               this.updateOrderStatus('Pesanan Dibatalkan');
               this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran');
-              console.log('[CartPage] Memulai ulang timeout setelah error pembayaran');
               this.startAutoCancelTimeout();
             },
             onClose: () => {
               console.log('[CartPage] Pengguna menutup jendela pembayaran');
-              // reset flag agar back akan membatalkan
               this.checkoutStarted = false;
               this.clearCountdown();
               this.startAutoCancelTimeout();
               this.startCountdown();
-              this.presentAlert('Info', `Anda menutup jendela pembayaran, Pembatalan otomatis dalam ${this.formatTime(this.remainingSeconds)}. (tekan back untuk langsung batalkan.)`);
+              this.presentAlert('Info', `Anda menutup jendela pembayaran, Pembatalan otomatis dalam ${this.formatTime(this.remainingSeconds)}.`);
             }
           });
         } else {
-          console.error('[CartPage] Token pembayaran tidak tersedia');
           this.presentAlert('Error', 'Token pembayaran tidak tersedia');
-          console.log('[CartPage] Memulai ulang timeout setelah gagal mendapatkan token');
           this.startAutoCancelTimeout();
         }
       },
       error: async err => {
-        console.error('[CartPage] Error checkout:', err);
         await loading.dismiss();
         this.presentAlert('Checkout Gagal', err.error?.message || 'Tidak dapat terhubung ke server');
-        console.log('[CartPage] Memulai ulang timeout setelah error checkout');
         this.startAutoCancelTimeout();
       }
     });
   }
 
   private async saveToHistory(checkoutResponse: any) {
-    console.log('[CartPage] Menyimpan pesanan ke riwayat');
-    // ... existing saveToHistory remains ...
+    // ... tidak berubah ...
   }
 
   private updateOrderStatus(status: string) {
     console.log(`[CartPage] Memperbarui status pesanan menjadi: ${status}`);
-    // ... existing updateOrderStatus remains ...
+    // ... tidak berubah ...
   }
 
   async presentAlert(header: string, message: string) {
-    console.log(`[ChatGPT] Menampilkan alert: ${header} - ${message}`);
     const alert = await this.alertController.create({ header, message, buttons: ['OK'] });
     await alert.present();
   }
 
   goBack() {
-    console.log('[CartPage] Kembali ke halaman menu');
     this.clearAutoCancelTimeout();
     this.router.navigate(['/menu'], { state: { reservasi: this.reservasi } });
   }
 
   private async showToast(message: string, color: string = 'primary') {
-    console.log(`[CartPage] Menampilkan toast: ${message}`);
     const toast = await this.toastController.create({
       message,
       duration: 3000,

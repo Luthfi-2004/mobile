@@ -1,3 +1,5 @@
+// src/app/services/reservation.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,7 +9,7 @@ export interface ReservationData {
   waktu_kedatangan: string;
   jumlah_tamu: number;
   catatan?: string;
-  id_meja: number[];   // Array of meja IDs (primary key)
+  id_meja: number[];
 }
 
 export interface ReservationResponse {
@@ -46,17 +48,21 @@ export interface ApiErrorResponse {
   providedIn: 'root'
 })
 export class ReservationService {
-  // Pastikan environment.apiUrl hanya sampai '/api', tanpa '/customer'
   private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
+  // DIUBAH: Menggunakan metode standar yang lebih robust
   private getHeaders(): HttpHeaders {
-    const token = localStorage.getItem('auth_token');
-    return new HttpHeaders({
+    let headers = new HttpHeaders({
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
-    });
+      'Accept': 'application/json'
+    }); 
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
   }
 
   createReservation(data: ReservationData): Observable<ReservationResponse> {
@@ -91,18 +97,16 @@ export class ReservationService {
 
   getBookedTimes(date: string): Observable<{ booked_times: string[] }> {
     return this.http.get<{ booked_times: string[] }>(
-      // Panggil endpoint /api/customer/reservations/booked‑times
       `${this.apiUrl}/customer/reservations/booked-times?date=${date}`,
       { headers: this.getHeaders() }
     );
   }
 
   autoCancelReservasi(id: number): Observable<{ message: string }> {
-  return this.http.post<{ message: string }>(
-    `${this.apiUrl}/customer/reservations/${id}/auto-cancel`,
-    {},
-    { headers: this.getHeaders() }
-  );
-}
-
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/customer/reservations/${id}/auto-cancel`,
+      {},
+      { headers: this.getHeaders() }
+    );
+  }
 }

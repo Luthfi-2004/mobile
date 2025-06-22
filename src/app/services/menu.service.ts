@@ -1,3 +1,5 @@
+// src/app/services/menu.service.ts
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
@@ -42,6 +44,19 @@ export class MenuService {
 
   constructor(private http: HttpClient) { }
 
+  // BARU: Menambahkan metode getHeaders standar.
+  private getHeaders(): HttpHeaders {
+    let headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return headers;
+  }
+
   getMenus(category?: string, search?: string, page: number = 1): Observable<MenuResponse> {
     let params = new HttpParams();
 
@@ -55,12 +70,8 @@ export class MenuService {
 
     params = params.set('page', page.toString());
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    });
-
-    return this.http.get<MenuResponse>(this.apiUrl, { params, headers }).pipe(
+    // DIUBAH: Gunakan getHeaders() terpusat
+    return this.http.get<MenuResponse>(this.apiUrl, { params, headers: this.getHeaders() }).pipe(
       map((response: MenuResponse) => {
         if (response.menus && response.menus.data) {
           response.menus.data = response.menus.data.map(menu => ({
@@ -76,7 +87,8 @@ export class MenuService {
   }
 
   getMenuById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
+    // DIUBAH: Gunakan getHeaders() terpusat
+    return this.http.get(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
   }
 
   getCategories(): { value: string, label: string }[] {
