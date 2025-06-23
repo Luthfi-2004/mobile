@@ -37,7 +37,6 @@ export interface RegisterData {
   password_confirmation: string;
 }
 
-// Interface untuk data ganti password
 export interface ChangePasswordData {
   current_password: string;
   new_password: string;
@@ -57,7 +56,6 @@ export class AuthService {
     this.loadStoredAuth();
   }
 
-  // Load stored auth on startup
   private loadStoredAuth(): void {
     const token = localStorage.getItem('auth_token');
     const userJson = localStorage.getItem('user_data');
@@ -71,7 +69,6 @@ export class AuthService {
     }
   }
 
-  // Ambil CSRF token untuk Sanctum
   private getCsrfToken(): Observable<any> {
     return this.http.get(
       `${this.apiUrl.replace('/api', '')}/sanctum/csrf-cookie`,
@@ -79,7 +76,6 @@ export class AuthService {
     );
   }
 
-  // Registrasi
   register(data: RegisterData): Observable<AuthResponse> {
     return this.getCsrfToken().pipe(
       switchMap(() =>
@@ -94,7 +90,6 @@ export class AuthService {
     );
   }
 
-  // Login
   login(data: LoginData): Observable<AuthResponse> {
     return this.getCsrfToken().pipe(
       switchMap(() =>
@@ -109,7 +104,6 @@ export class AuthService {
     );
   }
 
-  // Logout
   logout(): Observable<any> {
     return this.http
       .post(`${this.apiUrl}/customer/logout`, {}, { withCredentials: true })
@@ -122,7 +116,6 @@ export class AuthService {
       );
   }
 
-  // Simpan token & data user
   private storeAuthData(token: string, user: User): void {
     localStorage.setItem('auth_token', token);
     localStorage.setItem('user_data', JSON.stringify(user));
@@ -131,27 +124,33 @@ export class AuthService {
     console.log('Auth data stored');
   }
 
-  // Hapus token & data user
   private clearAuthData(): void {
+    // Hapus data auth
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
+
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
     console.log('Auth data cleared');
   }
 
-  // Getter user & token saat ini
+  updateCurrentUser(user: User): void {
+    this.currentUserSubject.next(user);
+    localStorage.setItem('user_data', JSON.stringify(user));
+  }
+
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
   }
+
   getCurrentToken(): string | null {
     return this.tokenSubject.value;
   }
+
   isLoggedIn(): boolean {
     return !!this.getCurrentToken();
   }
 
-  // Header otentikasi
   private getAuthHeaders(): HttpHeaders {
     let headers = new HttpHeaders({ 'X-Requested-With': 'XMLHttpRequest' });
     const token = this.getCurrentToken();
@@ -161,7 +160,6 @@ export class AuthService {
     return headers;
   }
 
-  // Request dengan header otentikasi
   authenticatedRequest(
     method: string,
     endpoint: string,
@@ -182,7 +180,6 @@ export class AuthService {
     }
   }
 
-  // Verifikasi token di background
   private verifyTokenSilently(): void {
     const token = this.getCurrentToken();
     if (!token) return;
@@ -206,7 +203,6 @@ export class AuthService {
       });
   }
 
-  // Verifikasi token dan redirect jika invalid
   verifyToken(): Observable<any> {
     return this.http
       .get(`${this.apiUrl}/customer/profile`, {
@@ -230,7 +226,6 @@ export class AuthService {
       );
   }
 
-  // Redirect paksa ke login
   forceLogout(message?: string): void {
     this.clearAuthData();
     this.router.navigate(['/login'], {
@@ -238,7 +233,6 @@ export class AuthService {
     });
   }
 
-  // ——— Fitur: Ganti Password ———
   changePassword(data: ChangePasswordData): Observable<{ message: string }> {
     return this.authenticatedRequest('post', '/customer/profile/change-password', data)
       .pipe(
@@ -246,7 +240,6 @@ export class AuthService {
       );
   }
 
-  // ——— Fitur: Request Reset Password ———
   requestPasswordReset(
     emailOrPhone: string
   ): Observable<{ message: string; identifier?: string }> {
@@ -262,7 +255,6 @@ export class AuthService {
     );
   }
 
-  // ——— Fitur: Reset Password Baru ———
   resetPassword(
     identifier: string,
     newPassword: string,
@@ -284,7 +276,6 @@ export class AuthService {
     );
   }
 
-  // Penanganan error otentikasi
   private handleAuthError(
     error: HttpErrorResponse,
     operation: string

@@ -1,16 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { AlertController, NavController, Platform } from '@ionic/angular';
 import { ThemeService } from '../services/theme.service';
-import { AuthService } from '../auth.service'; // Tambahkan import ini
+import { AuthService, User } from '../auth.service';
+import { ProfileImageService } from '../services/profile-image.service'; // ✅ Import service gambar
 
 @Component({
   selector: 'app-akun',
   templateUrl: './akun.page.html',
   styleUrls: ['./akun.page.scss'],
-  standalone: false,
+  standalone: false
 })
 export class AkunPage implements OnInit {
-  currentUser: any = null;
+  currentUser: User | null = null;
   profileImage: string = 'assets/img/default-profile.jpg';
   isDarkTheme: boolean = false;
 
@@ -19,7 +20,8 @@ export class AkunPage implements OnInit {
     private navCtrl: NavController,
     private themeService: ThemeService,
     private platform: Platform,
-    private authService: AuthService // Tambahkan injection ini
+    private authService: AuthService,
+    private profileImageService: ProfileImageService // ✅ Injeksi service
   ) {}
 
   ngOnInit() {
@@ -27,10 +29,15 @@ export class AkunPage implements OnInit {
 
     this.platform.ready().then(() => {
       window.matchMedia('(prefers-color-scheme: dark)')
-            .addEventListener('change', e => {
-              this.themeService.setTheme(e.matches ? 'dark' : 'light');
-              this.isDarkTheme = e.matches;
-            });
+        .addEventListener('change', e => {
+          this.themeService.setTheme(e.matches ? 'dark' : 'light');
+          this.isDarkTheme = e.matches;
+        });
+    });
+
+    // ✅ Subscribe ke perubahan gambar profil
+    this.profileImageService.currentProfileImage$.subscribe(image => {
+      this.profileImage = image || 'assets/img/default-profile.jpg';
     });
   }
 
@@ -39,25 +46,18 @@ export class AkunPage implements OnInit {
   }
 
   loadUserData() {
-    // Gunakan AuthService untuk mendapatkan data user
     const user = this.authService.getCurrentUser();
     if (user) {
-      // Sesuaikan struktur data dengan template HTML
       this.currentUser = {
         ...user,
-        username: user.nama // Template menggunakan username, tapi AuthService menyimpan nama
-      };
-      
-      // Load profile image dari localStorage atau gunakan default
-      const storedProfileImage = localStorage.getItem('profileImage');
-      if (storedProfileImage) {
-        this.profileImage = storedProfileImage;
-      } else {
-        this.profileImage = 'assets/img/default-profile.jpg';
-      }
+        username: user.nama
+      } as User;
+
+      // ✅ Load gambar profil user
+      this.profileImageService.loadCurrentUserProfileImage(user.id);
     } else {
       this.currentUser = null;
-      this.profileImage = 'assets/img/default-profile.jpg';
+      this.profileImageService.resetCurrentProfileImage();
     }
   }
 
@@ -109,24 +109,24 @@ export class AkunPage implements OnInit {
     await alert.present();
   }
 
-  // Perbaiki performLogout untuk menggunakan AuthService
+  // ✅ Logout dengan reset profile image
   private performLogout() {
     if (this.authService.isLoggedIn()) {
-      // Logout melalui API dan hapus semua data auth
       this.authService.logout().subscribe({
         next: () => {
           console.log('Logout berhasil');
+          this.profileImageService.resetCurrentProfileImage();
           this.navCtrl.navigateRoot('/login');
         },
         error: (error) => {
           console.log('Logout error:', error);
-          // Tetap hapus data lokal meskipun API error
+          this.profileImageService.resetCurrentProfileImage();
           this.authService.forceLogout();
         }
       });
     } else {
-      // Jika tidak ada token, langsung redirect ke login
-      this.navCtrl.navigateRoot('/login');
+      this.profileImageService.resetCurrentProfileImage();
+      this.authService.forceLogout();
     }
   }
 }
