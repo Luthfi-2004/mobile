@@ -5,15 +5,15 @@ import { FormBuilder, FormGroup, Validators, ValidatorFn, AbstractControl } from
 import { ActionSheetController, AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { AuthService, User } from '../auth.service';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera'; // Import Capacitor Camera
-import { Observable } from 'rxjs'; // <<< TAMBAHKAN IMPORT INI
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { Observable } from 'rxjs';
+import { ProfileImageService } from '../services/profile-image.service'; // <-- IMPORT SERVICE YANG BENAR
 
 @Component({
   selector: 'app-info-akun',
   templateUrl: './info-akun.page.html',
   styleUrls: ['./info-akun.page.scss'],
   standalone: false
-  // Hapus baris 'standalone: false' atau 'standalone: true' jika ada di sini
 })
 export class InfoAkunPage implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef;
@@ -29,6 +29,7 @@ export class InfoAkunPage implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private profileImageService: ProfileImageService, // <-- INJEKSI SERVICE
     private alertController: AlertController,
     private loadingController: LoadingController,
     private toastController: ToastController,
@@ -47,6 +48,9 @@ export class InfoAkunPage implements OnInit {
 
   ngOnInit() {
     this.loadUserData();
+    this.profileImageService.currentProfileImage$.subscribe(image => {
+      this.profileImage = image;
+    });
   }
 
   passwordMatchValidator: ValidatorFn = (control: AbstractControl): { [key: string]: boolean } | null => {
@@ -61,7 +65,6 @@ export class InfoAkunPage implements OnInit {
     return null;
   };
 
-
   loadUserData() {
     this.currentUser = this.authService.getCurrentUser();
     if (this.currentUser) {
@@ -72,10 +75,8 @@ export class InfoAkunPage implements OnInit {
       });
       this.initialFormValue = this.form.value;
 
-      const storedProfileImage = localStorage.getItem('profileImage');
-      if (storedProfileImage) {
-        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(storedProfileImage);
-      }
+      // Gunakan ProfileImageService untuk memuat gambar
+      this.profileImageService.loadCurrentUserProfileImage(this.currentUser.id);
     }
   }
 
@@ -105,15 +106,7 @@ export class InfoAkunPage implements OnInit {
   }
 
   toggleEdit(field: string) {
-    if (this.editingField === field) {
-      this.editingField = null;
-      // Gunakan disable() atau set to read-only jika Anda punya logika untuk itu
-      // this.form.get(field)?.disable();
-    } else {
-      this.editingField = field;
-      // Gunakan enable() jika Anda punya logika untuk itu
-      // this.form.get(field)?.enable();
-    }
+    this.editingField = this.editingField === field ? null : field;
   }
 
   async saveChanges() {
@@ -175,24 +168,24 @@ export class InfoAkunPage implements OnInit {
 
     if (profileUpdateObservable && passwordChangeObservable) {
       profileUpdateObservable.subscribe({
-        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+        next: async () => {
           this.updateLocalStorageUserData(accountInfoChanges);
           passwordChangeObservable?.subscribe({
-            next: async (res: any) => { // <<< Tipe eksplisit 'any'
+            next: async (res: any) => {
               await loading.dismiss();
               this.isSubmitting = false;
               await this.showToast(res.message || 'Profil dan Kata Sandi berhasil diperbarui.');
               this.resetPasswordFormFields();
               this.loadUserData();
             },
-            error: async (err: any) => { // <<< Tipe eksplisit 'any'
+            error: async (err: any) => {
               await loading.dismiss();
               this.isSubmitting = false;
               await this.showAlert('Gagal Ganti Kata Sandi', err.userMessage || 'Terjadi kesalahan saat mengganti kata sandi.');
             }
           });
         },
-        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+        error: async (err: any) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showAlert('Gagal Update Profil', err.userMessage || 'Terjadi kesalahan saat memperbarui informasi profil.');
@@ -200,14 +193,14 @@ export class InfoAkunPage implements OnInit {
       });
     } else if (profileUpdateObservable) {
       profileUpdateObservable.subscribe({
-        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+        next: async (res: any) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showToast(res.message || 'Informasi profil berhasil diperbarui.');
           this.updateLocalStorageUserData(accountInfoChanges);
           this.loadUserData();
         },
-        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+        error: async (err: any) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showAlert('Gagal Update Profil', err.userMessage || 'Terjadi kesalahan saat memperbarui informasi profil.');
@@ -215,14 +208,14 @@ export class InfoAkunPage implements OnInit {
       });
     } else if (passwordChangeObservable) {
       passwordChangeObservable.subscribe({
-        next: async (res: any) => { // <<< Tipe eksplisit 'any'
+        next: async (res: any) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showToast(res.message || 'Kata Sandi berhasil diperbarui.');
           this.resetPasswordFormFields();
           this.loadUserData();
         },
-        error: async (err: any) => { // <<< Tipe eksplisit 'any'
+        error: async (err: any) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showAlert('Gagal Ganti Kata Sandi', err.userMessage || 'Terjadi kesalahan saat mengganti kata sandi.');
@@ -239,13 +232,7 @@ export class InfoAkunPage implements OnInit {
     const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
     const updatedUser = { ...userData, nama: changes.nama, email: changes.email, nomor_hp: changes.nomor_hp };
     localStorage.setItem('user_data', JSON.stringify(updatedUser));
-    // Memperbarui BehaviorSubject di AuthService
-    // (Akses property pribadi secara langsung, atau tambahkan metode publik di AuthService untuk ini jika desain mengizinkan)
-    // Jika Anda ingin metode lebih bersih, tambahkan public method di AuthService seperti `updateCurrentUser(user: User)`
-    // Untuk saat ini, asumsikan `currentUserSubject` dapat diakses atau Anda mengimplementasikan cara yang sesuai.
-    // Contoh ini akan memerlukan penyesuaian di AuthService jika currentUserSubject adalah private sepenuhnya
-    // dan tidak ada metode setter publik.
-    (this.authService as any)['currentUserSubject'].next(updatedUser);
+    this.authService.updateCurrentUser(updatedUser);
   }
 
   private resetPasswordFormFields() {
@@ -254,9 +241,6 @@ export class InfoAkunPage implements OnInit {
       newPassword: '',
       confirmPassword: ''
     });
-    this.form.get('currentPassword')?.markAsUntouched();
-    this.form.get('newPassword')?.markAsUntouched();
-    this.form.get('confirmPassword')?.markAsUntouched();
     this.form.updateValueAndValidity();
   }
 
@@ -290,24 +274,18 @@ export class InfoAkunPage implements OnInit {
   }
 
   async changeProfilePicture() {
-    // Pastikan Anda sudah menginstal @capacitor/camera jika ingin fitur ini berfungsi
-    // npm install @capacitor/camera && npx cap sync
     const actionSheet = await this.actionSheetController.create({
       header: 'Pilih Sumber Gambar',
       buttons: [
         {
           text: 'Ambil Foto',
           icon: 'camera',
-          handler: () => {
-            this.takePicture(CameraSource.Camera);
-          }
+          handler: () => this.takePicture(CameraSource.Camera)
         },
         {
           text: 'Pilih dari Galeri',
           icon: 'image',
-          handler: () => {
-            this.takePicture(CameraSource.Photos);
-          }
+          handler: () => this.takePicture(CameraSource.Photos)
         },
         {
           text: 'Batal',
@@ -328,9 +306,9 @@ export class InfoAkunPage implements OnInit {
         source: source
       });
 
-      if (image && image.dataUrl) {
-        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(image.dataUrl);
-        localStorage.setItem('profileImage', image.dataUrl);
+      if (image && image.dataUrl && this.currentUser) {
+        const compressed = await this.profileImageService.compressImage(image.dataUrl);
+        this.profileImageService.setUserProfileImage(this.currentUser.id, compressed);
         this.showToast('Foto profil berhasil diubah!', 'success');
       }
     } catch (error) {
@@ -341,11 +319,12 @@ export class InfoAkunPage implements OnInit {
 
   handleImageChange(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
+    if (file && this.currentUser) {
       const reader = new FileReader();
-      reader.onload = () => {
-        this.profileImage = this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
-        localStorage.setItem('profileImage', reader.result as string);
+      reader.onload = async () => {
+        const imageDataUrl = reader.result as string;
+        const compressed = await this.profileImageService.compressImage(imageDataUrl);
+        this.profileImageService.setUserProfileImage(this.currentUser!.id, compressed);
         this.showToast('Foto profil berhasil diubah!', 'success');
       };
       reader.readAsDataURL(file);
