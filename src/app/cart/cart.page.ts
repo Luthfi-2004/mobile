@@ -1,4 +1,3 @@
-// ... import tetap sama ...
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
@@ -25,6 +24,10 @@ export class CartPage implements OnInit, OnDestroy {
   private checkoutStarted = false;
   private remainingSeconds = 0;
   private countdownInterval: any;
+
+  // Untuk menyimpan token dan opsi Midtrans
+  private snapToken: string | null = null;
+  private snapOptions: any = null;
 
   constructor(
     private router: Router,
@@ -88,6 +91,7 @@ export class CartPage implements OnInit, OnDestroy {
       this.remainingSeconds--;
       if (this.remainingSeconds <= 0) {
         this.clearCountdown();
+        this.cancelReservation(this.reservasi.id);
       }
     }, 1000);
   }
@@ -103,6 +107,12 @@ export class CartPage implements OnInit, OnDestroy {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
     const s = (sec % 60).toString().padStart(2, '0');
     return `${m}:${s}`;
+  }
+
+  formatVaNumber(vaNumber: string): string {
+    if (!vaNumber) return '';
+    const cleaned = vaNumber.replace(/\D/g, '');
+    return cleaned.match(/.{1,4}/g)?.join(' ') || vaNumber;
   }
 
   async cancelReservation(reservasiId: number) {
@@ -172,6 +182,38 @@ export class CartPage implements OnInit, OnDestroy {
     return this.total - this.paymentAmount + this.serviceFee;
   }
 
+  /**
+   * Method central untuk membuka Midtrans Pay popup
+   */
+  private openSnapPay() {
+    if (!this.snapToken || !this.snapOptions) return;
+    snap.pay(this.snapToken, this.snapOptions);
+  }
+
+  /**
+   * Handler untuk status pending: tampilkan alert dengan opsi re-open popup
+   */
+  private async handlePending(result: any) {
+    this.updateOrderStatus('Belum Lunas');
+    this.startAutoCancelTimeout();
+    this.startCountdown();
+
+    const va = result.va_numbers?.[0]?.va_number || '';
+    const alert = await this.alertController.create({
+      header: 'Menunggu Pembayaran',
+      message:  [
+        'Silakan selesaikan pembayaran : ',
+        `${this.formatVaNumber(va)}`,
+        
+      ].join(''),
+      buttons: [{
+        text: 'OK',
+        handler: () => this.openSnapPay()
+      }]
+    });
+    await alert.present();
+  }
+
   async checkout() {
     if (!this.cart.length) return this.presentAlert('Keranjang Kosong', 'Silakan pilih menu terlebih dahulu');
     if (!this.reservasi.id) return this.presentAlert('Error', 'Reservasi tidak ditemukan');
@@ -196,37 +238,39 @@ export class CartPage implements OnInit, OnDestroy {
     await loading.present();
 
     this.paymentService.processCheckout(payload).subscribe({
-      next: async resp => {
+      next: async (resp: any) => {
         await loading.dismiss();
         await this.saveToHistory(resp);
         if (resp.snap_token) {
-          snap.pay(resp.snap_token, {
+          // simpan token & opsi sekali
+          this.snapToken = resp.snap_token;
+          this.snapOptions = {
             onSuccess: (result: any) => {
               console.log('[CartPage] Pembayaran sukses:', result);
-              // ✅ PERUBAHAN DI SINI:
-              // Hapus updateOrderStatus('Selesai');
               this.presentAlert('Pembayaran DP Berhasil', 'Pembayaran DP Anda telah kami terima.');
-              this.router.navigate(['/invoice-detail', this.reservasi.id]);            },
-            onPending: (result: any) => {
-              console.log('[CartPage] Pembayaran pending:', result);
-              this.updateOrderStatus('Belum Lunas');
               this.router.navigate(['/invoice-detail', this.reservasi.id]);
             },
-            onError: (result: any) => {
-              console.error('[CartPage] Error pembayaran:', result);
+            onPending: (result: any) => this.handlePending(result),
+            onError:   (err: any)    => {
+              console.error('[CartPage] Error pembayaran:', err);
               this.updateOrderStatus('Pesanan Dibatalkan');
               this.presentAlert('Pembayaran Gagal', 'Terjadi kesalahan saat memproses pembayaran');
               this.startAutoCancelTimeout();
             },
-            onClose: () => {
+            onClose:   ()            => {
               console.log('[CartPage] Pengguna menutup jendela pembayaran');
               this.checkoutStarted = false;
               this.clearCountdown();
               this.startAutoCancelTimeout();
               this.startCountdown();
-              this.presentAlert('Info', `Anda menutup jendela pembayaran, Pembatalan otomatis dalam ${this.formatTime(this.remainingSeconds)}.`);
+              this.presentAlert(
+                'Info',
+                `Anda menutup jendela pembayaran, pembatalan otomatis dalam ${this.formatTime(this.remainingSeconds)}.`
+              );
             }
-          });
+          };
+          // tampilkan Midtrans popup
+          this.openSnapPay();
         } else {
           this.presentAlert('Error', 'Token pembayaran tidak tersedia');
           this.startAutoCancelTimeout();
@@ -234,6 +278,7 @@ export class CartPage implements OnInit, OnDestroy {
       },
       error: async err => {
         await loading.dismiss();
+        console.error('[CartPage] Checkout error:', err);
         this.presentAlert('Checkout Gagal', err.error?.message || 'Tidak dapat terhubung ke server');
         this.startAutoCancelTimeout();
       }
@@ -241,12 +286,11 @@ export class CartPage implements OnInit, OnDestroy {
   }
 
   private async saveToHistory(checkoutResponse: any) {
-    // ... tidak berubah ...
+    // implementasi sesuai kebutuhan
   }
 
   private updateOrderStatus(status: string) {
     console.log(`[CartPage] Memperbarui status pesanan menjadi: ${status}`);
-    // ... tidak berubah ...
   }
 
   async presentAlert(header: string, message: string) {
