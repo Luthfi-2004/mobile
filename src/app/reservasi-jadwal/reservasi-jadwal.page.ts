@@ -23,9 +23,10 @@ export class ReservasiJadwalPage implements OnInit {
   idMeja: string = '';  // e.g. "4,8,9"
   catatan: string = '';
 
-  // List waktu sekarang per 15 menit
-  waktuList: { label: string; disabled: boolean; booked: boolean }[] = [];
-  subTimes: string[] = []; // Menyimpan daftar waktu spesifik untuk popup
+  // PERUBAHAN 1: Menyederhanakan struktur waktu
+  waktuList: string[] = []; // Hanya menyimpan label waktu
+  bookedTimes: string[] = []; // Menyimpan waktu yang sudah dibooking
+  subTimes: { time: string; disabled: boolean }[] = []; // Menyimpan waktu spesifik untuk popup dengan status
 
   tempatList = ['INDOOR', 'OUTDOOR', 'VVIP'];
   filteredTempatList: string[] = [];
@@ -53,13 +54,8 @@ export class ReservasiJadwalPage implements OnInit {
     this.minDate = today.toISOString().split('T')[0];
     this.maxDate = max.toISOString().split('T')[0];
 
-    // Inisialisasi dengan semua waktu di-disable dulu
-    const allTimeSlots = this.generateTimeSlots();
-    this.waktuList = allTimeSlots.map(time => ({
-      label: time,
-      disabled: true,
-      booked: false
-    }));
+    // PERUBAHAN 2: Inisialisasi dengan semua slot waktu
+    this.waktuList = this.generateTimeSlots();
 
     this.route.queryParams.subscribe(params => {
       if (params['jumlahKursi']) {
@@ -93,14 +89,13 @@ export class ReservasiJadwalPage implements OnInit {
   }
 
   /** Hanya slot full-hour (menit = 00) */
-  get mainTimes(): { label: string; disabled: boolean; booked: boolean }[] {
-    return this.waktuList.filter(w => w.label.endsWith(':00'));
+  get mainTimes(): string[] {
+    return this.waktuList.filter(w => w.endsWith(':00'));
   }
 
   async setTanggal(event: any) {
     this.tanggal = event.detail.value;
     const selectedDate = new Date(this.tanggal);
-    const today = new Date();
     const dateStr = this.tanggal.split('T')[0];
 
     // Reset waktu yang dipilih
@@ -115,28 +110,15 @@ export class ReservasiJadwalPage implements OnInit {
 
     try {
       const response = await this.reservationService.getBookedTimes(dateStr).toPromise();
-      const bookedTimes = response?.booked_times || [];
-
-      this.waktuList = this.generateTimeSlots().map(time => {
-        const [hour, minute] = time.split(':').map(Number);
-        const waktuDate = new Date(selectedDate);
-        waktuDate.setHours(hour, minute, 0, 0);
-
-        const isBooked = bookedTimes.includes(time);
-        if (selectedDate.toDateString() === today.toDateString()) {
-          const now = new Date();
-          return { label: time, disabled: isBooked || (now > waktuDate), booked: isBooked };
-        } else {
-          return { label: time, disabled: isBooked, booked: isBooked };
-        }
-      });
+      // PERUBAHAN 3: Simpan waktu yang sudah dibooking secara terpisah
+      this.bookedTimes = response?.booked_times || [];
     } catch (error) {
       console.error('Gagal mengambil data waktu terbooking:', error);
       await this.presentAlert(
         'Gagal memuat jadwal tersedia. Silakan coba lagi atau pilih tanggal berbeda.',
         'Kesalahan Jaringan'
       );
-      // fallback logic sama seperti sebelumnya...
+      this.bookedTimes = [];
     } finally {
       await loading.dismiss();
     }
@@ -149,22 +131,43 @@ export class ReservasiJadwalPage implements OnInit {
     event.stopPropagation();
     this.selectedMainTime = mainTime;
     const hour = mainTime.split(':')[0];
+    
+    // PERUBAHAN 4: Bangun daftar sub-waktu dengan status disabled
     this.subTimes = this.waktuList
-      .filter(w => w.label.startsWith(hour + ':'))
-      .map(w => w.label);
+      .filter(w => w.startsWith(hour + ':'))
+      .map(time => {
+        const disabled = this.isTimeDisabled(time);
+        return { time, disabled };
+      });
 
     this.timePopover.event = event;
     this.timePopover.present();
   }
 
+  // PERUBAHAN 5: Fungsi untuk mengecek apakah waktu harus dinonaktifkan
+  private isTimeDisabled(time: string): boolean {
+    const selectedDate = new Date(this.tanggal);
+    const [hour, minute] = time.split(':').map(Number);
+    const waktuDate = new Date(selectedDate);
+    waktuDate.setHours(hour, minute, 0, 0);
+
+    const today = new Date();
+    
+    // Cek jika waktu sudah lewat untuk hari ini
+    if (selectedDate.toDateString() === today.toDateString()) {
+      const now = new Date();
+      if (now > waktuDate) {
+        return true;
+      }
+    }
+    
+    // Cek jika waktu sudah dibooking
+    return this.bookedTimes.includes(time);
+  }
+
   selectSubTime(subTime: string) {
     this.waktu = subTime;
     this.timePopover.dismiss();
-  }
-
-  isSubTimeDisabled(subTime: string): boolean {
-    const waktuItem = this.waktuList.find(w => w.label === subTime);
-    return waktuItem ? (waktuItem.disabled || waktuItem.booked) : true;
   }
 
   async presentAlert(message: string, header: string = 'Peringatan') {
@@ -226,9 +229,8 @@ export class ReservasiJadwalPage implements OnInit {
       return;
     }
     
-    // Validasi waktu yang dipilih tidak dibooking
-    const selectedTime = this.waktuList.find(w => w.label === this.waktu);
-    if (selectedTime?.booked) {
+    // PERUBAHAN 6: Validasi waktu yang dipilih tidak dibooking
+    if (this.bookedTimes.includes(this.waktu)) {
       await this.presentAlert('Waktu yang dipilih sudah tidak tersedia. Silakan pilih waktu lain.');
       return;
     }

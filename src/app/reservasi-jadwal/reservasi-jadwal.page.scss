@@ -191,3 +191,42 @@ ion-list ion-item .booked-icon {
   color: #ff0000;
   font-size: 18px;
 }
+
+/* reservasi-jadwal.page.scss */
+
+/* Gaya untuk teks informasi */
+.info-text {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+  margin-top: 0;
+  margin-bottom: 10px;
+  
+  ion-icon {
+    margin-right: 5px;
+  }
+}
+
+/* Gaya untuk header popover */
+.popover-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--ion-color-light-shade);
+  background: var(--ion-color-light);
+  
+  ion-note {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    
+    ion-icon {
+      margin: 0 4px;
+    }
+  }
+}
+
+/* Gaya untuk item yang dinonaktifkan di popover */
+ion-item.disabled {
+  --color: var(--ion-color-medium);
+  opacity: 0.8;
+}

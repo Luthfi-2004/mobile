@@ -6,7 +6,8 @@ ion-content {
   padding: 16px;
   max-width: 600px;
   margin: 0 auto;
-  color: var(--ion-background-color);
+  /* ubah warna teks default menjadi gelap */
+  color: var(--ion-text-color);
 }
 
 .cart-item {
@@ -36,12 +37,16 @@ ion-content {
 
 .item-detail {
   flex: 1;
+
   h4 {
     font-size: 1rem;
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 4px;
+    /* teks nama menu sekarang lebih gelap */
+    color: #222;
   }
+
   p {
     font-size: 0.9rem;
     font-weight: bold;
@@ -76,7 +81,8 @@ ion-content {
   }
 }
 
-.payment-summary, .payment-method {
+.payment-summary,
+.payment-method {
   background: var(--ion-card-background);
   border-radius: 12px;
   margin: 20px 0;
@@ -96,12 +102,16 @@ ion-content {
 
 .payment-method {
   padding: 16px;
+
   h4 {
     font-size: 1.1rem;
     font-weight: bold;
     margin: 0;
     margin-bottom: 12px;
+    /* pastikan judul metode pembayaran kontras */
+    color: var(--ion-text-color);
   }
+
   ion-list {
     padding-top: 0;
   }
@@ -118,6 +128,7 @@ ion-content {
 
   ion-label {
     font-weight: 500;
+    color: var(--ion-text-color);
   }
 }
 
@@ -130,7 +141,8 @@ ion-content {
   padding-left: 20px;
   margin-bottom: 8px;
   margin-top: -4px;
-  color: var(--ion-background-color);
+  /* teks opsi tambahan jadi gelap */
+  color: var(--ion-text-color);
 
   ion-item {
     border: none;
@@ -141,7 +153,7 @@ ion-content {
 
   ion-item.sub-selected {
     --background: var(--ion-color-secondary-tint);
-    
+
     ion-label {
       font-weight: 600;
       color: var(--ion-color-secondary);
