@@ -10,19 +10,16 @@
 </ion-header>
 
 <ion-content class="ion-padding" [fullscreen]="true">
-  <!-- Pull to refresh -->
   <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <!-- Empty state -->
   <div *ngIf="riwayat.length === 0" class="empty-state">
     <ion-icon name="receipt-outline" size="large"></ion-icon>
     <h3>Belum ada riwayat</h3>
     <p>Riwayat reservasi dan pesanan Anda akan muncul di sini</p>
   </div>
 
-  <!-- Riwayat list -->
   <div *ngFor="let data of riwayat" class="card-riwayat">
     <div class="header">
       <h2>{{ data.kode_reservasi }}</h2>
@@ -39,7 +36,6 @@
       <p><strong>Waktu Kedatangan:</strong> {{ data.waktu_kedatangan | date:'dd/MM/yyyy HH:mm' }}</p>
       <p><strong>Jumlah Tamu:</strong> {{ data.jumlah_tamu }} orang</p>
       
-      <!-- Informasi meja -->
       <div *ngIf="data.meja && data.meja.length > 0">
         <p><strong>Meja:</strong> 
           <span *ngFor="let meja of data.meja; let last = last">
@@ -48,11 +44,9 @@
         </p>
       </div>
 
-      <!-- Catatan jika ada -->
       <p *ngIf="data.catatan"><strong>Catatan:</strong> {{ data.catatan }}</p>
     </div>
 
-    <!-- Items akan ditampilkan jika tersedia -->
     <div class="items" *ngIf="data.items && data.items.length > 0">
       <h4>Item Pesanan:</h4>
       <div *ngFor="let item of data.items">
@@ -71,10 +65,9 @@
         Detail Reservasi
       </ion-button>
       
-      <ion-button *ngIf="data.status === 'Selesai'" size="small" color="dark" (click)="beriUlasan(data)">
-        Beri Penilaian
+      <ion-button *ngIf="data.status === 'Selesai' || data.status === 'Dibayar Sebagian'" size="small" color="dark" (click)="beriUlasan(data)">
+        {{ data.raw_data.rating ? 'Lihat Penilaian' : 'Beri Penilaian' }}
       </ion-button>
-
       <ion-button *ngIf="data.status === 'Belum Dibayar'" color="warning" size="small" (click)="lanjutkanPembayaran(data)">
         Lanjutkan Pembayaran
       </ion-button>

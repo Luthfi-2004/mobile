@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
+import { RatingService } from '../services/rating.service';
 
 @Component({
   selector: 'app-ulasan',
@@ -14,26 +15,73 @@ export class UlasanPage {
   ratingPelayanan: number = 0;
   ratingAplikasi: number = 0;
   pesanan: any;
+  reservasiId: number = 0;
   ulasanSudahAda: boolean = false;
+  viewOnly: boolean = false;
   feedback: string = '';
+  existingRating: any = null;
 
   constructor(
     private router: Router,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private loadingController: LoadingController,
+    private ratingService: RatingService
   ) {
     const nav = this.router.getCurrentNavigation();
-    this.pesanan = nav?.extras?.state?.['pesanan'];
+    const state = nav?.extras?.state;
+    
+    if (state) {
+      this.pesanan = state['pesanan'];
+      this.reservasiId = state['reservasi_id'] || 0;
+      this.viewOnly = state['view_only'] || false;
+      this.existingRating = state['rating_data'] || null;
+    }
 
-    if (this.pesanan) {
-      this.loadExistingUlasan(this.pesanan.id);
-      if (!this.ulasanSudahAda) {
-        this.loadTemporaryRating(this.pesanan.id);
+    if (this.reservasiId && !this.viewOnly) {
+      this.checkExistingRating();
+    } else if (this.existingRating) {
+      this.loadExistingRatingData();
+    }
+  }
+
+  async checkExistingRating() {
+    const loading = await this.loadingController.create({
+      message: 'Memuat data penilaian...'
+    });
+    await loading.present();
+
+    this.ratingService.checkExistingRating(this.reservasiId).subscribe({
+      next: (response) => {
+        loading.dismiss();
+        if (response.has_rating) {
+          this.ulasanSudahAda = true;
+          this.existingRating = response.rating;
+          this.loadExistingRatingData();
+        } else {
+          // Load temporary rating dari localStorage jika ada
+          this.loadTemporaryRating();
+        }
+      },
+      error: (error) => {
+        loading.dismiss();
+        console.error('Error checking existing rating:', error);
+        this.presentAlert('Error', 'Gagal memuat data penilaian');
       }
+    });
+  }
+
+  loadExistingRatingData() {
+    if (this.existingRating) {
+      this.ratingMakanan = this.existingRating.rating_makanan || 0;
+      this.ratingPelayanan = this.existingRating.rating_pelayanan || 0;
+      this.ratingAplikasi = this.existingRating.rating_aplikasi || 0;
+      this.feedback = this.existingRating.komentar || '';
+      this.ulasanSudahAda = true;
     }
   }
 
   setRating(type: 'makanan' | 'pelayanan' | 'aplikasi', value: number) {
-    if (this.ulasanSudahAda) return;
+    if (this.ulasanSudahAda || this.viewOnly) return;
 
     switch (type) {
       case 'makanan':
@@ -51,21 +99,21 @@ export class UlasanPage {
   }
 
   saveTemporaryRating() {
-    if (!this.pesanan?.id) return;
+    if (!this.reservasiId) return;
 
     const tempRating = {
-      id: this.pesanan.id,
+      reservasi_id: this.reservasiId,
       makanan: this.ratingMakanan,
       pelayanan: this.ratingPelayanan,
       aplikasi: this.ratingAplikasi,
       feedback: this.feedback
     };
 
-    localStorage.setItem(`ulasan-${this.pesanan.id}`, JSON.stringify(tempRating));
+    localStorage.setItem(`temp-rating-${this.reservasiId}`, JSON.stringify(tempRating));
   }
 
-  loadTemporaryRating(pesananId: string) {
-    const stored = localStorage.getItem(`ulasan-${pesananId}`);
+  loadTemporaryRating() {
+    const stored = localStorage.getItem(`temp-rating-${this.reservasiId}`);
     if (stored) {
       const data = JSON.parse(stored);
       this.ratingMakanan = data.makanan || 0;
@@ -75,21 +123,8 @@ export class UlasanPage {
     }
   }
 
-  loadExistingUlasan(pesananId: string) {
-    const existing = JSON.parse(localStorage.getItem('penilaian') || '[]');
-    const ulasan = existing.find((p: any) => p.idPesanan === pesananId);
-
-    if (ulasan) {
-      this.ratingMakanan = ulasan.makanan;
-      this.ratingPelayanan = ulasan.pelayanan;
-      this.ratingAplikasi = ulasan.aplikasi;
-      this.feedback = ulasan.feedback || '';
-      this.ulasanSudahAda = true;
-    }
-  }
-
   async simpanPenilaian() {
-    if (this.ulasanSudahAda) return;
+    if (this.ulasanSudahAda || this.viewOnly) return;
 
     // Validasi jika ada yang belum diberi rating
     if (
@@ -97,39 +132,62 @@ export class UlasanPage {
       this.ratingPelayanan === 0 ||
       this.ratingAplikasi === 0
     ) {
-      const alert = await this.alertController.create({
-        header: 'Gagal',
-        message: 'Mohon beri rating untuk semua kategori sebelum menyimpan.',
-        buttons: ['OK']
-      });
-      await alert.present();
+      await this.presentAlert('Gagal', 'Mohon beri rating untuk semua kategori sebelum menyimpan.');
       return;
     }
 
-    const penilaian = {
-      idPesanan: this.pesanan?.id,
-      tanggal: new Date().toLocaleString(),
-      makanan: this.ratingMakanan,
-      pelayanan: this.ratingPelayanan,
-      aplikasi: this.ratingAplikasi,
-      feedback: this.feedback
+    const loading = await this.loadingController.create({
+      message: 'Menyimpan penilaian...'
+    });
+    await loading.present();
+
+    const ratingData = {
+      reservasi_id: this.reservasiId,
+      rating_makanan: this.ratingMakanan,
+      rating_pelayanan: this.ratingPelayanan,
+      rating_aplikasi: this.ratingAplikasi,
+      komentar: this.feedback
     };
 
-    const existing = JSON.parse(localStorage.getItem('penilaian') || '[]');
-    existing.push(penilaian);
-    localStorage.setItem('penilaian', JSON.stringify(existing));
+    this.ratingService.createRating(ratingData).subscribe({
+      next: async (response) => {
+        loading.dismiss();
+        
+        // Hapus temporary rating
+        localStorage.removeItem(`temp-rating-${this.reservasiId}`);
 
-    localStorage.removeItem(`ulasan-${this.pesanan?.id}`);
+        await this.presentAlert('Berhasil', response.message || 'Penilaian berhasil disimpan!');
+        
+        // Kembali ke halaman riwayat
+        this.router.navigate(['/riwayat'], { replaceUrl: true });
+      },
+      error: async (error) => {
+        loading.dismiss();
+        console.error('Error saving rating:', error);
+        
+        let errorMessage = 'Gagal menyimpan penilaian';
+        if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        await this.presentAlert('Error', errorMessage);
+      }
+    });
+  }
 
+  async presentAlert(header: string, message: string) {
     const alert = await this.alertController.create({
-      header: 'Berhasil',
-      message: 'Penilaian berhasil disimpan!',
+      header,
+      message,
       buttons: ['OK']
     });
-
     await alert.present();
-    await alert.onDidDismiss();
+  }
 
-    this.router.navigate(['/riwayat'], { replaceUrl: true });
+  // Method untuk update feedback
+  onFeedbackChange() {
+    if (!this.viewOnly && !this.ulasanSudahAda) {
+      this.saveTemporaryRating();
+    }
   }
 }

@@ -3,7 +3,7 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/riwayat"></ion-back-button>
     </ion-buttons>
-    <ion-title>Penilaian Resto</ion-title>
+    <ion-title>{{ viewOnly ? 'Lihat Penilaian' : 'Beri Penilaian' }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -14,8 +14,8 @@
       <ion-icon
         *ngFor="let star of stars; let i = index"
         [name]="i < ratingMakanan ? 'star' : 'star-outline'"
-        [class.disabled]="ulasanSudahAda"
-        (click)="!ulasanSudahAda && setRating('makanan', i + 1)"
+        [class.disabled]="ulasanSudahAda || viewOnly"
+        (click)="(!ulasanSudahAda && !viewOnly) && setRating('makanan', i + 1)"
         color="warning"
         class="star-icon"
       ></ion-icon>
@@ -28,8 +28,8 @@
       <ion-icon
         *ngFor="let star of stars; let i = index"
         [name]="i < ratingPelayanan ? 'star' : 'star-outline'"
-        [class.disabled]="ulasanSudahAda"
-        (click)="!ulasanSudahAda && setRating('pelayanan', i + 1)"
+        [class.disabled]="ulasanSudahAda || viewOnly"
+        (click)="(!ulasanSudahAda && !viewOnly) && setRating('pelayanan', i + 1)"
         color="warning"
         class="star-icon"
       ></ion-icon>
@@ -42,8 +42,8 @@
       <ion-icon
         *ngFor="let star of stars; let i = index"
         [name]="i < ratingAplikasi ? 'star' : 'star-outline'"
-        [class.disabled]="ulasanSudahAda"
-        (click)="!ulasanSudahAda && setRating('aplikasi', i + 1)"
+        [class.disabled]="ulasanSudahAda || viewOnly"
+        (click)="(!ulasanSudahAda && !viewOnly) && setRating('aplikasi', i + 1)"
         color="warning"
         class="star-icon"
       ></ion-icon>
@@ -54,17 +54,30 @@
     <h2>Saran / Komentar</h2>
     <ion-textarea
       [(ngModel)]="feedback"
+      (ionInput)="onFeedbackChange()"
       placeholder="Tulis saran atau komentar Anda di sini..."
       autoGrow="true"
       class="feedback-textarea"
-      [readonly]="ulasanSudahAda"
+      [readonly]="ulasanSudahAda || viewOnly"
     ></ion-textarea>
   </div>
 
-  <div class="thank-you ion-text-center" style="margin-top: 40px;" *ngIf="!ulasanSudahAda">
+  <!-- Show message if viewing existing rating -->
+  <div class="existing-rating-info ion-text-center" *ngIf="viewOnly || ulasanSudahAda" style="margin-top: 20px;">
+    <ion-chip color="success">
+      <ion-icon name="checkmark-circle" color="success"></ion-icon>
+      <ion-label>Penilaian sudah diberikan</ion-label>
+    </ion-chip>
+    <p class="ion-text-center" style="margin-top: 10px; color: #666;">
+      <small>Terima kasih atas penilaian Anda!</small>
+    </p>
+  </div>
+
+  <!-- Submit button - only show if not view only and not already rated -->
+  <div class="thank-you ion-text-center" style="margin-top: 40px;" *ngIf="!ulasanSudahAda && !viewOnly">
     <h3>Terima Kasih.</h3>
     <ion-button expand="block" shape="round" color="medium" (click)="simpanPenilaian()">
-      Selesai
+      Simpan Penilaian
     </ion-button>
   </div>
 </ion-content>
