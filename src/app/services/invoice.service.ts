@@ -128,6 +128,17 @@ export class InvoiceService {
       .pipe(catchError(err => this.handleError(err)));
   }
 
+  // invoice.service.ts
+saveToLocalHistory(data: any) {
+  const history = this.getHistory();
+  history.unshift(data);
+  localStorage.setItem('riwayat', JSON.stringify(history));
+}
+
+getHistory(): any[] {
+  return JSON.parse(localStorage.getItem('riwayat') || '[]');
+}
+
   verifyAttendance(kodeReservasi: string): Observable<any> {
     // Endpoint ini publik, tapi tetap aman mengirim header
     return this.http
@@ -150,4 +161,5 @@ export class InvoiceService {
     console.error('InvoiceService Error:', error);
     return throwError(() => new Error(msg));
   }
-}
+} 
+
