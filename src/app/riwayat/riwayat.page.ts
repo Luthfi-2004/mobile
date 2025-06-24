@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController } from '@ionic/angular';
 import { ReservationService } from '../services/reservation.service';
+import { RatingService } from '../services/rating.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-riwayat',
@@ -16,7 +18,8 @@ export class RiwayatPage {
     private router: Router,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private reservationService: ReservationService
+    private reservationService: ReservationService,
+    private ratingService: RatingService
   ) {}
 
   // Akan dipanggil setiap kali halaman ini dibuka
@@ -32,25 +35,15 @@ export class RiwayatPage {
 
     this.reservationService.getReservations().subscribe({
       next: (response) => {
-        loading.dismiss();
-        
-        // Transform data dari API ke format yang sesuai dengan template
         if (response.reservations && response.reservations.data) {
-          this.riwayat = response.reservations.data.map((reservasi: any) => ({
-            id: reservasi.id,
-            tanggal: new Date(reservasi.created_at).toLocaleString('id-ID'),
-            waktu_kedatangan: reservasi.waktu_kedatangan,
-            kode_reservasi: reservasi.kode_reservasi,
-            jumlah_tamu: reservasi.jumlah_tamu,
-            status: this.getStatusLabel(reservasi.status, reservasi.payment_status),
-            total: reservasi.total_bill || 0,
-            payment_method: reservasi.payment_method,
-            meja: reservasi.meja || [],
-            catatan: reservasi.catatan,
-            items: [], // Items akan diload dari orders jika diperlukan
-            // Data mentah untuk keperluan lain
-            raw_data: reservasi
-          }));
+          const reservations = response.reservations.data;
+          
+          // Load rating status untuk setiap reservasi
+          this.loadRatingStatus(reservations).then(() => {
+            loading.dismiss();
+          });
+        } else {
+          loading.dismiss();
         }
       },
       error: (error) => {
@@ -59,6 +52,47 @@ export class RiwayatPage {
         this.presentAlert('Error', 'Gagal memuat riwayat reservasi');
       }
     });
+  }
+
+  private async loadRatingStatus(reservations: any[]) {
+    // Transform data dan load rating status
+    const ratingChecks = reservations.map(reservasi => {
+      if (reservasi.status === 'selesai') {
+        return this.ratingService.checkExistingRating(reservasi.id);
+      }
+      return null;
+    });
+
+    // Execute all rating checks
+    const ratingResults = await Promise.all(
+      ratingChecks.map(check => {
+        if (check) {
+          // If the promise fails, return an object with the same structure
+          return check.toPromise().catch(() => ({ has_rating: false, rating: null, can_rate: false }));
+        }
+        return Promise.resolve({ has_rating: false, rating: null, can_rate: false });
+      })
+    );
+
+    // Transform data dengan rating status
+    this.riwayat = reservations.map((reservasi: any, index: number) => ({
+      id: reservasi.id,
+      tanggal: new Date(reservasi.created_at).toLocaleString('id-ID'),
+      waktu_kedatangan: reservasi.waktu_kedatangan,
+      kode_reservasi: reservasi.kode_reservasi,
+      jumlah_tamu: reservasi.jumlah_tamu,
+      status: this.getStatusLabel(reservasi.status, reservasi.payment_status),
+      total: reservasi.total_bill || 0,
+      payment_method: reservasi.payment_method,
+      meja: reservasi.meja || [],
+      catatan: reservasi.catatan,
+      items: [], // Items will be loaded from orders if needed
+      has_rating: ratingResults[index]?.has_rating || false,
+      rating_data: ratingResults[index]?.rating || null,
+      can_rate: ratingResults[index]?.can_rate || false,
+      // Raw data for other purposes
+      raw_data: reservasi
+    }));
   }
 
   private getStatusLabel(status: string, paymentStatus?: string): string {
@@ -79,7 +113,7 @@ export class RiwayatPage {
   }
 
   lihatDetail(data: any) {
-    // Navigasi ke detail dengan membawa data reservasi
+    // Navigate to detail with reservation data
     this.router.navigate(['/detail-pesanan'], {
       state: { 
         pesanan: data,
@@ -89,13 +123,40 @@ export class RiwayatPage {
   }
 
   beriUlasan(data: any) {
+    // Ensure the reservation can be rated
+    if (data.status !== 'Dibayar Sebagian') {
+      this.presentAlert('Info', 'Anda hanya bisa memberi penilaian pada reservasi yang sudah selesai');
+      return;
+    }
+
+    if (data.has_rating) {
+      this.presentAlert('Info', 'Anda sudah memberikan penilaian untuk reservasi ini');
+      return;
+    }
+
+    // Navigate to the review page with reservation data
     this.router.navigate(['/ulasan'], {
-      state: { pesanan: data }
+      state: { 
+        pesanan: data,
+        reservasi_id: data.id
+      }
+    });
+  }
+
+  lihatRating(data: any) {
+    // Navigate to the review page in view-only mode
+    this.router.navigate(['/ulasan'], {
+      state: { 
+        pesanan: data,
+        reservasi_id: data.id,
+        view_only: true,
+        rating_data: data.rating_data
+      }
     });
   }
 
   lanjutkanPembayaran(data: any) {
-    // Navigasi ke invoice detail atau payment page
+    // Navigate to invoice detail or payment page
     this.router.navigate(['/invoice-detail', data.id]);
   }
 
@@ -111,11 +172,11 @@ export class RiwayatPage {
         {
           text: 'Hapus',
           handler: async () => {
-            // Implementasi hapus riwayat di server (jika ada endpoint)
-            // Untuk sementara hanya clear data lokal
+            // Implement delete history on the server (if there's an endpoint)
+            // For now, just clear local data
             this.riwayat = [];
             
-            // Juga hapus localStorage backup jika masih ada
+            // Also remove localStorage backup if it exists
             localStorage.removeItem('riwayat');
             
             this.presentAlert('Sukses', 'Riwayat berhasil dihapus');
@@ -136,7 +197,7 @@ export class RiwayatPage {
     await alert.present();
   }
 
-  // Helper method untuk refresh data
+  // Helper method to refresh data
   async doRefresh(event: any) {
     await this.loadRiwayat();
     event.target.complete();
