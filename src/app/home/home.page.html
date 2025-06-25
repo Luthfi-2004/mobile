@@ -8,11 +8,11 @@
         <ion-icon name="notifications-outline"></ion-icon>
         <span *ngIf="unreadNotificationCount > 0" class="notif-badge"></span>
       </ion-button>
-      <ion-button>
-        <ion-icon name="cart-outline"></ion-icon>
-      </ion-button>
-      <ion-button [routerLink]="'/info-akun'">
-        <img [src]="profileImage" alt="Foto Profil" class="profile-image-home" />
+      <ion-button [routerLink]="'/info-akun'" class="profile-button">
+        <div class="profile-container">
+          <img [src]="profileImage" alt="Foto Profil" class="profile-image-home" />
+          <div class="profile-status-indicator"></div>
+        </div>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
