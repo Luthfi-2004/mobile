@@ -1,10 +1,13 @@
 // File: src/app/home/home.page.ts
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, Platform, LoadingController, ToastController } from '@ionic/angular';
 import { AuthService } from '../auth.service';
 import { MenuService, MenuItem } from '../services/menu.service';
+import { ProfileImageService } from '../services/profile-image.service';
+import { SafeUrl } from '@angular/platform-browser';
+import { Subscription } from 'rxjs';
 
 declare var navigator: any;
 
@@ -14,7 +17,7 @@ declare var navigator: any;
   styleUrls: ['./home.page.scss'],
   standalone: false,
 })
-export class HomePage implements OnInit {
+export class HomePage implements OnInit, OnDestroy {
   images = [
     { src: 'assets/img/indoor.jpg', type: 'indoor', text: 'Area Indoor' },
     { src: 'assets/img/outdoor.jpg', type: 'outdoor', text: 'Area Outdoor' },
@@ -23,9 +26,9 @@ export class HomePage implements OnInit {
   currentImageIndex = 0;
   unreadNotificationCount = 0;
 
-  // --- Start: Penambahan untuk Gambar Profil Dinamis ---
-  profileImage: string = 'assets/img/default-profile.jpg'; // Default image, harus sama dengan di info-akun.page.ts
-  // --- End: Penambahan untuk Gambar Profil Dinamis ---
+  // Gambar profil kini dikelola secara reaktif
+  profileImage: SafeUrl = 'assets/img/default-profile.jpg';
+  private profileImageSubscription!: Subscription;
 
   // Dynamic menu data
   bestSellerMenus: MenuItem[] = [];
@@ -40,7 +43,8 @@ export class HomePage implements OnInit {
     private platform: Platform,
     private menuService: MenuService,
     private loadingController: LoadingController,
-    private toastController: ToastController
+    private toastController: ToastController,
+    private profileImageService: ProfileImageService // Service diinjeksi
   ) {
     this.startImageSlider();
     this.setupBackButtonHandler();
@@ -52,11 +56,20 @@ export class HomePage implements OnInit {
       return;
     }
 
+    // Logika baru untuk memuat dan mendengarkan perubahan gambar profil
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      // 1. Memuat gambar profil awal saat komponen diinisialisasi
+      this.profileImageService.loadCurrentUserProfileImage(currentUser.id);
+    }
+
+    // 2. Mendengarkan (subscribe) setiap perubahan pada gambar profil
+    this.profileImageSubscription = this.profileImageService.currentProfileImage$.subscribe(image => {
+      this.profileImage = image;
+    });
+
     this.loadUnreadNotifications();
     await this.loadMenus();
-    // --- Start: Pemanggilan loadProfileImage saat ngOnInit ---
-    this.loadProfileImage();
-    // --- End: Pemanggilan loadProfileImage saat ngOnInit ---
   }
 
   async ionViewWillEnter() {
@@ -65,29 +78,10 @@ export class HomePage implements OnInit {
     if (this.bestSellerMenus.length === 0 && this.discountMenus.length === 0) {
       await this.loadMenus();
     }
-    // --- Start: Pemanggilan loadProfileImage saat ionViewWillEnter agar selalu update ---
-    this.loadProfileImage();
-    // --- End: Pemanggilan loadProfileImage saat ionViewWillEnter agar selalu update ---
+    // Panggilan ke loadProfileImage() yang lama telah dihapus dari sini
   }
 
-  // --- Start: Method baru untuk memuat gambar profil ---
-  loadProfileImage() {
-    const storedProfileImage = localStorage.getItem('profileImage');
-    if (storedProfileImage) {
-      this.profileImage = storedProfileImage;
-    } else {
-      // Jika tidak ada di localStorage, coba ambil dari userData jika ada
-      const loggedUserDataString = localStorage.getItem('userData');
-      if (loggedUserDataString) {
-        const loggedUserData = JSON.parse(loggedUserDataString);
-        if (loggedUserData.profileImage) {
-          this.profileImage = loggedUserData.profileImage;
-          localStorage.setItem('profileImage', loggedUserData.profileImage); // Simpan juga ke profileImage terpisah
-        }
-      }
-    }
-  }
-  // --- End: Method baru untuk memuat gambar profil ---
+  // Method loadProfileImage() yang lama telah dihapus sepenuhnya
 
   private setupBackButtonHandler() {
     this.platform.backButton.subscribeWithPriority(10, async () => {
@@ -226,38 +220,27 @@ export class HomePage implements OnInit {
     this.router.navigate(['/reservasi']);
   }
 
-  // Method to handle menu item click
   onMenuItemClick(menu: MenuItem) {
     console.log('Menu clicked:', menu);
-    // You can navigate to menu detail page or add to cart
-    // Example: this.router.navigate(['/menu-detail', menu.id]);
-    
-    // For now, show a simple toast
     this.showToast(`Menu ${menu.name} dipilih`, 'success');
   }
 
-  // Helper method to format currency
   formatCurrency(amount: number): string {
     return this.menuService.formatCurrency(amount);
   }
 
-  // Helper method to get category display name
   getCategoryDisplayName(category: string): string {
     return this.menuService.getCategoryDisplayName(category);
   }
 
-  // TrackBy function for ngFor performance
   trackByMenuId(index: number, menu: MenuItem): number {
     return menu.id;
   }
 
-  // Refresh method for pull-to-refresh
   async doRefresh(event: any) {
     try {
       await this.loadMenus();
-      // --- Start: Pemanggilan loadProfileImage saat refresh ---
-      this.loadProfileImage();
-      // --- End: Pemanggilan loadProfileImage saat refresh ---
+      // Panggilan ke loadProfileImage() yang lama telah dihapus dari sini
       await this.showToast('Menu berhasil diperbarui', 'success');
     } catch (error) {
       await this.showToast('Gagal memperbarui menu', 'danger');
@@ -266,7 +249,6 @@ export class HomePage implements OnInit {
     }
   }
 
-  // Retry loading menus
   async retryLoadMenus() {
     await this.loadMenus();
   }
@@ -298,6 +280,13 @@ export class HomePage implements OnInit {
     } catch (error) {
       console.error('Error handling invoice click:', error);
       await this.showToast('Gagal mengakses invoice', 'danger');
+    }
+  }
+
+  ngOnDestroy() {
+    // Hentikan subscription saat komponen dihancurkan untuk mencegah memory leak
+    if (this.profileImageSubscription) {
+      this.profileImageSubscription.unsubscribe();
     }
   }
 }
