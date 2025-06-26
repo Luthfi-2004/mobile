@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
 import { PaymentService } from 'src/app/services/payment.service';
 import { ReservationService } from 'src/app/services/reservation.service';
+import { AuthService } from 'src/app/auth.service';
 
 declare var snap: any;
 
@@ -35,7 +36,8 @@ export class CartPage implements OnInit, OnDestroy {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private paymentService: PaymentService,
-    private reservationService: ReservationService
+    private reservationService: ReservationService,
+    private authService: AuthService 
   ) {
     const nav = this.router.getCurrentNavigation();
     if (nav?.extras?.state) {
@@ -223,9 +225,7 @@ export class CartPage implements OnInit, OnDestroy {
       header: 'Menunggu Pembayaran',
       message:  `
         Silakan selesaikan pembayaran: 
-        <strong>${this.formatVaNumber(va)}</strong>
-        <br><br>Waktu tersisa: ${this.formatTime(this.remainingSeconds)}
-      `,
+        ${this.formatVaNumber(va)}`,
       buttons: [{
         text: 'Buka Kembali Pembayaran',
         handler: () => this.openSnapPay()
@@ -264,6 +264,8 @@ export class CartPage implements OnInit, OnDestroy {
       next: async (resp: any) => {
         await loading.dismiss();
         console.log('[DEBUG] Snap Token:', resp.snap_token);
+
+        this.saveToHistory(resp);
         
         if (resp.snap_token) {
           // Simpan token & opsi
@@ -322,21 +324,47 @@ export class CartPage implements OnInit, OnDestroy {
         invoice_number: checkoutResponse.invoice_number || `INV-${Date.now()}`,
         created_at: new Date().toISOString(),
         total: this.total,
-        items: this.cart,
-        customer: this.reservasi.pengguna || {},
-        reservasi: this.reservasi,
+        items: this.cart.map(item => ({
+          id: item.id,
+          nama: item.nama || item.name,
+          harga: item.final_price || item.price || item.harga,
+          quantity: item.quantity,
+          note: item.note
+        })),
+        customer: {
+          nama_pelanggan: this.reservasi.nama_pelanggan || 'Guest',
+          phone: this.reservasi.phone || '',
+          email: this.reservasi.email || ''
+        },
+        reservasi: {
+          id: this.reservasi.id,
+          tanggal_reservasi: this.reservasi.tanggal_reservasi,
+          jam_reservasi: this.reservasi.jam_reservasi,
+          jumlah_orang: this.reservasi.jumlah_orang,
+          meja: this.reservasi.meja
+        },
         invoice: {
           payment_status: 'pending',
           payment_method: this.paymentMethod,
-          total_amount: this.total
+          total_amount: this.total,
+          generated_at: new Date().toISOString()
         }
       };
 
-      const existingHistory = JSON.parse(localStorage.getItem('riwayat') || '[]');
-      existingHistory.unshift(historyEntry);
-      localStorage.setItem('riwayat', JSON.stringify(existingHistory));
+      // Dapatkan user ID
+      const userId = this.authService.getCurrentUserId();
+      const storageKey = `riwayat_${userId}`;
+
+      const existingHistory = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
       
-      console.log('[CartPage] Riwayat disimpan:', historyEntry);
+      const updatedHistory = existingHistory.filter(
+        (item: any) => item.id !== this.reservasi.id
+      );
+      
+      updatedHistory.unshift(historyEntry);
+      sessionStorage.setItem(storageKey, JSON.stringify(updatedHistory));
+      
+      console.log(`[CartPage] Riwayat disimpan untuk user ${userId}`);
     } catch (err) {
       console.error('[CartPage] Gagal menyimpan riwayat:', err);
     }
