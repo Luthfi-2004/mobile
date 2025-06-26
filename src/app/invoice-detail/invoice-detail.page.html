@@ -180,27 +180,6 @@
         <h3>Catatan</h3>
         <p class="note-text">{{ reservasi.catatan }}</p>
       </div>
-
-      <!-- ACTION BUTTONS -->
-      <div class="action-buttons">
-        <ion-button 
-          expand="block" 
-          fill="outline" 
-          (click)="resendInvoice()"
-          [disabled]="isLoading">
-          <ion-icon name="mail-outline" slot="start"></ion-icon>
-          Kirim Ulang Invoice
-        </ion-button>
-        
-        <ion-button 
-          expand="block" 
-          (click)="goToPayment()"
-          *ngIf="invoice.payment_status !== 'paid'"
-          [disabled]="isLoading">
-          <ion-icon name="card-outline" slot="start"></ion-icon>
-          Bayar Sekarang!
-        </ion-button>
-      </div>
     </div>
   </div>
 

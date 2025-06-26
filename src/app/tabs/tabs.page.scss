@@ -1,0 +1,12 @@
+.tab-icon {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
+  filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+}
+
+ion-tab-button:hover .tab-icon {
+  transform: scale(1.1);
+}
+
