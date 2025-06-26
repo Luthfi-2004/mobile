@@ -1,14 +1,15 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
-import { InvoiceService } from '../services/invoice.service';
+import { InvoiceService } from 'src/app/services/invoice.service';
 import { Subscription } from 'rxjs';
+import { AuthService } from 'src/app/auth.service';
 
 @Component({
   selector: 'app-invoice',
   templateUrl: './invoice.page.html',
   styleUrls: ['./invoice.page.scss'],
-  standalone: false
+  standalone: false,
 })
 export class InvoicePage implements OnInit, OnDestroy {
   invoiceHistory: any[] = [];
@@ -21,6 +22,7 @@ export class InvoicePage implements OnInit, OnDestroy {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private invoiceService: InvoiceService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -49,9 +51,13 @@ export class InvoicePage implements OnInit, OnDestroy {
     await loading.present();
 
     try {
-      const raw: any[] = JSON.parse(localStorage.getItem('riwayat') || '[]');
+      // Dapatkan user ID
+      const userId = this.authService.getCurrentUserId();
+      const storageKey = `riwayat_${userId}`;
+      
+      const raw: any[] = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
 
-      // Map data dari localStorage ke struktur yang diinginkan
+      // Map data
       this.invoiceHistory = raw.map(item => {
         return {
           id: item.id,
@@ -179,10 +185,18 @@ export class InvoicePage implements OnInit, OnDestroy {
 
   private performDeleteInvoice(invoiceId: string) {
     try {
-      const current: any[] = JSON.parse(localStorage.getItem('riwayat') || '[]');
+      // Dapatkan user ID
+      const userId = this.authService.getCurrentUserId();
+      const storageKey = `riwayat_${userId}`;
+      
+      const current: any[] = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
       const updated = current.filter(i => i.id !== invoiceId && i.invoice_number !== invoiceId);
-      localStorage.setItem('riwayat', JSON.stringify(updated));
-      this.invoiceHistory = this.invoiceHistory.filter(inv => inv.id !== invoiceId && inv.invoice_number !== invoiceId);
+      sessionStorage.setItem(storageKey, JSON.stringify(updated));
+      
+      this.invoiceHistory = this.invoiceHistory.filter(inv => 
+        inv.id !== invoiceId && inv.invoice_number !== invoiceId
+      );
+      
       this.showToast('Invoice berhasil dihapus', 'success');
     } catch (err) {
       console.error('Error deleting invoice:', err);

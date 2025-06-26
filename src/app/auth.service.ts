@@ -143,6 +143,12 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
+  // NEW: Get current user ID (or 'guest' if not logged in)
+  getCurrentUserId(): string {
+    const user = this.getCurrentUser();
+    return user ? `${user.id}` : 'guest';
+  }
+
   getCurrentToken(): string | null {
     return this.tokenSubject.value;
   }
