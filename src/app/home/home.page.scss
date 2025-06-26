@@ -361,3 +361,61 @@ ion-segment {
     z-index: 10;
   }
 }
+
+/* Profile Image Styles */
+.profile-button {
+  --padding-start: 4px;
+  --padding-end: 4px;
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  margin-left: 8px;
+}
+
+.profile-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-image-home {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ffffff;
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.15),
+    0 0 0 2px var(--ion-color-primary);
+  transition: all 0.3s ease;
+}
+
+.profile-image-home:hover {
+  transform: scale(1.05);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    0 0 0 3px var(--ion-color-primary);
+}
+
+.profile-status-indicator {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background-color: #4CAF50;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Animation for profile image */
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(var(--ion-color-primary-rgb), 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(var(--ion-color-primary-rgb), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--ion-color-primary-rgb), 0); }
+}
+
+.profile-image-home.active {
+  animation: pulse 1.5s infinite;
+}
