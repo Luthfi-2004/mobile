@@ -159,7 +159,7 @@ export class UlasanPage {
         await this.presentAlert('Berhasil', response.message || 'Penilaian berhasil disimpan!');
         
         // Kembali ke halaman riwayat
-        this.router.navigate(['/riwayat'], { replaceUrl: true });
+        this.router.navigate(['/tabs/home'], { replaceUrl: true });
       },
       error: async (error) => {
         loading.dismiss();
