@@ -8,6 +8,9 @@ import { UlasanPageRoutingModule } from './ulasan-routing.module';
 
 import { UlasanPage } from './ulasan.page';
 
+import { Router } from '@angular/router';
+
+
 @NgModule({
   imports: [
     CommonModule,
