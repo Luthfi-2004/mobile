@@ -52,12 +52,11 @@ export class ReservationService {
 
   constructor(private http: HttpClient) {}
 
-  // DIUBAH: Menggunakan metode standar yang lebih robust
   private getHeaders(): HttpHeaders {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'Accept': 'application/json'
-    }); 
+    });
     const token = localStorage.getItem('auth_token');
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
@@ -106,6 +105,13 @@ export class ReservationService {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/customer/reservations/${id}/auto-cancel`,
       {},
+      { headers: this.getHeaders() }
+    );
+  }
+
+  clearHistory(): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.apiUrl}/customer/reservations/clear-history`,
       { headers: this.getHeaders() }
     );
   }
