@@ -1,4 +1,3 @@
-/* reservasi-jadwal.page.ts */
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { IonPopover, AlertController, ToastController, LoadingController } from '@ionic/angular';
@@ -265,6 +264,9 @@ export class ReservasiJadwalPage implements OnInit {
         next: async (response: ReservationResponse) => {
           await loading.dismiss();
           const createdReservation = response.reservasi;
+
+          // [PERUBAHAN]: Simpan reservasi ke dalam service agar tidak hilang
+          this.reservationService.activeReservation = createdReservation;
 
           await this.presentToast('Reservasi berhasil dibuat. Silakan pilih menu Anda.', 'success');
 
