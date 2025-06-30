@@ -36,27 +36,33 @@ export class CartPage implements OnInit, OnDestroy {
     private loadingController: LoadingController,
     private toastController: ToastController,
     private paymentService: PaymentService,
-    private reservationService: ReservationService,
-    private authService: AuthService 
+    private reservationService: ReservationService, // Service sudah di-inject
+    private authService: AuthService
   ) {
+    // [PERBAIKAN]: Logika pengambilan data reservasi
     const nav = this.router.getCurrentNavigation();
-    console.log('=== DEBUG NAVIGATION ===');
-    console.log('Full navigation:', nav);
-    console.log('Navigation extras:', nav?.extras);
-    console.log('Navigation state:', nav?.extras?.state);
+    const state = nav?.extras?.state;
+    // Prioritas 1: Ambil dari service
+    if (this.reservationService.activeReservation) {
+      this.reservasi = this.reservationService.activeReservation;
+      console.log('Reservasi diambil dari Service:', this.reservasi);
+    } 
+    // Prioritas 2: Ambil dari navigation state (sebagai fallback)
+    else if (state?.['reservasi']) {
+      this.reservasi = state['reservasi'];
+      this.reservationService.activeReservation = this.reservasi; // Simpan juga ke service
+      console.log('Reservasi diambil dari Navigation State:', this.reservasi);
+    }
+    // Ambil data keranjang dari state (jika ada)
+    if (state?.['cart']) {
+      this.cart = state['cart'].map((i: any) => ({ ...i, quantity: i.quantity || 1, note: i.note || '' }));
+    }
     
-    if (nav?.extras?.state) {
-      this.cart = (nav.extras.state['cart'] || []).map((i: any) => ({
-        ...i,
-        quantity: i.quantity || 1,
-        note: i.note || ''
-      }));
-      this.reservasi = nav.extras.state['reservasi'] || {};
-      console.log('Cart received:', this.cart);
-      console.log('Reservasi received:', this.reservasi);
-      console.log('Reservasi ID:', this.reservasi.id);
-    } else {
-      console.warn('Tidak ada navigation state');
+    // Jika setelah semua cara tetap tidak ada ID, navigasikan kembali
+    if (!this.reservasi?.id) {
+      console.error('FATAL: Tidak ada ID Reservasi. Kembali ke jadwal.');
+      this.presentAlert('Sesi reservasi tidak ditemukan, silakan ulangi.', 'Error');
+      this.router.navigate(['/reservasi-jadwal']);
     }
   }
 

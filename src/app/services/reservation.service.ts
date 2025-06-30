@@ -49,6 +49,8 @@ export interface ApiErrorResponse {
 })
 export class ReservationService {
   private apiUrl = environment.apiUrl;
+  // [TAMBAHAN]: Variabel untuk menyimpan data reservasi aktif
+  public activeReservation: any = null;
 
   constructor(private http: HttpClient) {}
 
