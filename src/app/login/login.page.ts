@@ -24,7 +24,7 @@ export class LoginPage implements OnInit {
     private toastController: ToastController
   ) {
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required]], // Bisa email atau nomor HP
+      email: ['', [Validators.required]],
       password: ['', [Validators.required, Validators.minLength(8)]]
     });
   }
@@ -35,7 +35,6 @@ export class LoginPage implements OnInit {
     }
   }
 
-  // Metode publik untuk menangani navigasi kembali ke splash
   public navigateToSplash(): void {
     this.router.navigate(['/splash']);
   }
@@ -44,11 +43,9 @@ export class LoginPage implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
-  // --- TAMBAHAN BARU ---
   goToForgotPassword() {
     this.router.navigate(['/forgot-password']);
   }
-  // --- END ---
 
   async showAlert(header: string, message: string) {
     const alert = await this.alertController.create({
@@ -89,7 +86,6 @@ export class LoginPage implements OnInit {
           await loading.dismiss();
           this.isSubmitting = false;
           
-          // Simpan data pengguna ke localStorage setelah login berhasil
           localStorage.setItem('userData', JSON.stringify({
             email: response.user.email,
             username: response.user.nama,
@@ -158,19 +154,5 @@ export class LoginPage implements OnInit {
       const control = formGroup.get(field);
       control?.markAsTouched({ onlySelf: true });
     });
-  }
-
-  async loginWithGoogle() {
-    try {
-      console.log('Login with Google clicked');
-      await this.showAlert('Fitur Google Login', 'Fitur login Google akan segera tersedia');
-    } catch (error) {
-      console.error('Google login error:', error);
-      await this.showAlert('Login Gagal', 'Terjadi kesalahan saat login dengan Google');
-    }
-  }
-
-  goToRegister() {
-    this.router.navigate(['/registrasi']);
   }
 }

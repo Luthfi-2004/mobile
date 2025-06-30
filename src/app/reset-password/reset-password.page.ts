@@ -13,7 +13,7 @@ import { AuthService } from '../auth.service';
 export class ResetPasswordPage implements OnInit {
   resetPasswordForm: FormGroup;
   isSubmitting = false;
-  identifier: string | null = null; // Ini akan menerima token atau identifier dari URL
+  identifier: string | null = null;
   showPassword1 = false;
   showPassword2 = false;
 
@@ -21,7 +21,7 @@ export class ResetPasswordPage implements OnInit {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute, // Untuk mengambil parameter dari URL
+    private route: ActivatedRoute,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private toastController: ToastController
@@ -42,6 +42,11 @@ export class ResetPasswordPage implements OnInit {
     }
   }
 
+  // Fungsi untuk navigasi kembali
+  goBack() {
+    this.router.navigate(['/forgot-password']);
+  }
+
   passwordMatchValidator(formGroup: FormGroup) {
     const password = formGroup.get('password')?.value;
     const passwordConfirmation = formGroup.get('password_confirmation')?.value;
@@ -51,6 +56,43 @@ export class ResetPasswordPage implements OnInit {
   togglePassword1() {
     this.showPassword1 = !this.showPassword1;
   }
+
+  // Tambahkan fungsi ini di dalam class ResetPasswordPage
+
+getPasswordStrengthClass(): string {
+  const password = this.resetPasswordForm.get('password')?.value;
+  if (!password) return '';
+  
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+  
+  const strength = 
+    (password.length >= 8 ? 1 : 0) +
+    (hasUpperCase ? 1 : 0) +
+    (hasLowerCase ? 1 : 0) +
+    (hasNumber ? 1 : 0) +
+    (hasSpecialChar ? 1 : 0);
+  
+  if (strength <= 2) return 'weak';
+  if (strength <= 4) return 'medium';
+  return 'strong';
+}
+
+getPasswordStrengthText(): string {
+  const password = this.resetPasswordForm.get('password')?.value;
+  if (!password) return '';
+  
+  const strength = this.getPasswordStrengthClass();
+  
+  switch (strength) {
+    case 'weak': return 'Lemah - tambahkan huruf besar, angka, atau simbol';
+    case 'medium': return 'Sedang - tambahkan simbol untuk lebih kuat';
+    case 'strong': return 'Kuat - password Anda aman';
+    default: return '';
+  }
+}
 
   togglePassword2() {
     this.showPassword2 = !this.showPassword2;
@@ -71,12 +113,19 @@ export class ResetPasswordPage implements OnInit {
         next: async (response) => {
           await loading.dismiss();
           this.isSubmitting = false;
-          await this.showToast(response.message || 'Password berhasil diubah. Silakan login.');
-          this.router.navigate(['/login']);
+          
+          // Tampilkan toast sukses
+          await this.showToast(response.message || 'Password berhasil diubah. Silakan login.', 'success');
+          
+          // Navigasi ke halaman login setelah 1.5 detik
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 1500);
         },
         error: async (error) => {
           await loading.dismiss();
           this.isSubmitting = false;
+          
           let errorMessage = 'Gagal mengubah password.';
           if (error.status === 422 && error.error?.errors) {
             const errors = error.error.errors;
@@ -91,7 +140,12 @@ export class ResetPasswordPage implements OnInit {
             errorMessage = errorMessages.join('\n');
           } else if (error.error?.message) {
             errorMessage = error.error.message;
+          } else if (error.status === 400) {
+            errorMessage = 'Token reset password tidak valid atau sudah kedaluwarsa.';
+          } else if (error.status === 404) {
+            errorMessage = 'Pengguna tidak ditemukan.';
           }
+          
           await this.showAlert('Gagal', errorMessage);
         }
       });
@@ -105,7 +159,8 @@ export class ResetPasswordPage implements OnInit {
     const alert = await this.alertController.create({
       header,
       message,
-      buttons: ['OK']
+      buttons: ['OK'],
+      cssClass: 'custom-alert'
     });
     await alert.present();
   }
@@ -115,7 +170,8 @@ export class ResetPasswordPage implements OnInit {
       message,
       duration: 3000,
       color,
-      position: 'top'
+      position: 'top',
+      cssClass: 'custom-toast'
     });
     await toast.present();
   }

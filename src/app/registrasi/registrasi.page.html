@@ -1,89 +1,111 @@
-<ion-content [fullscreen]="true">
-  <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
-    <div class="register-wrapper">
-      <ion-icon name="arrow-back-outline" class="back-icon"></ion-icon>
+<ion-content [fullscreen]="true" class="register-page">
+  <div class="container">
+    <ion-icon name="arrow-back-outline" class="back-icon" (click)="goBack()"></ion-icon>
+    
+    <div class="register-card">
       <h1 class="title">Daftar</h1>
+      <p class="subtitle">Buat akun baru untuk memulai</p>
 
-      <!-- Username -->
-      <ion-input
-        label="Username"
-        labelPlacement="floating"
-        placeholder="Masukkan Username"
-        formControlName="nama"
-        [counter]="true"
-        maxlength="20"
-        [counterFormatter]="customCounterFormatter"
-      ></ion-input>
+      <form [formGroup]="registerForm" (ngSubmit)="onRegister()">
+        <!-- Username -->
+        <div class="input-wrapper">
+          <div class="input-container">
+            <ion-icon name="person-outline" class="input-icon"></ion-icon>
+            <input 
+              class="input-field" 
+              formControlName="nama"
+              placeholder="Masukkan Username"
+              maxlength="20"
+            />
+          </div>
+          <div class="counter">{{ registerForm.get('nama')?.value?.length || 0 }}/20</div>
+        </div>
 
-      <!-- Nomor Telepon -->
-      <ion-input
-        label="Nomor Telepon"
-        labelPlacement="floating"
-        type="tel"
-        placeholder="Masukkan Nomor Telepon"
-        formControlName="nomor_hp"
-        [counter]="true"
-        maxlength="15"
-        [counterFormatter]="customCounterFormatter"
-      ></ion-input>
+        <!-- Nomor Telepon -->
+        <div class="input-wrapper">
+          <div class="input-container">
+            <ion-icon name="call-outline" class="input-icon"></ion-icon>
+            <input 
+              class="input-field" 
+              formControlName="nomor_hp"
+              placeholder="Masukkan Nomor Telepon"
+              type="tel"
+              maxlength="15"
+            />
+          </div>
+          <div class="counter">{{ registerForm.get('nomor_hp')?.value?.length || 0 }}/15</div>
+        </div>
 
-      <!-- Email -->
-      <ion-input
-        label="Email"
-        labelPlacement="floating"
-        type="email"
-        placeholder="Masukkan Email"
-        formControlName="email"
-        [counter]="true"
-        maxlength="50"
-        [counterFormatter]="customCounterFormatter"
-      ></ion-input>
+        <!-- Email -->
+        <div class="input-wrapper">
+          <div class="input-container">
+            <ion-icon name="mail-outline" class="input-icon"></ion-icon>
+            <input 
+              class="input-field" 
+              formControlName="email"
+              placeholder="Masukkan Email"
+              type="email"
+              maxlength="50"
+            />
+          </div>
+          <div class="counter">{{ registerForm.get('email')?.value?.length || 0 }}/50</div>
+        </div>
 
-      <!-- Password -->
-      <div class="password-wrapper">
-        <ion-input
-          label="Password"
-          labelPlacement="floating"
-          [type]="showPassword ? 'text' : 'password'"
-          placeholder="Masukkan Password"
-          formControlName="password"
-          [counter]="true"
-          maxlength="20"
-          [counterFormatter]="customCounterFormatter"
-        ></ion-input>
-        <ion-icon
-          [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
-          class="toggle-icon"
-          (click)="togglePassword()"
-        ></ion-icon>
-      </div>
+        <!-- Password -->
+        <div class="input-wrapper">
+          <div class="input-container">
+            <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+            <input 
+              [type]="showPassword ? 'text' : 'password'" 
+              class="input-field" 
+              formControlName="password"
+              placeholder="Masukkan Password"
+              maxlength="20"
+            />
+            <ion-icon
+              [name]="showPassword ? 'eye-outline' : 'eye-off-outline'"
+              class="toggle-password"
+              (click)="togglePassword()"
+            ></ion-icon>
+          </div>
+          <div class="counter">{{ registerForm.get('password')?.value?.length || 0 }}/20</div>
+        </div>
 
-      <!-- Confirm Password -->
-      <div class="password-wrapper">
-        <ion-input
-          label="Confirm Password"
-          labelPlacement="floating"
-          [type]="showConfirmPassword ? 'text' : 'password'"
-          placeholder="Ulangi Password"
-          formControlName="password_confirmation"
-          [counter]="true"
-          maxlength="20"
-          [counterFormatter]="customCounterFormatter"
-        ></ion-input>
-        <ion-icon
-          [name]="showConfirmPassword ? 'eye-off-outline' : 'eye-outline'"
-          class="toggle-icon"
-          (click)="toggleConfirmPassword()"
-        ></ion-icon>
-      </div>
+        <!-- Confirm Password -->
+        <div class="input-wrapper">
+          <div class="input-container">
+            <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+            <input 
+              [type]="showConfirmPassword ? 'text' : 'password'" 
+              class="input-field" 
+              formControlName="password_confirmation"
+              placeholder="Ulangi Password"
+              maxlength="20"
+            />
+            <ion-icon
+              [name]="showConfirmPassword ? 'eye-outline' : 'eye-off-outline'"
+              class="toggle-password"
+              (click)="toggleConfirmPassword()"
+            ></ion-icon>
+          </div>
+          <div class="counter">{{ registerForm.get('password_confirmation')?.value?.length || 0 }}/20</div>
+        </div>
 
-      <ion-button expand="block" class="register-btn" type="submit" [disabled]="registerForm.invalid || isSubmitting">
-        Daftar
-      </ion-button>
+        <button 
+          type="submit" 
+          class="register-button" 
+          [disabled]="registerForm.invalid || isSubmitting"
+        >
+          <span *ngIf="!isSubmitting">Daftar</span>
+          <span *ngIf="isSubmitting" class="loading-spinner">
+            <ion-spinner name="crescent"></ion-spinner> Memproses...
+          </span>
+        </button>
+      </form>
 
       <p class="login-link">
         Sudah Punya Akun? <a routerLink="/login"><strong>Masuk</strong></a>
       </p>
     </div>
-  </form>
+  </div>
 </ion-content>
