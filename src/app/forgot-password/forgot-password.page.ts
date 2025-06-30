@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AlertController, LoadingController, ToastController } from '@ionic/angular';
-import { AuthService } from '../auth.service'; // Pastikan path benar
+import { AuthService } from '../auth.service';
 
 @Component({
   selector: 'app-forgot-password',
@@ -29,6 +29,11 @@ export class ForgotPasswordPage implements OnInit {
 
   ngOnInit() {}
 
+  // Tambahkan fungsi ini untuk navigasi kembali
+  goBack() {
+    this.router.navigate(['/login']);
+  }
+
   async onSubmit() {
     if (this.forgotPasswordForm.valid && !this.isSubmitting) {
       this.isSubmitting = true;
@@ -40,14 +45,12 @@ export class ForgotPasswordPage implements OnInit {
 
       const emailOrPhone = this.forgotPasswordForm.value.email.trim();
 
-      // Panggil metode baru di AuthService
       this.authService.requestPasswordReset(emailOrPhone).subscribe({
         next: async (response) => {
           await loading.dismiss();
           this.isSubmitting = false;
           await this.showToast(response.message || 'Verifikasi berhasil. Silakan masukkan password baru Anda.');
-          // Redirect ke halaman untuk memasukkan password baru, bawa token/identifier jika perlu
-          this.router.navigate(['/reset-password', response.identifier]); // response.identifier adalah token sementara dari backend
+          this.router.navigate(['/reset-password', response.identifier]); 
         },
         error: async (error) => {
           await loading.dismiss();
@@ -71,7 +74,8 @@ export class ForgotPasswordPage implements OnInit {
     const alert = await this.alertController.create({
       header,
       message,
-      buttons: ['OK']
+      buttons: ['OK'],
+      cssClass: 'custom-alert'
     });
     await alert.present();
   }
@@ -81,7 +85,8 @@ export class ForgotPasswordPage implements OnInit {
       message,
       duration: 3000,
       color,
-      position: 'top'
+      position: 'top',
+      cssClass: 'custom-toast'
     });
     await toast.present();
   }
