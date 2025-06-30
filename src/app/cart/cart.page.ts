@@ -40,6 +40,11 @@ export class CartPage implements OnInit, OnDestroy {
     private authService: AuthService 
   ) {
     const nav = this.router.getCurrentNavigation();
+    console.log('=== DEBUG NAVIGATION ===');
+    console.log('Full navigation:', nav);
+    console.log('Navigation extras:', nav?.extras);
+    console.log('Navigation state:', nav?.extras?.state);
+    
     if (nav?.extras?.state) {
       this.cart = (nav.extras.state['cart'] || []).map((i: any) => ({
         ...i,
@@ -47,9 +52,11 @@ export class CartPage implements OnInit, OnDestroy {
         note: i.note || ''
       }));
       this.reservasi = nav.extras.state['reservasi'] || {};
-      console.log('[CartPage] Reservasi ID diterima:', this.reservasi.id);
+      console.log('Cart received:', this.cart);
+      console.log('Reservasi received:', this.reservasi);
+      console.log('Reservasi ID:', this.reservasi.id);
     } else {
-      console.warn('[CartPage] Tidak ada data reservasi yang diterima');
+      console.warn('Tidak ada navigation state');
     }
   }
 
