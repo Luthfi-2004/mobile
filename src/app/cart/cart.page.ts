@@ -39,26 +39,28 @@ export class CartPage implements OnInit, OnDestroy {
     private reservationService: ReservationService, // Service sudah di-inject
     private authService: AuthService
   ) {
-    // [PERBAIKAN]: Logika pengambilan data reservasi
+    // [PERBAIKAN TOTAL]: Logika pengambilan data reservasi
     const nav = this.router.getCurrentNavigation();
     const state = nav?.extras?.state;
-    // Prioritas 1: Ambil dari service
+
+    // Prioritas 1: Ambil dari service. Ini adalah sumber data utama.
     if (this.reservationService.activeReservation) {
       this.reservasi = this.reservationService.activeReservation;
-      console.log('Reservasi diambil dari Service:', this.reservasi);
+      console.log('Reservasi diambil dari ReservationService:', this.reservasi);
     } 
-    // Prioritas 2: Ambil dari navigation state (sebagai fallback)
+    // Prioritas 2: Ambil dari navigation state (sebagai fallback jika user baru pindah halaman).
     else if (state?.['reservasi']) {
       this.reservasi = state['reservasi'];
-      this.reservationService.activeReservation = this.reservasi; // Simpan juga ke service
+      this.reservationService.activeReservation = this.reservasi; // Langsung simpan ke service
       console.log('Reservasi diambil dari Navigation State:', this.reservasi);
     }
-    // Ambil data keranjang dari state (jika ada)
+
+    // Ambil data keranjang dari state (ini tidak masalah karena sifatnya sementara)
     if (state?.['cart']) {
       this.cart = state['cart'].map((i: any) => ({ ...i, quantity: i.quantity || 1, note: i.note || '' }));
     }
     
-    // Jika setelah semua cara tetap tidak ada ID, navigasikan kembali
+    // Pemeriksaan Final: Jika setelah semua cara tetap tidak ada ID, paksa kembali.
     if (!this.reservasi?.id) {
       console.error('FATAL: Tidak ada ID Reservasi. Kembali ke jadwal.');
       this.presentAlert('Sesi reservasi tidak ditemukan, silakan ulangi.', 'Error');

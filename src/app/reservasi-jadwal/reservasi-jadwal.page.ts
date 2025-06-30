@@ -265,15 +265,14 @@ export class ReservasiJadwalPage implements OnInit {
           await loading.dismiss();
           const createdReservation = response.reservasi;
 
-          // [PERUBAHAN]: Simpan reservasi ke dalam service agar tidak hilang
+          // [PERUBAHAN]: Simpan data reservasi ke dalam service
           this.reservationService.activeReservation = createdReservation;
 
           await this.presentToast('Reservasi berhasil dibuat. Silakan pilih menu Anda.', 'success');
-
+          
+          // Navigasi tetap sama
           this.router.navigate(['/menu'], {
-            state: {
-              reservasi: createdReservation
-            }
+            state: { reservasi: createdReservation }
           });
         },
         error: async (error: ApiErrorResponse) => {
