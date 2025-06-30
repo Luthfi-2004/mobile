@@ -3,7 +3,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError, switchMap } from 'rxjs/operators';
 import { environment } from '../environments/environment';
 
@@ -59,15 +59,50 @@ export class AuthService {
 
   private loadStoredAuth(): void {
     const token = localStorage.getItem('auth_token');
-    const userJson = localStorage.getItem('user_data');
-    if (token && userJson) {
-      const user = JSON.parse(userJson);
-      this.tokenSubject.next(token);
-      this.currentUserSubject.next(user);
-      this.verifyTokenSilently();
-    } else {
-      this.clearAuthData();
+    if (token) {
+      // Verifikasi token dan muat data user terbaru dari server
+      this.verifyTokenAndLoadUser(token);
     }
+  }
+
+  // Verifikasi token dan muat data user terbaru dari server
+  private verifyTokenAndLoadUser(token: string): void {
+    const headers = new HttpHeaders({ 'Authorization': `Bearer ${token}` });
+    this.http.get<any>(`${this.apiUrl}/customer/profile`, { headers }).subscribe({
+      next: (res) => {
+        if (res.user) {
+          this.storeAuthData(token, res.user); // Simpan token dan data user yang VALID
+        } else {
+          this.clearAuthData(); // Jika response aneh, hapus sesi
+        }
+      },
+      error: () => {
+        this.clearAuthData(); // Jika token tidak valid (error 401 dll), hapus sesi
+      }
+    });
+  }
+
+  private verifyTokenSilently(): void {
+    const token = this.getCurrentToken();
+    if (!token) return;
+    this.http
+      .get(`${this.apiUrl}/customer/profile`, {
+        headers: this.getAuthHeaders(),
+        withCredentials: true
+      })
+      .subscribe({
+        next: (res: any) => {
+          if (res.user) {
+            this.currentUserSubject.next(res.user);
+            localStorage.setItem('user_data', JSON.stringify(res.user));
+          }
+        },
+        error: err => {
+          if (err.status === 401 || err.status === 403) {
+            this.clearAuthData();
+          }
+        }
+      });
   }
 
   private getCsrfToken(): Observable<any> {
@@ -106,15 +141,14 @@ export class AuthService {
   }
 
   logout(): Observable<any> {
-    return this.http
-      .post(`${this.apiUrl}/customer/logout`, {}, { withCredentials: true })
-      .pipe(
-        tap(() => this.clearAuthData()),
-        catchError(err => {
-          this.clearAuthData();
-          return throwError(() => err);
-        })
-      );
+    const headers = this.getAuthHeaders();
+    return this.http.post(`${this.apiUrl}/customer/logout`, {}, { headers, withCredentials: true }).pipe(
+      tap(() => this.clearAuthData()),
+      catchError(() => {
+        this.clearAuthData();
+        return of(null); // Selalu berhasil di sisi frontend
+      })
+    );
   }
 
   private storeAuthData(token: string, user: User): void {
@@ -126,12 +160,11 @@ export class AuthService {
   }
 
   private clearAuthData(): void {
-    // Hapus data auth
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_data');
-
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
+    this.router.navigate(['/login']); // Paksa kembali ke login
     console.log('Auth data cleared');
   }
 
@@ -144,7 +177,7 @@ export class AuthService {
     return this.currentUserSubject.value;
   }
 
-  // NEW: Get current user ID (or 'guest' if not logged in)
+  // Get current user ID (string format atau 'guest' jika tidak login)
   getCurrentUserId(): string {
     const user = this.getCurrentUser();
     return user ? `${user.id}` : 'guest';
@@ -158,8 +191,11 @@ export class AuthService {
     return !!this.getCurrentToken();
   }
 
-  private getAuthHeaders(): HttpHeaders {
-    let headers = new HttpHeaders({ 'X-Requested-With': 'XMLHttpRequest' });
+  public getAuthHeaders(): HttpHeaders {
+    let headers = new HttpHeaders({ 
+      'X-Requested-With': 'XMLHttpRequest',
+      'Accept': 'application/json'
+    });
     const token = this.getCurrentToken();
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
@@ -185,29 +221,6 @@ export class AuthService {
       case 'delete': return this.http.delete(url, options);
       default: throw new Error('Unsupported HTTP method');
     }
-  }
-
-  private verifyTokenSilently(): void {
-    const token = this.getCurrentToken();
-    if (!token) return;
-    this.http
-      .get(`${this.apiUrl}/customer/profile`, {
-        headers: this.getAuthHeaders(),
-        withCredentials: true
-      })
-      .subscribe({
-        next: (res: any) => {
-          if (res.user) {
-            this.currentUserSubject.next(res.user);
-            localStorage.setItem('user_data', JSON.stringify(res.user));
-          }
-        },
-        error: err => {
-          if (err.status === 401 || err.status === 403) {
-            this.clearAuthData();
-          }
-        }
-      });
   }
 
   verifyToken(): Observable<any> {
@@ -297,6 +310,8 @@ export class AuthService {
       msg = 'Kredensial tidak valid.';
     } else if (error.error?.message) {
       msg = error.error.message;
+    } else {
+      msg = 'Terjadi kesalahan. Silakan coba lagi.';
     }
     return throwError(() => ({ ...error, userMessage: msg }));
   }
