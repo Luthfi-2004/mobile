@@ -76,10 +76,12 @@ export class ReservasiPage implements OnInit {
     return `1 Meja + ${capacities.join('/')} Kursi`;
   }
 
+
   selectTable(table: Table) {
-    if (table.full) return;
-    table.selected = !table.selected;
-  }
+  // Cegah memilih meja nonaktif atau sudah penuh
+  if (table.full || table.status === 'nonaktif') return;
+  table.selected = !table.selected;
+}
 
   getSelectedTables(): Table[] {
     let selected: Table[] = [];

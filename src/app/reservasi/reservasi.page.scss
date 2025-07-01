@@ -45,12 +45,13 @@
   cursor: pointer;
   text-align: center;
   padding: 4px;
-}
-
-.table.full {
-  background-color: #f50000;
-  color: white;
-  pointer-events: none;
+  
+  &.red {
+    background-color: #f50000;
+    color: white;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
 }
 
 .table.selected {
@@ -96,7 +97,7 @@
   border-radius: 2px;
 }
 
-.box.full {
+.box.red {
   background-color: #f50000;
 }
 
@@ -171,4 +172,14 @@
   height: auto;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: Add styles for loading and error states */
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  text-align: center;
 }

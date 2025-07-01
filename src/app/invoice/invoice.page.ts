@@ -55,7 +55,8 @@ export class InvoicePage implements OnInit, OnDestroy {
       const userId = this.authService.getCurrentUserId();
       const storageKey = `riwayat_${userId}`;
       
-      const raw: any[] = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+      // PERUBAHAN: Gunakan localStorage bukan sessionStorage
+      const raw: any[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
       // Map data
       this.invoiceHistory = raw.map(item => {
@@ -189,9 +190,10 @@ export class InvoicePage implements OnInit, OnDestroy {
       const userId = this.authService.getCurrentUserId();
       const storageKey = `riwayat_${userId}`;
       
-      const current: any[] = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+      // PERUBAHAN: Gunakan localStorage bukan sessionStorage
+      const current: any[] = JSON.parse(localStorage.getItem(storageKey) || '[]');
       const updated = current.filter(i => i.id !== invoiceId && i.invoice_number !== invoiceId);
-      sessionStorage.setItem(storageKey, JSON.stringify(updated));
+      localStorage.setItem(storageKey, JSON.stringify(updated));
       
       this.invoiceHistory = this.invoiceHistory.filter(inv => 
         inv.id !== invoiceId && inv.invoice_number !== invoiceId
