@@ -63,11 +63,10 @@
             *ngFor="let table of tables[section]"
             class="table"
             [ngClass]="{
-              'full': table.full,
-              'selected': table.selected,
-              'available': !table.full
+              'red': table.status !== 'tersedia' && !table.selected,
+              'selected': table.selected
             }"
-            (click)="selectTable(table)">
+            (click)="table.status === 'tersedia' && selectTable(table)">
             <div class="table-content">
               <div class="table-id">{{ table.id }}</div>
               <div class="table-seats">({{ table.seats }} kursi)</div>
@@ -83,7 +82,7 @@
     <!-- Legend -->
     <div class="legend">
       <div class="legend-item">
-        <div class="box full"></div> Tidak Tersedia
+        <div class="box red"></div> Tidak Tersedia
       </div>
       <div class="legend-item">
         <div class="box selected"></div> Dipilih
