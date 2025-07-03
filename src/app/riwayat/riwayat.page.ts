@@ -96,7 +96,7 @@ export class RiwayatPage {
       case 'dibatalkan':
         return 'Pesanan Dibatalkan';
       case 'pending_payment':
-        return 'Dibayar Sebagian';
+        return 'Belum Lunas';
       case 'paid':
         return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
       case 'active_order':
@@ -116,7 +116,7 @@ export class RiwayatPage {
   }
 
   beriUlasan(data: any) {
-    if (data.status !== 'Dibayar Sebagian') {
+    if (data.status !== 'Belum Lunas') {
       this.presentAlert('Info', 'Anda hanya bisa memberi penilaian pada reservasi yang sudah selesai');
       return;
     }

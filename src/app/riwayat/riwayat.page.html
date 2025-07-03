@@ -26,7 +26,6 @@
       <ion-badge *ngIf="data.status === 'Selesai'" color="success">Selesai</ion-badge>
       <ion-badge *ngIf="data.status === 'Pesanan Dibatalkan'" color="danger">Dibatalkan</ion-badge>
       <ion-badge *ngIf="data.status === 'Belum Lunas'" color="warning">Belum Lunas</ion-badge>
-      <ion-badge *ngIf="data.status === 'Dibayar Sebagian'" color="warning">Dibayar Sebagian</ion-badge>
       <ion-badge *ngIf="data.status === 'Dikonfirmasi'" color="primary">Dikonfirmasi</ion-badge>
       <ion-badge *ngIf="data.status === 'Sedang Berlangsung'" color="secondary">Berlangsung</ion-badge>
     </div>
@@ -65,7 +64,7 @@
         Detail Reservasi
       </ion-button>
       
-      <ion-button *ngIf="data.status === 'Selesai' || data.status === 'Dibayar Sebagian'" size="small" color="dark" (click)="beriUlasan(data)">
+      <ion-button *ngIf="data.status === 'Selesai' || data.status === 'Belum Lunas'" size="small" color="dark" (click)="beriUlasan(data)">
         {{ data.raw_data.rating ? 'Lihat Penilaian' : 'Beri Penilaian' }}
       </ion-button>
       <ion-button *ngIf="data.status === 'Belum Dibayar'" color="warning" size="small" (click)="lanjutkanPembayaran(data)">

@@ -125,7 +125,7 @@ export class InvoicePage implements OnInit, OnDestroy {
     const st = raw.toLowerCase();
     switch (st) {
       case 'paid':    return 'Lunas';
-      case 'partial': return 'Dibayar Sebagian';
+      case 'partial': return 'Belum_Lunas';
       case 'pending': return 'Belum Dibayar';
       case 'dibatalkan': return 'Dibatalkan';
       default:        return 'Tidak Diketahui';

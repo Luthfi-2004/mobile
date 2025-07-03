@@ -177,7 +177,7 @@ export class InvoiceDetailPage implements OnInit, OnDestroy {
 
     switch (st) {
       case 'paid':    return 'Lunas';
-      case 'partial': return 'Dibayar Sebagian';
+      case 'partial': return 'Belum Lunas';
       case 'pending': return 'Belum Dibayar';
       case 'dibatalkan': return 'Dibatalkan';
       default:        return 'Tidak Diketahui';
