@@ -132,7 +132,7 @@ export class DetailPesananPage implements OnInit {
       case 'dibatalkan':
         return 'Pesanan Dibatalkan';
       case 'pending_payment':
-        return 'Dibayar Sebagian';
+        return 'Belum Lunas';
       case 'paid':
         return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
       case 'active_order':
@@ -142,47 +142,56 @@ export class DetailPesananPage implements OnInit {
     }
   }
 
-  async cancelOrder() {
-    const alert = await this.alertController.create({
-      header: 'Konfirmasi Pembatalan',
-      message: 'Apakah Anda yakin ingin membatalkan pesanan ini? Jika anda batalkan uang anda tidak akan kembali',
-      buttons: [
-        {
-          text: 'Batal',
-          role: 'cancel',
-          cssClass: 'secondary',
-        },
-        {
-          text: 'Ya, Batalkan',
-          handler: async () => {
-            const loading = await this.loadingController.create({
-              message: 'Membatalkan Pesanan...'
-            });
-            await loading.present();
+async cancelOrder() {
+  const alert = await this.alertController.create({
+    header: 'Konfirmasi Pembatalan',
+    message: 'Apakah Anda yakin ingin membatalkan pesanan ini? Jika anda batalkan uang anda tidak akan kembali',
+    buttons: [
+      {
+        text: 'Batal',
+        role: 'cancel',
+      },
+      {
+        text: 'Ya, Batalkan',
+        handler: async () => {
+          const loading = await this.loadingController.create({
+            message: 'Membatalkan Pesanan...'
+          });
+          await loading.present();
 
-            this.reservationService.cancelReservation(this.pesanan.id).subscribe({
-              next: (response) => {
-                console.log('Pembatalan berhasil:', response);
-                this.pesanan.status = 'Pesanan Dibatalkan';
-                this.presentAlert('Sukses', 'Pesanan berhasil dibatalkan');
-                // Navigasi kembali ke riwayat
-                this.router.navigate(['/tabs/riwayat']);
-              },
-              error: (error) => {
-                console.error('Error membatalkan pesanan:', error);
-                this.presentAlert('Error', 'Gagal membatalkan pesanan');
-              },
-              complete: () => {
-                loading.dismiss();
+          this.reservationService.cancelReservation(this.pesanan.id).subscribe({
+            next: (response) => {
+              // PAKAI DATA DARI BACKEND UNTUK UPDATE
+              const updatedReservasi = response.reservasi;
+              
+              // Update semua properti berdasarkan respons backend
+              this.pesanan.status = this.getStatusLabel(updatedReservasi.status);
+              this.pesanan.kehadiran_status = updatedReservasi.kehadiran_status;
+              this.pesanan.payment_status = updatedReservasi.payment_status;
+              
+              // Update raw_data jika diperlukan
+              if (this.pesanan.raw_data) {
+                this.pesanan.raw_data = { 
+                  ...this.pesanan.raw_data, 
+                  ...updatedReservasi 
+                };
               }
-            });
-          }
-        }
-      ]
-    });
 
-    await alert.present();
-  }
+              this.presentAlert('Sukses', 'Pesanan berhasil dibatalkan');
+              this.router.navigate(['/tabs/riwayat']);
+            },
+            error: (error) => {
+              console.error('Error membatalkan pesanan:', error);
+              this.presentAlert('Error', 'Gagal membatalkan pesanan');
+            },
+            complete: () => loading.dismiss()
+          });
+        }
+      }
+    ]
+  });
+  await alert.present();
+}
 
   // Method untuk logika tampil/tidaknya tombol batal
   isBisaDibatalkan(): boolean {
@@ -224,7 +233,7 @@ export class DetailPesananPage implements OnInit {
       case 'pesanan dibatalkan':
       case 'dibatalkan':
         return 'danger';
-      case 'Dibayar Sebagian':
+      case 'Belum_Lunas':
       case 'pending_payment':
         return 'warning';
       case 'sedang berlangsung':
