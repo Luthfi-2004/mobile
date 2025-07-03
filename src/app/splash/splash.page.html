@@ -1,7 +1,7 @@
-<ion-content class="splash-screen" [fullscreen]="true">
+<ion-content class="splash-screen" [class.fade-out]="fadeOut" [fullscreen]="true">
   <div class="color-flash" *ngIf="showFlash"></div>
 
   <div class="logo-container" *ngIf="showLogo">
-    <img src="assets/img/logo.jpg" class="logo animate__animated animate__zoomIn" />
+    <img src="assets/img/logoresto.png" class="logo" alt="Logo" />
   </div>
 </ion-content>

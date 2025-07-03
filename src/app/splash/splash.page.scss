@@ -1,66 +1,67 @@
 .splash-screen {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    background: #ffffff;
-    overflow: hidden;
-  
-    .color-flash {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #90caf9;
-      animation: flashFade 2s ease-out forwards;
-      z-index: 1;
-    }
-  
-    .logo-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 2;
-      animation: logoFadeIn 2s ease-out forwards;
-  
-      .logo {
-        width: 160px;
-        height: auto;
-      }
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  overflow: hidden;
+
+  .color-flash {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #90caf9, #e3f2fd);
+    animation: flashFade 2.8s ease-in-out forwards; /* Durasi diperpanjang */
+    z-index: 1;
+    filter: blur(12px); /* Blur lebih besar untuk efek lebih lembut */
+  }
+
+  .logo-container {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    .logo {
+      width: 220px;
+      opacity: 0;
+      transform: perspective(600px) rotateY(90deg) scale(0.8);
+      clip-path: circle(0 at 50% 50%);
+      /* Durasi diperpanjang, easing lebih halus, delay disesuaikan */
+      animation: logoFlipReveal 2.2s cubic-bezier(0.28, 0.84, 0.42, 0.98) forwards;
+      animation-delay: 0.8s; /* Delay lebih panjang */
     }
   }
-  
-  // Warna muncul lalu hilang
-  @keyframes flashFade {
-    0% {
-      opacity: 0;
-    }
-    30% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
+}
+
+/* Flash background - lebih lambat dan bertahan lebih lama */
+@keyframes flashFade {
+  0%   { opacity: 0; transform: scale(1); }
+  20%  { opacity: 1; transform: scale(1.02); } /* Sedikit zoom untuk efek halus */
+  60%  { opacity: 1; } /* Bertahan lebih lama di puncak */
+  100% { opacity: 0; transform: scale(1); }
+}
+
+/* Flip + circle reveal - lebih perlahan dan halus */
+@keyframes logoFlipReveal {
+  0% {
+    opacity: 0;
+    transform: perspective(600px) rotateY(90deg) scale(0.8);
+    clip-path: circle(0 at 50% 50%);
   }
-  
-  // Logo fade in & zoom sedikit
-  @keyframes logoFadeIn {
-    0% {
-      opacity: 0;
-      transform: scale(0.9);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.05);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
+  40% { /* Fase peralihan yang lebih panjang */
+    opacity: 0.8;
+    transform: perspective(600px) rotateY(-10deg) scale(1.05);
+    clip-path: circle(45% at 50% 50%);
   }
-  
+  70% { /* Lebih dekat ke akhir tapi belum final */
+    opacity: 1;
+    transform: perspective(600px) rotateY(0deg) scale(1.01);
+    clip-path: circle(85% at 50% 50%);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(600px) rotateY(0deg) scale(1);
+    clip-path: circle(150% at 50% 50%);
+  }
+}

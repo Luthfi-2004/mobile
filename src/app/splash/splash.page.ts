@@ -11,6 +11,7 @@ import { Platform } from '@ionic/angular';
 export class SplashPage implements OnInit {
   showFlash = true;
   showLogo = false;
+  fadeOut = false;
 
   constructor(
     private router: Router,
@@ -20,14 +21,20 @@ export class SplashPage implements OnInit {
   ngOnInit() {
     // Tunggu platform siap
     this.platform.ready().then(() => {
+      // Tampilkan logo setelah flash background mulai
       setTimeout(() => {
-        this.showFlash = false;
         this.showLogo = true;
-      }, 1500);  
+      }, 800); // Timing yang lebih smooth
 
+      // Mulai fade out sebelum navigasi
+      setTimeout(() => {
+        this.fadeOut = true;
+      }, 4000); // 4 detik total
+
+      // Navigasi ke halaman login setelah fade out selesai
       setTimeout(() => {
         this.router.navigateByUrl('login', { replaceUrl: true });
-      }, 3000);  
+      }, 5000); // 4s + 1s fade out
     });
   }
 }
