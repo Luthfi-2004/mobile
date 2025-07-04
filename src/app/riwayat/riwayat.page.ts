@@ -55,7 +55,8 @@ export class RiwayatPage {
 
   private async loadRatingStatus(reservations: any[]) {
     const ratingChecks = reservations.map(reservasi => {
-      if (reservasi.status === 'selesai') {
+      // Memungkinkan rating untuk status selesai, paid, atau confirmed
+      if (reservasi.status === 'selesai' || reservasi.status === 'paid' || reservasi.payment_status === 'paid') {
         return this.ratingService.checkExistingRating(reservasi.id);
       }
       return null;
@@ -98,7 +99,7 @@ export class RiwayatPage {
       case 'pending_payment':
         return 'Belum Lunas';
       case 'paid':
-        return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
+        return paymentStatus === 'paid' ? 'Lunas' : 'Belum Lunas';
       case 'active_order':
         return 'Sedang Berlangsung';
       default:
@@ -116,14 +117,19 @@ export class RiwayatPage {
   }
 
   beriUlasan(data: any) {
-    if (data.status !== 'Belum Lunas') {
-      this.presentAlert('Info', 'Anda hanya bisa memberi penilaian pada reservasi yang sudah selesai');
+    // Memperbolehkan penilaian untuk status yang sudah dikonfirmasi atau selesai
+    if (data.status !== 'Belum Lunas' && data.status !== 'Lunas' && data.status !== 'Selesai') {
+      this.presentAlert('Info', 'Anda hanya bisa memberi penilaian pada reservasi yang sudah Lunas atau selesai');
       return;
     }
+    
     if (data.has_rating) {
-      this.presentAlert('Info', 'Anda sudah memberikan penilaian untuk reservasi ini');
+      // Jika sudah ada rating, tampilkan rating yang sudah ada
+      this.lihatRating(data);
       return;
     }
+    
+    // Navigasi ke halaman ulasan untuk memberi penilaian
     this.router.navigate(['/ulasan'], {
       state: {
         pesanan: data,
@@ -201,5 +207,5 @@ export class RiwayatPage {
   async doRefresh(event: any) {
     await this.loadRiwayat();
     event.target.complete();
-  }
+  }
 }

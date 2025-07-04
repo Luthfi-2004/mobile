@@ -134,7 +134,7 @@ export class DetailPesananPage implements OnInit {
       case 'pending_payment':
         return 'Belum Lunas';
       case 'paid':
-        return paymentStatus === 'paid' ? 'Dikonfirmasi' : 'Belum Lunas';
+        return paymentStatus === 'paid' ? 'Lunas' : 'Belum Lunas';
       case 'active_order':
         return 'Sedang Berlangsung';
       default:
@@ -228,12 +228,13 @@ async cancelOrder() {
     const statusLower = status?.toLowerCase();
     switch (statusLower) {
       case 'selesai':
-      case 'dikonfirmasi':
+      case 'lunas':
         return 'success';
       case 'pesanan dibatalkan':
       case 'dibatalkan':
         return 'danger';
-      case 'Belum_Lunas':
+      case 'belum lunas':
+        return 'warning';
       case 'pending_payment':
         return 'warning';
       case 'sedang berlangsung':

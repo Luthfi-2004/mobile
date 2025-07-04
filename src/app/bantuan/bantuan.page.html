@@ -100,11 +100,20 @@
 
     <ion-card-content>
       <ion-item>
-        <ion-input label="Nama" placeholder="Masukkan nama Anda"></ion-input>
+        <ion-input 
+          label="Nama" 
+          placeholder="Masukkan nama Anda"
+          [(ngModel)]="formData.nama"
+        ></ion-input>
       </ion-item>
 
       <ion-item>
-        <ion-input label="Email" type="email" placeholder="email@contoh.com"></ion-input>
+        <ion-input 
+          label="Email" 
+          type="email" 
+          placeholder="email@contoh.com"
+          [(ngModel)]="formData.email"
+        ></ion-input>
       </ion-item>
 
       <ion-item>
@@ -112,10 +121,17 @@
           label="Pesan" 
           placeholder="Tulis pesan Anda di sini..."
           rows="5"
+          [(ngModel)]="formData.pesan"
         ></ion-textarea>
       </ion-item>
 
-      <ion-button expand="block" color="primary" class="submit-button" (click)="kirimPesan()">
+      <ion-button 
+        expand="block" 
+        color="primary" 
+        class="submit-button" 
+        (click)="kirimPesan()"
+        [disabled]="!isFormValid()"
+      >
         Kirim
       </ion-button>
     </ion-card-content>
