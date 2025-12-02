@@ -138,6 +138,64 @@
     z-index: 2;
   }
 
+  // Password Requirements Styles
+  .password-requirements {
+    background: #f8f9fa;
+    border-radius: 0.8rem;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    border: 1px solid #e0e0e0;
+    animation: slideDown 0.3s ease;
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .requirement {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      color: #e74c3c;
+      margin-bottom: 0.4rem;
+      transition: all 0.3s ease;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      ion-icon {
+        font-size: 1rem;
+        flex-shrink: 0;
+      }
+
+      &.valid {
+        color: #27ae60;
+
+        ion-icon {
+          color: #27ae60;
+        }
+      }
+
+      &:not(.valid) {
+        ion-icon {
+          color: #e74c3c;
+        }
+      }
+
+      span {
+        line-height: 1.3;
+      }
+    }
+  }
+
   .register-button {
     background: linear-gradient(135deg, #3498db 0%, #2c3e50 100%);
     border: none;

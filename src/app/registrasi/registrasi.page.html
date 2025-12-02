@@ -61,6 +61,8 @@
               formControlName="password"
               placeholder="Masukkan Password"
               maxlength="20"
+              (focus)="onPasswordFocus()"
+              (blur)="onPasswordBlur()"
             />
             <ion-icon
               [name]="showPassword ? 'eye-outline' : 'eye-off-outline'"
@@ -68,6 +70,31 @@
               (click)="togglePassword()"
             ></ion-icon>
           </div>
+          
+          <!-- Password Requirements Indicator - Only show when focused and has value -->
+          <div class="password-requirements" *ngIf="isPasswordFocused && registerForm.get('password')?.value">
+            <div class="requirement" [class.valid]="passwordRequirements.minLength">
+              <ion-icon [name]="passwordRequirements.minLength ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>Minimal 8 karakter</span>
+            </div>
+            <div class="requirement" [class.valid]="passwordRequirements.hasUpperCase">
+              <ion-icon [name]="passwordRequirements.hasUpperCase ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>Huruf besar (A-Z)</span>
+            </div>
+            <div class="requirement" [class.valid]="passwordRequirements.hasLowerCase">
+              <ion-icon [name]="passwordRequirements.hasLowerCase ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>Huruf kecil (a-z)</span>
+            </div>
+            <div class="requirement" [class.valid]="passwordRequirements.hasNumber">
+              <ion-icon [name]="passwordRequirements.hasNumber ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>Angka (0-9)</span>
+            </div>
+            <div class="requirement" [class.valid]="passwordRequirements.hasSpecialChar">
+              <ion-icon [name]="passwordRequirements.hasSpecialChar ? 'checkmark-circle' : 'close-circle'"></ion-icon>
+              <span>Karakter spesial (&#64;, !, #, dll)</span>
+            </div>
+          </div>
+          
           <div class="counter">{{ registerForm.get('password')?.value?.length || 0 }}/20</div>
         </div>
 

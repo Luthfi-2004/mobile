@@ -18,6 +18,18 @@ export class RegistrasiPage implements OnInit, OnDestroy {
   isSubmitting = false;
   private authSubscription?: Subscription;
 
+  // Password strength indicators
+  passwordRequirements = {
+    minLength: false,
+    hasUpperCase: false,
+    hasLowerCase: false,
+    hasNumber: false,
+    hasSpecialChar: false
+  };
+  
+  // Track if password field is focused
+  isPasswordFocused = false;
+
   constructor(
     private formBuilder: FormBuilder,
     private authService: AuthService,
@@ -33,6 +45,11 @@ export class RegistrasiPage implements OnInit, OnDestroy {
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/tabs/home']);
     }
+
+    // Subscribe to password changes to update requirements
+    this.registerForm.get('password')?.valueChanges.subscribe(value => {
+      this.updatePasswordRequirements(value || '');
+    });
   }
 
   ngOnDestroy() {
@@ -43,7 +60,7 @@ export class RegistrasiPage implements OnInit, OnDestroy {
 
   // Fungsi untuk navigasi kembali
   goBack() {
-    this.router.navigate(['/splash']); // Ganti dengan halaman sebelumnya
+    this.router.navigate(['/splash']);
   }
 
   private initializeForm() {
@@ -93,6 +110,14 @@ export class RegistrasiPage implements OnInit, OnDestroy {
     });
   }
 
+  private updatePasswordRequirements(password: string) {
+    this.passwordRequirements.minLength = password.length >= 8;
+    this.passwordRequirements.hasUpperCase = /[A-Z]/.test(password);
+    this.passwordRequirements.hasLowerCase = /[a-z]/.test(password);
+    this.passwordRequirements.hasNumber = /[0-9]/.test(password);
+    this.passwordRequirements.hasSpecialChar = /[@!#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  }
+
   private noSpecialCharsValidator(control: AbstractControl): { [key: string]: any } | null {
     if (!control.value) return null;
     
@@ -110,8 +135,9 @@ export class RegistrasiPage implements OnInit, OnDestroy {
     const hasUpperCase = /[A-Z]/.test(value);
     const hasLowerCase = /[a-z]/.test(value);
     const hasNumber = /[0-9]/.test(value);
+    const hasSpecialChar = /[@!#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value);
     
-    if (value.length >= 8 && hasUpperCase && hasLowerCase && hasNumber) {
+    if (value.length >= 8 && hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar) {
       return null;
     }
     
@@ -142,6 +168,14 @@ export class RegistrasiPage implements OnInit, OnDestroy {
   toggleConfirmPassword() {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
+  
+  onPasswordFocus() {
+    this.isPasswordFocused = true;
+  }
+  
+  onPasswordBlur() {
+    this.isPasswordFocused = false;
+  }
 
   customCounterFormatter(inputLength: number, maxLength: number): string {
     return `${inputLength} / ${maxLength}`;
@@ -162,7 +196,7 @@ export class RegistrasiPage implements OnInit, OnDestroy {
       return 'Format tidak valid.';
     }
     if (errors['specialChars']) return 'Nama tidak boleh mengandung karakter khusus atau angka.';
-    if (errors['weakPassword']) return 'Password harus mengandung huruf besar, huruf kecil, dan angka.';
+    if (errors['weakPassword']) return 'Password harus memenuhi semua persyaratan keamanan.';
     if (errors['mismatch']) return 'Konfirmasi password tidak cocok.';
     
     return 'Input tidak valid.';
